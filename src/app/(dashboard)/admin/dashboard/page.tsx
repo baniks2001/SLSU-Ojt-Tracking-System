@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UserData {
-  id: string;
+  _id: string;
   email: string;
   accountType: 'student' | 'department' | 'admin' | 'superadmin';
   isActive: boolean;
@@ -43,7 +43,7 @@ interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
-  departmentId: string;
+  departmentName: string;
   duration: string;
   isActive: boolean;
 }
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', accountType: 'admin' });
-  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentId: '', duration: '4 years' });
+  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', duration: '4 years' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         toast.success('Course created successfully');
-        setNewCourse({ courseCode: '', courseName: '', departmentId: '', duration: '4 years' });
+        setNewCourse({ courseCode: '', courseName: '', departmentName: '', duration: '4 years' });
         fetchCourses();
       } else {
         const data = await response.json();
@@ -589,7 +589,7 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {students.map((studentUser) => (
-                        <TableRow key={studentUser.id}>
+                        <TableRow key={studentUser._id}>
                           <TableCell>{studentUser.details?.studentId}</TableCell>
                           <TableCell>
                             {studentUser.details?.firstName} {studentUser.details?.lastName}
@@ -609,14 +609,14 @@ export default function AdminDashboard() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleToggleUserStatus(studentUser.id, studentUser.isActive)}
+                                onClick={() => handleToggleUserStatus(studentUser._id, studentUser.isActive)}
                               >
                                 {studentUser.isActive ? 'Deactivate' : 'Activate'}
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleDeleteUser(studentUser.id, 'student')}
+                                onClick={() => handleDeleteUser(studentUser._id, 'student')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -655,7 +655,7 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {departmentUsers.map((deptUser) => (
-                        <TableRow key={deptUser.id}>
+                        <TableRow key={deptUser._id}>
                           <TableCell>{deptUser.details?.departmentCode}</TableCell>
                           <TableCell>{deptUser.details?.departmentName}</TableCell>
                           <TableCell>{deptUser.details?.ojtAdvisorName}</TableCell>
@@ -670,14 +670,14 @@ export default function AdminDashboard() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleToggleUserStatus(deptUser.id, deptUser.isActive)}
+                                onClick={() => handleToggleUserStatus(deptUser._id, deptUser.isActive)}
                               >
                                 {deptUser.isActive ? 'Deactivate' : 'Activate'}
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleDeleteUser(deptUser.id, 'department')}
+                                onClick={() => handleDeleteUser(deptUser._id, 'department')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -722,21 +722,13 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="course-dept">Department</Label>
-                      <Select
-                        value={newCourse.departmentId}
-                        onValueChange={(value) => setNewCourse({ ...newCourse, departmentId: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept._id} value={dept._id}>
-                              {dept.departmentName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        id="course-dept"
+                        placeholder="e.g., College of Computer Studies"
+                        value={newCourse.departmentName}
+                        onChange={(e) => setNewCourse({ ...newCourse, departmentName: e.target.value })}
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="duration">Duration</Label>
@@ -791,9 +783,7 @@ export default function AdminDashboard() {
                         <TableRow key={course._id}>
                           <TableCell>{course.courseCode}</TableCell>
                           <TableCell>{course.courseName}</TableCell>
-                          <TableCell>
-                            {(course.departmentId as any)?.departmentName || 'N/A'}
-                          </TableCell>
+                          <TableCell>{course.departmentName}</TableCell>
                           <TableCell>{course.duration}</TableCell>
                           <TableCell>
                             <Button
@@ -1018,7 +1008,7 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {adminUsers.map((adminUser) => (
-                        <TableRow key={adminUser.id}>
+                        <TableRow key={adminUser._id}>
                           <TableCell>{adminUser.email}</TableCell>
                           <TableCell>{getAccountTypeLabel(adminUser.accountType)}</TableCell>
                           <TableCell>
@@ -1038,14 +1028,14 @@ export default function AdminDashboard() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleToggleUserStatus(adminUser.id, adminUser.isActive)}
+                                    onClick={() => handleToggleUserStatus(adminUser._id, adminUser.isActive)}
                                   >
                                     {adminUser.isActive ? 'Deactivate' : 'Activate'}
                                   </Button>
                                   <Button
                                     variant="destructive"
                                     size="sm"
-                                    onClick={() => handleDeleteUser(adminUser.id, adminUser.accountType)}
+                                    onClick={() => handleDeleteUser(adminUser._id, adminUser.accountType)}
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>

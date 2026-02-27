@@ -35,7 +35,7 @@ interface StudentData {
 }
 
 interface UserData {
-  id: string;
+  _id: string;
   email: string;
   accountType: string;
   details: StudentData;

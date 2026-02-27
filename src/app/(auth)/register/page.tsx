@@ -23,7 +23,7 @@ interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
-  departmentId: string;
+  departmentName: string;
 }
 
 export default function RegisterPage() {
@@ -326,7 +326,14 @@ export default function RegisterPage() {
                     <Label htmlFor="department">Department *</Label>
                     <Select
                       value={studentForm.departmentId}
-                      onValueChange={(value) => setStudentForm({ ...studentForm, departmentId: value })}
+                      onValueChange={(value) => {
+                        const selectedDept = departments.find(d => d._id === value);
+                        setStudentForm(prev => ({ 
+                          ...prev, 
+                          departmentId: value,
+                          location: selectedDept?.location || '' 
+                        }));
+                      }}
                       disabled={isLoadingDepartments}
                     >
                       <SelectTrigger>
@@ -334,7 +341,7 @@ export default function RegisterPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {departments.length === 0 ? (
-                          <SelectItem value="" disabled>
+                          <SelectItem value="no-departments" disabled>
                             No approved departments available
                           </SelectItem>
                         ) : (
@@ -351,30 +358,39 @@ export default function RegisterPage() {
                     <Label htmlFor="course">Course *</Label>
                     <Select
                       value={studentForm.courseId}
-                      onValueChange={(value) => setStudentForm({ ...studentForm, courseId: value })}
-                      disabled={isLoadingCourses || !studentForm.departmentId}
+                      onValueChange={(value) => {
+                        setStudentForm({ ...studentForm, courseId: value });
+                        // Auto-fill department based on selected course
+                        const selectedCourse = courses.find(c => c._id === value);
+                        if (selectedCourse) {
+                          // Find department that matches the course's department name
+                          const matchingDept = departments.find(d => d.departmentName === selectedCourse.departmentName);
+                          if (matchingDept) {
+                            setStudentForm(prev => ({ 
+                              ...prev, 
+                              courseId: value,
+                              departmentId: matchingDept._id,
+                              location: matchingDept.location 
+                            }));
+                          }
+                        }
+                      }}
+                      disabled={isLoadingCourses}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={isLoadingCourses ? "Loading..." : "Select course"} />
                       </SelectTrigger>
                       <SelectContent>
                         {courses.length === 0 ? (
-                          <SelectItem value="" disabled>
+                          <SelectItem value="no-courses" disabled>
                             No courses available
                           </SelectItem>
                         ) : (
-                          courses
-                            .filter(c => c.departmentId === studentForm.departmentId)
-                            .map((course) => (
-                              <SelectItem key={course._id} value={course._id}>
-                                {course.courseName} ({course.courseCode})
-                              </SelectItem>
-                            ))
-                        )}
-                        {courses.filter(c => c.departmentId === studentForm.departmentId).length === 0 && studentForm.departmentId && (
-                          <SelectItem value="" disabled>
-                            No courses for this department
-                          </SelectItem>
+                          courses.map((course) => (
+                            <SelectItem key={course._id} value={course._id}>
+                              {course.courseName} ({course.courseCode}) - {course.departmentName}
+                            </SelectItem>
+                          ))
                         )}
                       </SelectContent>
                     </Select>
