@@ -18,11 +18,11 @@ interface ProfileFormProps {
     middleName?: string;
     course: string;
     department: string;
-    location: string;
     hostEstablishment: string;
     contactNumber?: string;
     address?: string;
-    shiftType: 'regular' | 'graveyard';
+    shiftType: 'regular' | 'graveyard' | 'custom';
+    location?: string; // Optional, kept for backward compatibility
   };
   userEmail: string;
 }

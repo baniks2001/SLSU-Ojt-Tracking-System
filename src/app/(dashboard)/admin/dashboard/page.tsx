@@ -408,6 +408,13 @@ export default function AdminDashboard() {
   const adminUsers = users.filter(u => ['admin', 'superadmin'].includes(u.accountType));
   const activeUsers = users.filter(u => u.isActive);
 
+  // Refetch courses when courses tab is selected
+  useEffect(() => {
+    if (activeTab === 'courses') {
+      fetchCourses();
+    }
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -494,6 +501,17 @@ export default function AdminDashboard() {
                   <p className="text-2xl font-bold text-green-600">{departmentUsers.length}</p>
                 </div>
                 <Building className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Courses</p>
+                  <p className="text-2xl font-bold text-orange-600">{courses.length}</p>
+                </div>
+                <Building className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>

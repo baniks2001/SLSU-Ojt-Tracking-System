@@ -1,7 +1,7 @@
 export { default as User } from './User';
 export type { IUser } from './User';
 export { default as Student } from './Student';
-export type { IStudent } from './Student';
+export type { IStudent, ShiftConfig } from './Student';
 export { default as Department } from './Department';
 export type { IDepartment } from './Department';
 export { default as Course } from './Course';
@@ -16,3 +16,5 @@ export { default as SystemLog } from './SystemLog';
 export type { ISystemLog } from './SystemLog';
 export { default as DTRTemplate } from './DTRTemplate';
 export type { IDTRTemplate } from './DTRTemplate';
+export { default as ScheduleChangeRequest } from './ScheduleChangeRequest';
+export type { IScheduleChangeRequest } from './ScheduleChangeRequest';

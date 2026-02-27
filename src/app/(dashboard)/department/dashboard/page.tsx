@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Users, FileText, Bell, LogOut, UserCheck, UserX, CheckCircle } from 'lucide-react';
+import { Users, FileText, Bell, LogOut, UserCheck, UserX, CheckCircle, Clock } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,6 +52,26 @@ interface Student {
   createdAt: string;
 }
 
+interface ScheduleRequest {
+  _id: string;
+  studentId: {
+    _id: string;
+    studentId: string;
+    firstName: string;
+    lastName: string;
+  };
+  currentShiftType: string;
+  requestedShiftType: string;
+  requestedShiftConfig: {
+    description?: string;
+    eveningStart?: string;
+    eveningEnd?: string;
+  };
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+}
+
 interface Announcement {
   _id: string;
   title: string;
@@ -89,6 +109,7 @@ export default function DepartmentDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [scheduleRequests, setScheduleRequests] = useState<ScheduleRequest[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,6 +171,18 @@ export default function DepartmentDashboard() {
     }
   };
 
+  const fetchScheduleRequests = async (departmentName: string) => {
+    try {
+      const response = await fetch(`/api/schedule-requests?departmentId=${departmentName}`);
+      if (response.ok) {
+        const data = await response.json();
+        setScheduleRequests(data.requests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching schedule requests:', error);
+    }
+  };
+
   const fetchAttendance = async (studentId?: string) => {
     try {
       let url = '/api/attendance?';
@@ -193,6 +226,34 @@ export default function DepartmentDashboard() {
       }
     } catch (error) {
       console.error('Error accepting student:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleReviewScheduleRequest = async (requestId: string, status: 'approved' | 'rejected', comments?: string) => {
+    try {
+      const response = await fetch('/api/schedule-requests', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId,
+          status,
+          comments,
+          reviewedBy: user?.id,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`Schedule request ${status}`);
+        if (user) {
+          fetchScheduleRequests(user.details.departmentName);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to review request');
+      }
+    } catch (error) {
+      console.error('Error reviewing schedule request:', error);
       toast.error('An error occurred');
     }
   };
@@ -248,6 +309,7 @@ export default function DepartmentDashboard() {
 
   const pendingStudents = students.filter(s => !s.isAccepted);
   const activeStudents = students.filter(s => s.isAccepted);
+  const pendingRequests = scheduleRequests.filter(r => r.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -346,7 +408,7 @@ export default function DepartmentDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
+          <TabsList className="grid w-full grid-cols-5 lg:w-[1000px]">
             <TabsTrigger value="students" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Students</span>
@@ -360,6 +422,13 @@ export default function DepartmentDashboard() {
               <span className="hidden sm:inline">Pending</span>
               {pendingStudents.length > 0 && (
                 <Badge variant="destructive" className="ml-2">{pendingStudents.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="schedule-requests" className="flex items-center space-x-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Schedule Requests</span>
+              {pendingRequests.length > 0 && (
+                <Badge variant="destructive" className="ml-2">{pendingRequests.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center space-x-2">
@@ -563,6 +632,76 @@ export default function DepartmentDashboard() {
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Accept
                             </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="schedule-requests" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Schedule Change Requests</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {scheduleRequests.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No schedule change requests.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {scheduleRequests.map((request) => (
+                      <Card key={request._id} className={`border-l-4 ${request.status === 'pending' ? 'border-l-yellow-500' : request.status === 'approved' ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <h3 className="font-semibold">
+                                {request.studentId.firstName} {request.studentId.lastName}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                ID: {request.studentId.studentId}
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                From: <Badge variant="outline">{request.currentShiftType}</Badge>
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                To: <Badge variant="outline">{request.requestedShiftConfig?.description || request.requestedShiftType}</Badge>
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Reason: {request.reason}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                Requested: {new Date(request.requestedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {request.status === 'pending' ? (
+                              <div className="flex space-x-2 mt-4 md:mt-0">
+                                <Button
+                                  onClick={() => handleReviewScheduleRequest(request._id, 'approved')}
+                                  className="bg-green-600 hover:bg-green-700"
+                                  size="sm"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  onClick={() => handleReviewScheduleRequest(request._id, 'rejected')}
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  <UserX className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            ) : (
+                              <Badge className={request.status === 'approved' ? 'bg-green-600' : 'bg-red-600'}>
+                                {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                              </Badge>
+                            )}
                           </div>
                         </CardContent>
                       </Card>

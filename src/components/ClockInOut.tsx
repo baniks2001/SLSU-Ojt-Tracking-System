@@ -9,7 +9,16 @@ import { Camera, Clock, LogIn, LogOut } from 'lucide-react';
 
 interface ClockInOutProps {
   studentId: string;
-  shiftType: 'regular' | 'graveyard';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom';
+  shiftConfig?: {
+    morningStart?: string;
+    morningEnd?: string;
+    afternoonStart?: string;
+    afternoonEnd?: string;
+    eveningStart?: string;
+    eveningEnd?: string;
+    description?: string;
+  };
   isAccepted: boolean;
 }
 
@@ -22,11 +31,11 @@ interface AttendanceRecord {
   afternoonOut?: string;
   eveningIn?: string;
   eveningOut?: string;
-  shiftType: 'regular' | 'graveyard';
+  shiftType: string;
   totalHours: number;
 }
 
-export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockInOutProps) {
+export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccepted }: ClockInOutProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -163,6 +172,23 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
 
   return (
     <div className="space-y-6">
+      {/* Schedule Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Clock className="h-5 w-5" />
+            <span>Current Schedule</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Badge variant="outline" className="text-base px-3 py-1">
+            {shiftType === 'regular' && 'Regular: 7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM'}
+            {shiftType === 'graveyard' && 'Graveyard: 7:00 PM - 7:00 AM'}
+            {shiftType === 'custom' && (shiftConfig?.description || `Custom: ${shiftConfig?.eveningStart} - ${shiftConfig?.eveningEnd}`)}
+          </Badge>
+        </CardContent>
+      </Card>
+
       {/* Camera Section */}
       <Card>
         <CardHeader>

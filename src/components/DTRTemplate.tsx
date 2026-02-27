@@ -16,9 +16,9 @@ interface DTRTemplateProps {
     middleName?: string;
     course: string;
     department: string;
-    location: string;
     hostEstablishment: string;
-    shiftType: 'regular' | 'graveyard';
+    shiftType: 'regular' | 'graveyard' | 'custom';
+    location?: string; // Optional
   };
 }
 

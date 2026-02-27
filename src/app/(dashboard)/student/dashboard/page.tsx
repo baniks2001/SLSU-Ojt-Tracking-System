@@ -16,6 +16,7 @@ import ProfileForm from '@/components/ProfileForm';
 import AttendanceLogs from '@/components/AttendanceLogs';
 import DTRTemplate from '@/components/DTRTemplate';
 import Announcements from '@/components/Announcements';
+import ScheduleChangeRequest from '@/components/ScheduleChangeRequest';
 
 interface StudentData {
   _id: string;
@@ -25,11 +26,19 @@ interface StudentData {
   middleName?: string;
   course: string;
   department: string;
-  location: string;
   hostEstablishment: string;
   contactNumber?: string;
   address?: string;
-  shiftType: 'regular' | 'graveyard';
+  shiftType: 'regular' | 'graveyard' | 'custom';
+  shiftConfig?: {
+    morningStart?: string;
+    morningEnd?: string;
+    afternoonStart?: string;
+    afternoonEnd?: string;
+    eveningStart?: string;
+    eveningEnd?: string;
+    description?: string;
+  };
   isAccepted: boolean;
   isActive: boolean;
 }
@@ -167,7 +176,7 @@ export default function StudentDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-6 lg:w-[700px]">
             <TabsTrigger value="clock" className="flex items-center space-x-2">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Clock In/Out</span>
@@ -184,6 +193,10 @@ export default function StudentDashboard() {
               <Camera className="h-4 w-4" />
               <span className="hidden sm:inline">DTR</span>
             </TabsTrigger>
+            <TabsTrigger value="schedule" className="flex items-center space-x-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Schedule Request</span>
+            </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center space-x-2">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Announcements</span>
@@ -191,7 +204,12 @@ export default function StudentDashboard() {
           </TabsList>
 
           <TabsContent value="clock" className="space-y-4">
-            <ClockInOut studentId={student._id} shiftType={student.shiftType} isAccepted={student.isAccepted} />
+            <ClockInOut 
+              studentId={student._id} 
+              shiftType={student.shiftType} 
+              shiftConfig={student.shiftConfig}
+              isAccepted={student.isAccepted} 
+            />
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-4">
@@ -204,6 +222,14 @@ export default function StudentDashboard() {
 
           <TabsContent value="dtr" className="space-y-4">
             <DTRTemplate student={student} />
+          </TabsContent>
+
+          <TabsContent value="schedule" className="space-y-4">
+            <ScheduleChangeRequest 
+              studentId={student._id}
+              currentShiftType={student.shiftType}
+              departmentId={student.department}
+            />
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-4">

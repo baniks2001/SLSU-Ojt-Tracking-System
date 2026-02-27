@@ -46,9 +46,10 @@ export default function RegisterPage() {
     middleName: '',
     courseId: '',
     departmentName: '', // Auto-filled from selected course
-    location: '',
     hostEstablishment: '',
     contactNumber: '',
+    emergencyContact: '',
+    emergencyContactNumber: '',
     address: '',
     shiftType: 'regular',
   });
@@ -111,18 +112,18 @@ export default function RegisterPage() {
     }
   }, [activeTab]);
 
-  // Update location when course changes (department is auto-derived from course)
+  // Update when course changes (department is auto-derived from course)
   useEffect(() => {
     if (studentForm.courseId) {
       const selectedCourse = courses.find(c => c._id === studentForm.courseId);
       if (selectedCourse) {
-        const matchingDept = departments.find(d => d.departmentName === selectedCourse.departmentName);
-        if (matchingDept) {
-          setStudentForm(prev => ({ ...prev, location: matchingDept.location }));
-        }
+        setStudentForm(prev => ({ 
+          ...prev, 
+          departmentName: selectedCourse.departmentName 
+        }));
       }
     }
-  }, [studentForm.courseId, courses, departments]);
+  }, [studentForm.courseId, courses]);
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,9 +156,10 @@ export default function RegisterPage() {
             middleName: studentForm.middleName,
             courseId: studentForm.courseId,
             department: studentForm.departmentName, // Department derived from course
-            location: studentForm.location,
             hostEstablishment: studentForm.hostEstablishment,
             contactNumber: studentForm.contactNumber,
+            emergencyContact: studentForm.emergencyContact,
+            emergencyContactNumber: studentForm.emergencyContactNumber,
             address: studentForm.address,
             shiftType: studentForm.shiftType,
           },
@@ -308,13 +310,12 @@ export default function RegisterPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="contact-number">Contact Number</Label>
                     <Input
-                      id="location"
-                      placeholder="Auto-filled from course"
-                      value={studentForm.location}
-                      onChange={(e) => setStudentForm({ ...studentForm, location: e.target.value })}
-                      readOnly
+                      id="contact-number"
+                      placeholder="Enter contact number"
+                      value={studentForm.contactNumber}
+                      onChange={(e) => setStudentForm({ ...studentForm, contactNumber: e.target.value })}
                     />
                   </div>
                 </div>
@@ -329,9 +330,7 @@ export default function RegisterPage() {
                         setStudentForm(prev => ({ 
                           ...prev, 
                           courseId: value,
-                          departmentName: selectedCourse.departmentName,
-                          // Find location from a department with matching name
-                          location: departments.find(d => d.departmentName === selectedCourse.departmentName)?.location || ''
+                          departmentName: selectedCourse.departmentName
                         }));
                       }
                     }}
@@ -387,8 +386,8 @@ export default function RegisterPage() {
                         <SelectValue placeholder="Select shift type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="regular">Regular</SelectItem>
-                        <SelectItem value="graveyard">Graveyard</SelectItem>
+                        <SelectItem value="regular">Regular (7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM)</SelectItem>
+                        <SelectItem value="graveyard">Graveyard (7:00 PM - 7:00 AM)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -402,6 +401,29 @@ export default function RegisterPage() {
                     value={studentForm.address}
                     onChange={(e) => setStudentForm({ ...studentForm, address: e.target.value })}
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency-contact">Emergency Contact Name</Label>
+                    <Input
+                      id="emergency-contact"
+                      placeholder="Enter emergency contact name"
+                      value={studentForm.emergencyContact}
+                      onChange={(e) => setStudentForm({ ...studentForm, emergencyContact: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency-contact-number">Emergency Contact Number</Label>
+                    <Input
+                      id="emergency-contact-number"
+                      placeholder="Enter emergency contact number"
+                      value={studentForm.emergencyContactNumber}
+                      onChange={(e) => setStudentForm({ ...studentForm, emergencyContactNumber: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
