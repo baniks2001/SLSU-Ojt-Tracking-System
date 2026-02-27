@@ -1,0 +1,12 @@
+export { default as User } from './User';
+export type { IUser } from './User';
+export { default as Student } from './Student';
+export type { IStudent } from './Student';
+export { default as Department } from './Department';
+export type { IDepartment } from './Department';
+export { default as Attendance } from './Attendance';
+export type { IAttendance } from './Attendance';
+export { default as Announcement } from './Announcement';
+export type { IAnnouncement } from './Announcement';
+export { default as PasswordReset } from './PasswordReset';
+export type { IPasswordReset } from './PasswordReset';
