@@ -61,6 +61,26 @@ interface Announcement {
   createdAt: string;
 }
 
+interface AttendanceRecord {
+  _id: string;
+  studentId: string;
+  date: string;
+  morningIn?: string;
+  morningOut?: string;
+  afternoonIn?: string;
+  afternoonOut?: string;
+  eveningIn?: string;
+  eveningOut?: string;
+  morningInImage?: string;
+  morningOutImage?: string;
+  afternoonInImage?: string;
+  afternoonOutImage?: string;
+  eveningInImage?: string;
+  eveningOutImage?: string;
+  totalHours: number;
+  shiftType: 'regular' | 'graveyard';
+}
+
 export default function DepartmentDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
@@ -68,6 +88,8 @@ export default function DepartmentDashboard() {
   const [activeTab, setActiveTab] = useState('students');
   const [students, setStudents] = useState<Student[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -125,6 +147,26 @@ export default function DepartmentDashboard() {
       }
     } catch (error) {
       console.error('Error fetching announcements:', error);
+    }
+  };
+
+  const fetchAttendance = async (studentId?: string) => {
+    try {
+      let url = '/api/attendance?';
+      if (studentId) {
+        url += `studentId=${studentId}&`;
+      }
+      // Get current month
+      const now = new Date();
+      url += `month=${now.getMonth() + 1}&year=${now.getFullYear()}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setAttendanceRecords(data.attendance || []);
+      }
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
     }
   };
 
@@ -304,14 +346,18 @@ export default function DepartmentDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
             <TabsTrigger value="students" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Student Management</span>
+              <span className="hidden sm:inline">Students</span>
+            </TabsTrigger>
+            <TabsTrigger value="attendance" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Attendance</span>
             </TabsTrigger>
             <TabsTrigger value="pending" className="flex items-center space-x-2">
               <UserX className="h-4 w-4" />
-              <span className="hidden sm:inline">Pending Approvals</span>
+              <span className="hidden sm:inline">Pending</span>
               {pendingStudents.length > 0 && (
                 <Badge variant="destructive" className="ml-2">{pendingStudents.length}</Badge>
               )}
@@ -356,6 +402,123 @@ export default function DepartmentDashboard() {
                           <TableCell>{student.contactNumber || 'N/A'}</TableCell>
                           <TableCell>
                             <Badge variant="default">Active</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="attendance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Student Attendance Records</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Label htmlFor="student-select">Select Student</Label>
+                  <select
+                    id="student-select"
+                    className="w-full p-2 border rounded mt-1"
+                    value={selectedStudent}
+                    onChange={(e) => {
+                      setSelectedStudent(e.target.value);
+                      fetchAttendance(e.target.value || undefined);
+                    }}
+                  >
+                    <option value="">All Students</option>
+                    {activeStudents.map((student) => (
+                      <option key={student._id} value={student._id}>
+                        {student.studentId} - {student.firstName} {student.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {attendanceRecords.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No attendance records found.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Morning In</TableHead>
+                        <TableHead>Morning Out</TableHead>
+                        <TableHead>Afternoon In</TableHead>
+                        <TableHead>Afternoon Out</TableHead>
+                        <TableHead>Total Hours</TableHead>
+                        <TableHead>Images</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {attendanceRecords.map((record) => (
+                        <TableRow key={record._id}>
+                          <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {record.morningIn ? new Date(record.morningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {record.morningOut ? new Date(record.morningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {record.afternoonIn ? new Date(record.afternoonIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {record.afternoonOut ? new Date(record.afternoonOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                          </TableCell>
+                          <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1">
+                              {record.morningInImage && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">AM In</Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-3xl">
+                                    <DialogTitle>Morning Clock In Image</DialogTitle>
+                                    <img src={record.morningInImage} alt="Morning In" className="w-full" />
+                                  </DialogContent>
+                                </Dialog>
+                              )}
+                              {record.morningOutImage && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">AM Out</Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-3xl">
+                                    <DialogTitle>Morning Clock Out Image</DialogTitle>
+                                    <img src={record.morningOutImage} alt="Morning Out" className="w-full" />
+                                  </DialogContent>
+                                </Dialog>
+                              )}
+                              {record.afternoonInImage && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">PM In</Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-3xl">
+                                    <DialogTitle>Afternoon Clock In Image</DialogTitle>
+                                    <img src={record.afternoonInImage} alt="Afternoon In" className="w-full" />
+                                  </DialogContent>
+                                </Dialog>
+                              )}
+                              {record.afternoonOutImage && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">PM Out</Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-3xl">
+                                    <DialogTitle>Afternoon Clock Out Image</DialogTitle>
+                                    <img src={record.afternoonOutImage} alt="Afternoon Out" className="w-full" />
+                                  </DialogContent>
+                                </Dialog>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

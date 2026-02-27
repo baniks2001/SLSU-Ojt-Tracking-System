@@ -31,12 +31,24 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
+  const [countdown, setCountdown] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     fetchTodayRecord();
   }, [studentId]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const fetchTodayRecord = async () => {
     try {
@@ -106,7 +118,6 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
         body: JSON.stringify({
           studentId,
           action,
-          time: new Date().toISOString(),
           imageData: capturedImage,
           shiftType,
         }),
@@ -118,6 +129,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
         toast.success(`${action.replace(/([A-Z])/g, ' $1').trim()} recorded successfully!`);
         setCapturedImage(null);
         setShowCamera(false);
+        setCountdown(10); // Start 10 second countdown
         fetchTodayRecord();
       } else {
         toast.error(data.error || 'Failed to record attendance');
@@ -231,7 +243,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('morningIn')}
-                  disabled={isLoading || getClockButtonState('morningIn') || !capturedImage || !isAccepted}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !capturedImage || !isAccepted}
                   className="w-full bg-green-600 hover:bg-green-700"
                   size="sm"
                 >
@@ -247,7 +259,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('morningOut')}
-                  disabled={isLoading || getClockButtonState('morningOut') || !capturedImage || !isAccepted || !todayRecord?.morningIn}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !capturedImage || !isAccepted || !todayRecord?.morningIn}
                   className="w-full bg-red-600 hover:bg-red-700"
                   size="sm"
                 >
@@ -263,7 +275,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('afternoonIn')}
-                  disabled={isLoading || getClockButtonState('afternoonIn') || !capturedImage || !isAccepted}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !capturedImage || !isAccepted}
                   className="w-full bg-green-600 hover:bg-green-700"
                   size="sm"
                 >
@@ -279,7 +291,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('afternoonOut')}
-                  disabled={isLoading || getClockButtonState('afternoonOut') || !capturedImage || !isAccepted || !todayRecord?.afternoonIn}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !capturedImage || !isAccepted || !todayRecord?.afternoonIn}
                   className="w-full bg-red-600 hover:bg-red-700"
                   size="sm"
                 >
@@ -297,7 +309,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('eveningIn')}
-                  disabled={isLoading || getClockButtonState('eveningIn') || !capturedImage || !isAccepted}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningIn') || !capturedImage || !isAccepted}
                   className="w-full bg-green-600 hover:bg-green-700"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
@@ -312,7 +324,7 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('eveningOut')}
-                  disabled={isLoading || getClockButtonState('eveningOut') || !capturedImage || !isAccepted || !todayRecord?.eveningIn}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningOut') || !capturedImage || !isAccepted || !todayRecord?.eveningIn}
                   className="w-full bg-red-600 hover:bg-red-700"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -325,6 +337,11 @@ export default function ClockInOut({ studentId, shiftType, isAccepted }: ClockIn
           {!isAccepted && (
             <p className="text-center text-yellow-600 mt-4 text-sm">
               Your account is pending approval. You cannot clock in/out until approved.
+            </p>
+          )}
+          {countdown > 0 && (
+            <p className="text-center text-blue-600 mt-4 text-sm">
+              Please wait {countdown} seconds before next clock action...
             </p>
           )}
         </CardContent>

@@ -42,7 +42,14 @@ export async function GET(request: Request) {
       .populate('studentId', 'firstName lastName studentId')
       .sort({ date: -1 });
 
-    return NextResponse.json({ attendance: attendanceRecords });
+    return NextResponse.json(
+      { attendance: attendanceRecords },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     console.error('Get attendance error:', error);
     return NextResponse.json({ error: 'Failed to get attendance' }, { status: 500 });
@@ -57,55 +64,54 @@ export async function POST(request: Request) {
     const {
       studentId,
       action,
-      time,
       imageData,
       shiftType = 'regular',
     } = body;
 
-    const currentDate = new Date();
-    const timeDate = new Date(time);
+    // Use server time only - prevent client time manipulation
+    const serverTime = new Date();
 
     // Find or create attendance record for today
     let attendance = await Attendance.findOne({
       studentId,
       date: {
-        $gte: startOfDay(currentDate),
-        $lte: endOfDay(currentDate),
+        $gte: startOfDay(serverTime),
+        $lte: endOfDay(serverTime),
       },
     });
 
     if (!attendance) {
       attendance = await Attendance.create({
         studentId,
-        date: currentDate,
+        date: serverTime,
         shiftType,
       });
     }
 
-    // Update based on action
+    // Update based on action using server time
     switch (action) {
       case 'morningIn':
-        attendance.morningIn = timeDate;
+        attendance.morningIn = serverTime;
         attendance.morningInImage = imageData;
         break;
       case 'morningOut':
-        attendance.morningOut = timeDate;
+        attendance.morningOut = serverTime;
         attendance.morningOutImage = imageData;
         break;
       case 'afternoonIn':
-        attendance.afternoonIn = timeDate;
+        attendance.afternoonIn = serverTime;
         attendance.afternoonInImage = imageData;
         break;
       case 'afternoonOut':
-        attendance.afternoonOut = timeDate;
+        attendance.afternoonOut = serverTime;
         attendance.afternoonOutImage = imageData;
         break;
       case 'eveningIn':
-        attendance.eveningIn = timeDate;
+        attendance.eveningIn = serverTime;
         attendance.eveningInImage = imageData;
         break;
       case 'eveningOut':
-        attendance.eveningOut = timeDate;
+        attendance.eveningOut = serverTime;
         attendance.eveningOutImage = imageData;
         break;
       default:
@@ -119,6 +125,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       attendance,
+      serverTime: serverTime.toISOString(),
     });
   } catch (error) {
     console.error('Clock in/out error:', error);

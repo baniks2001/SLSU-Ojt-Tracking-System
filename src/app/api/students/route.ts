@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectDB from '@/lib/db/mongoose';
 import { Student, User } from '@/lib/models';
 import { sendAccountApprovedEmail } from '@/lib/auth/email';
@@ -46,7 +47,9 @@ export async function PUT(request: Request) {
 
     if (action === 'accept') {
       student.isAccepted = true;
-      student.ojtAdvisor = ojtAdvisorId;
+      if (ojtAdvisorId) {
+        student.ojtAdvisor = new mongoose.Types.ObjectId(ojtAdvisorId);
+      }
       await student.save();
 
       // Send approval email

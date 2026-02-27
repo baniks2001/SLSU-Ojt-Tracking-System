@@ -52,3 +52,30 @@ export async function sendAccountApprovedEmail(email: string, firstName: string)
 
   await transporter.sendMail(mailOptions);
 }
+
+export async function sendDepartmentApprovedEmail(email: string, departmentName: string, ojtAdvisorName: string) {
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: 'SLSU OJT Tracking System - Department Account Approved',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #003366;">Department Account Approved - SLSU OJT Tracking System</h2>
+        <p>Hello ${ojtAdvisorName},</p>
+        <p>Congratulations! Your department account for <strong>${departmentName}</strong> has been approved by the Super Administrator.</p>
+        <p>You can now log in to the system and:</p>
+        <ul>
+          <li>View and manage students registered under your department</li>
+          <li>Approve student registrations</li>
+          <li>Post announcements for your students</li>
+          <li>Monitor student attendance and DTR records</li>
+        </ul>
+        <p><a href="${process.env.NEXTAUTH_URL}/login" style="background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Log In Now</a></p>
+        <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;" />
+        <p style="font-size: 12px; color: #999;">Southern Leyte State University - OJT Tracking System</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}

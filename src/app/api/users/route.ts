@@ -48,7 +48,14 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json({ users: enrichedUsers });
+    return NextResponse.json(
+      { users: enrichedUsers },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=10, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (error) {
     console.error('Get users error:', error);
     return NextResponse.json({ error: 'Failed to get users' }, { status: 500 });

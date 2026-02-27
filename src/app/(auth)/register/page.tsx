@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,32 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import Logo from '@/components/Logo';
+
+interface Department {
+  _id: string;
+  departmentName: string;
+  departmentCode: string;
+  location: string;
+}
+
+interface Course {
+  _id: string;
+  courseCode: string;
+  courseName: string;
+  departmentId: string;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('student');
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
 
-  // Student form state
+  // Student form state - updated to use courseId and departmentId
   const [studentForm, setStudentForm] = useState({
     email: '',
     password: '',
@@ -25,8 +44,8 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     middleName: '',
-    course: '',
-    department: '',
+    courseId: '',
+    departmentId: '',
     location: '',
     hostEstablishment: '',
     contactNumber: '',
@@ -48,11 +67,75 @@ export default function RegisterPage() {
     ojtAdvisorPosition: '',
   });
 
+  // Fetch approved departments and courses for student registration
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch('/api/departments?forRegistration=true');
+        const data = await response.json();
+        
+        if (response.ok && data.departments) {
+          setDepartments(data.departments);
+        } else {
+          toast.error('Failed to load departments');
+        }
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        toast.error('Failed to load departments');
+      } finally {
+        setIsLoadingDepartments(false);
+      }
+    };
+
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch('/api/courses?forRegistration=true');
+        const data = await response.json();
+        
+        if (response.ok && data.courses) {
+          setCourses(data.courses);
+        } else {
+          toast.error('Failed to load courses');
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        toast.error('Failed to load courses');
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+
+    if (activeTab === 'student') {
+      fetchDepartments();
+      fetchCourses();
+    }
+  }, [activeTab]);
+
+  // Update location and filter courses when department changes
+  useEffect(() => {
+    if (studentForm.departmentId) {
+      const selectedDept = departments.find(d => d._id === studentForm.departmentId);
+      if (selectedDept) {
+        setStudentForm(prev => ({ ...prev, location: selectedDept.location }));
+      }
+    }
+  }, [studentForm.departmentId, departments]);
+
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (studentForm.password !== studentForm.confirmPassword) {
       toast.error('Passwords do not match');
+      return;
+    }
+
+    if (!studentForm.departmentId) {
+      toast.error('Please select a department');
+      return;
+    }
+
+    if (!studentForm.courseId) {
+      toast.error('Please select a course');
       return;
     }
 
@@ -72,8 +155,8 @@ export default function RegisterPage() {
             firstName: studentForm.firstName,
             lastName: studentForm.lastName,
             middleName: studentForm.middleName,
-            course: studentForm.course,
-            department: studentForm.department,
+            courseId: studentForm.courseId,
+            departmentId: studentForm.departmentId,
             location: studentForm.location,
             hostEstablishment: studentForm.hostEstablishment,
             contactNumber: studentForm.contactNumber,
@@ -133,7 +216,7 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Department registration successful! You can now log in.');
+        toast.success('Department registration successful! Please wait for admin approval.');
         router.push('/login');
       } else {
         toast.error(data.error || 'Registration failed');
@@ -150,7 +233,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-col items-center">
+            <Logo size="medium" className="mb-2" />
             <h1 className="text-2xl font-bold text-[#003366]">Southern Leyte State University</h1>
             <p className="text-sm text-gray-600">OJT Tracking System</p>
           </div>
@@ -226,37 +310,74 @@ export default function RegisterPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="course">Course</Label>
+                    <Label htmlFor="location">Location</Label>
                     <Input
-                      id="course"
-                      placeholder="Enter course"
-                      value={studentForm.course}
-                      onChange={(e) => setStudentForm({ ...studentForm, course: e.target.value })}
-                      required
+                      id="location"
+                      placeholder="Auto-filled from department"
+                      value={studentForm.location}
+                      onChange={(e) => setStudentForm({ ...studentForm, location: e.target.value })}
+                      readOnly
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      placeholder="Enter department"
-                      value={studentForm.department}
-                      onChange={(e) => setStudentForm({ ...studentForm, department: e.target.value })}
-                      required
-                    />
+                    <Label htmlFor="department">Department *</Label>
+                    <Select
+                      value={studentForm.departmentId}
+                      onValueChange={(value) => setStudentForm({ ...studentForm, departmentId: value })}
+                      disabled={isLoadingDepartments}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select department"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            No approved departments available
+                          </SelectItem>
+                        ) : (
+                          departments.map((dept) => (
+                            <SelectItem key={dept._id} value={dept._id}>
+                              {dept.departmentName} ({dept.departmentCode})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      placeholder="Enter location"
-                      value={studentForm.location}
-                      onChange={(e) => setStudentForm({ ...studentForm, location: e.target.value })}
-                      required
-                    />
+                    <Label htmlFor="course">Course *</Label>
+                    <Select
+                      value={studentForm.courseId}
+                      onValueChange={(value) => setStudentForm({ ...studentForm, courseId: value })}
+                      disabled={isLoadingCourses || !studentForm.departmentId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingCourses ? "Loading..." : "Select course"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            No courses available
+                          </SelectItem>
+                        ) : (
+                          courses
+                            .filter(c => c.departmentId === studentForm.departmentId)
+                            .map((course) => (
+                              <SelectItem key={course._id} value={course._id}>
+                                {course.courseName} ({course.courseCode})
+                              </SelectItem>
+                            ))
+                        )}
+                        {courses.filter(c => c.departmentId === studentForm.departmentId).length === 0 && studentForm.departmentId && (
+                          <SelectItem value="" disabled>
+                            No courses for this department
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

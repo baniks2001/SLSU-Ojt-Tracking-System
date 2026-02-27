@@ -111,8 +111,18 @@ async function handleLogin({ email, password }: { email: string; password: strin
     let userDetails = null;
     if (user.accountType === 'student') {
       userDetails = await Student.findOne({ userId: user._id }).select('-__v');
+      
+      // Check if student is accepted
+      if (userDetails && !userDetails.isAccepted) {
+        return NextResponse.json({ error: 'Your registration is pending approval from your department' }, { status: 401 });
+      }
     } else if (user.accountType === 'department') {
       userDetails = await Department.findOne({ userId: user._id }).select('-__v');
+      
+      // Check if department is accepted
+      if (userDetails && !userDetails.isAccepted) {
+        return NextResponse.json({ error: 'Your department registration is pending admin approval' }, { status: 401 });
+      }
     }
 
     return NextResponse.json({
@@ -188,12 +198,15 @@ async function handleRegister({
       await Department.create({
         userId: user._id,
         ...departmentData,
+        isAccepted: false,
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Registration successful. Please wait for approval if you registered as a student.',
+      message: accountType === 'student' 
+        ? 'Registration successful. Please wait for approval from your department.'
+        : 'Registration successful. Please wait for admin approval.',
       userId: user._id,
     });
   } catch (error) {

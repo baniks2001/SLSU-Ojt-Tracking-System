@@ -10,6 +10,7 @@ export interface IDepartment extends Document {
   ojtAdvisorName: string;
   ojtAdvisorPosition: string;
   isActive: boolean;
+  isAccepted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +25,7 @@ const DepartmentSchema: Schema = new Schema({
   ojtAdvisorName: { type: String, required: true },
   ojtAdvisorPosition: { type: String, required: true },
   isActive: { type: Boolean, default: true },
+  isAccepted: { type: Boolean, default: false },
 }, {
   timestamps: true,
 });
