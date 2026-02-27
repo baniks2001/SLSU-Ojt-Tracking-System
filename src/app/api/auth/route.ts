@@ -30,6 +30,56 @@ export async function POST(request: Request) {
 
 async function handleLogin({ email, password }: { email: string; password: string }) {
   try {
+    // Check for Super Admin first (before checking if user exists in DB)
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    
+    // If this is the SuperAdmin login with correct env credentials
+    if (email === superAdminEmail && password === superAdminPassword) {
+      // Find or create SuperAdmin user
+      let user = await User.findOne({ email });
+      
+      if (!user) {
+        // Create SuperAdmin if not exists
+        const hashedPassword = await hashPassword(superAdminPassword!);
+        user = await User.create({
+          email,
+          password: hashedPassword,
+          accountType: 'superadmin',
+          isActive: true,
+        });
+      } else if (user.accountType !== 'superadmin') {
+        // Upgrade to superadmin if needed
+        user.accountType = 'superadmin';
+        const hashedPassword = await hashPassword(superAdminPassword!);
+        user.password = hashedPassword;
+        await user.save();
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user._id, email: user.email, accountType: user.accountType },
+        process.env.NEXTAUTH_SECRET!,
+        { expiresIn: '24h' }
+      );
+
+      return NextResponse.json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          accountType: user.accountType,
+          details: null,
+        },
+      });
+    }
+
+    // Regular user login flow
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -40,23 +90,7 @@ async function handleLogin({ email, password }: { email: string; password: strin
       return NextResponse.json({ error: 'Account is deactivated' }, { status: 401 });
     }
 
-    // Check for Super Admin
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
-    
-    let isValidPassword = false;
-    
-    if (email === superAdminEmail && password === superAdminPassword) {
-      isValidPassword = true;
-      // Create super admin user if not exists
-      if (user.accountType !== 'superadmin') {
-        user.accountType = 'superadmin';
-        user.password = await hashPassword(superAdminPassword!);
-        await user.save();
-      }
-    } else {
-      isValidPassword = await comparePasswords(password, user.password);
-    }
+    const isValidPassword = await comparePasswords(password, user.password);
 
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
