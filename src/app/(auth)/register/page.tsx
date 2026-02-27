@@ -35,7 +35,7 @@ export default function RegisterPage() {
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
 
-  // Student form state - updated to use courseId and departmentId
+  // Student form state - department is auto-derived from course
   const [studentForm, setStudentForm] = useState({
     email: '',
     password: '',
@@ -45,7 +45,7 @@ export default function RegisterPage() {
     lastName: '',
     middleName: '',
     courseId: '',
-    departmentId: '',
+    departmentName: '', // Auto-filled from selected course
     location: '',
     hostEstablishment: '',
     contactNumber: '',
@@ -111,26 +111,24 @@ export default function RegisterPage() {
     }
   }, [activeTab]);
 
-  // Update location and filter courses when department changes
+  // Update location when course changes (department is auto-derived from course)
   useEffect(() => {
-    if (studentForm.departmentId) {
-      const selectedDept = departments.find(d => d._id === studentForm.departmentId);
-      if (selectedDept) {
-        setStudentForm(prev => ({ ...prev, location: selectedDept.location }));
+    if (studentForm.courseId) {
+      const selectedCourse = courses.find(c => c._id === studentForm.courseId);
+      if (selectedCourse) {
+        const matchingDept = departments.find(d => d.departmentName === selectedCourse.departmentName);
+        if (matchingDept) {
+          setStudentForm(prev => ({ ...prev, location: matchingDept.location }));
+        }
       }
     }
-  }, [studentForm.departmentId, departments]);
+  }, [studentForm.courseId, courses, departments]);
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (studentForm.password !== studentForm.confirmPassword) {
       toast.error('Passwords do not match');
-      return;
-    }
-
-    if (!studentForm.departmentId) {
-      toast.error('Please select a department');
       return;
     }
 
@@ -156,7 +154,7 @@ export default function RegisterPage() {
             lastName: studentForm.lastName,
             middleName: studentForm.middleName,
             courseId: studentForm.courseId,
-            departmentId: studentForm.departmentId,
+            department: studentForm.departmentName, // Department derived from course
             location: studentForm.location,
             hostEstablishment: studentForm.hostEstablishment,
             contactNumber: studentForm.contactNumber,
@@ -313,7 +311,7 @@ export default function RegisterPage() {
                     <Label htmlFor="location">Location</Label>
                     <Input
                       id="location"
-                      placeholder="Auto-filled from department"
+                      placeholder="Auto-filled from course"
                       value={studentForm.location}
                       onChange={(e) => setStudentForm({ ...studentForm, location: e.target.value })}
                       readOnly
@@ -321,80 +319,41 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department *</Label>
-                    <Select
-                      value={studentForm.departmentId}
-                      onValueChange={(value) => {
-                        const selectedDept = departments.find(d => d._id === value);
+                <div className="space-y-2">
+                  <Label htmlFor="course">Course *</Label>
+                  <Select
+                    value={studentForm.courseId}
+                    onValueChange={(value) => {
+                      const selectedCourse = courses.find(c => c._id === value);
+                      if (selectedCourse) {
                         setStudentForm(prev => ({ 
                           ...prev, 
-                          departmentId: value,
-                          location: selectedDept?.location || '' 
+                          courseId: value,
+                          departmentName: selectedCourse.departmentName,
+                          // Find location from a department with matching name
+                          location: departments.find(d => d.departmentName === selectedCourse.departmentName)?.location || ''
                         }));
-                      }}
-                      disabled={isLoadingDepartments}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select department"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.length === 0 ? (
-                          <SelectItem value="no-departments" disabled>
-                            No approved departments available
+                      }
+                    }}
+                    disabled={isLoadingCourses}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingCourses ? "Loading..." : "Select course"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.length === 0 ? (
+                        <SelectItem value="no-courses" disabled>
+                          No courses available
+                        </SelectItem>
+                      ) : (
+                        courses.map((course) => (
+                          <SelectItem key={course._id} value={course._id}>
+                            {course.courseName} ({course.courseCode}) - {course.departmentName}
                           </SelectItem>
-                        ) : (
-                          departments.map((dept) => (
-                            <SelectItem key={dept._id} value={dept._id}>
-                              {dept.departmentName} ({dept.departmentCode})
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="course">Course *</Label>
-                    <Select
-                      value={studentForm.courseId}
-                      onValueChange={(value) => {
-                        setStudentForm({ ...studentForm, courseId: value });
-                        // Auto-fill department based on selected course
-                        const selectedCourse = courses.find(c => c._id === value);
-                        if (selectedCourse) {
-                          // Find department that matches the course's department name
-                          const matchingDept = departments.find(d => d.departmentName === selectedCourse.departmentName);
-                          if (matchingDept) {
-                            setStudentForm(prev => ({ 
-                              ...prev, 
-                              courseId: value,
-                              departmentId: matchingDept._id,
-                              location: matchingDept.location 
-                            }));
-                          }
-                        }
-                      }}
-                      disabled={isLoadingCourses}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingCourses ? "Loading..." : "Select course"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courses.length === 0 ? (
-                          <SelectItem value="no-courses" disabled>
-                            No courses available
-                          </SelectItem>
-                        ) : (
-                          courses.map((course) => (
-                            <SelectItem key={course._id} value={course._id}>
-                              {course.courseName} ({course.courseCode}) - {course.departmentName}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">

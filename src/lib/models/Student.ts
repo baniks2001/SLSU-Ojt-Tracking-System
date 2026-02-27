@@ -7,7 +7,7 @@ export interface IStudent extends Document {
   lastName: string;
   middleName?: string;
   courseId: mongoose.Types.ObjectId;
-  departmentId: mongoose.Types.ObjectId;
+  department: string; // Department name (derived from course)
   location: string;
   hostEstablishment: string;
   contactNumber?: string;
@@ -27,7 +27,7 @@ const StudentSchema: Schema = new Schema({
   lastName: { type: String, required: true },
   middleName: { type: String },
   courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
-  departmentId: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
+  department: { type: String, required: true }, // Department name from course
   location: { type: String, required: true },
   hostEstablishment: { type: String, required: true },
   contactNumber: { type: String },

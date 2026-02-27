@@ -5,7 +5,7 @@ export interface ICourse extends Document {
   courseName: string;
   departmentName: string; // Name of the department offering this course
   description?: string;
-  duration: string; // e.g., "4 years", "2 years"
+  totalHours: number; // Total hours required to complete OJT
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -16,7 +16,7 @@ const CourseSchema: Schema = new Schema({
   courseName: { type: String, required: true },
   departmentName: { type: String, required: true },
   description: { type: String },
-  duration: { type: String, default: '4 years' },
+  totalHours: { type: Number, default: 500 }, // Total hours required for OJT
   isActive: { type: Boolean, default: true },
 }, {
   timestamps: true,

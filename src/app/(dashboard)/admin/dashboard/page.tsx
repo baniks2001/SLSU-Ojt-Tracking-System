@@ -44,7 +44,7 @@ interface Course {
   courseCode: string;
   courseName: string;
   departmentName: string;
-  duration: string;
+  totalHours: number;
   isActive: boolean;
 }
 
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', accountType: 'admin' });
-  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', duration: '4 years' });
+  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         toast.success('Course created successfully');
-        setNewCourse({ courseCode: '', courseName: '', departmentName: '', duration: '4 years' });
+        setNewCourse({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
         fetchCourses();
       } else {
         const data = await response.json();
@@ -731,20 +731,15 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="duration">Duration</Label>
-                      <Select
-                        value={newCourse.duration}
-                        onValueChange={(value) => setNewCourse({ ...newCourse, duration: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="2 years">2 Years</SelectItem>
-                          <SelectItem value="4 years">4 Years</SelectItem>
-                          <SelectItem value="5 years">5 Years</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="totalHours">Total Hours</Label>
+                      <Input
+                        id="totalHours"
+                        type="number"
+                        placeholder="e.g., 500"
+                        value={newCourse.totalHours}
+                        onChange={(e) => setNewCourse({ ...newCourse, totalHours: parseInt(e.target.value) || 500 })}
+                        required
+                      />
                     </div>
                   </div>
                   <Button
@@ -774,7 +769,7 @@ export default function AdminDashboard() {
                         <TableHead>Course Code</TableHead>
                         <TableHead>Course Name</TableHead>
                         <TableHead>Department</TableHead>
-                        <TableHead>Duration</TableHead>
+                        <TableHead>Total Hours</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -784,7 +779,7 @@ export default function AdminDashboard() {
                           <TableCell>{course.courseCode}</TableCell>
                           <TableCell>{course.courseName}</TableCell>
                           <TableCell>{course.departmentName}</TableCell>
-                          <TableCell>{course.duration}</TableCell>
+                          <TableCell>{course.totalHours}</TableCell>
                           <TableCell>
                             <Button
                               variant="destructive"

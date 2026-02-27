@@ -8,17 +8,11 @@ export async function GET(request: Request) {
     await connectDB();
     
     const { searchParams } = new URL(request.url);
-    const departmentId = searchParams.get('departmentId');
     const forRegistration = searchParams.get('forRegistration');
     
     let query: any = { isActive: true };
     
-    if (departmentId) {
-      query.departmentId = departmentId;
-    }
-    
     const courses = await Course.find(query)
-      .populate('departmentId', 'departmentName departmentCode')
       .select('-__v')
       .sort({ courseName: 1 });
     
@@ -44,9 +38,9 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { courseCode, courseName, departmentId, description, duration } = body;
+    const { courseCode, courseName, departmentName, description, totalHours } = body;
     
-    if (!courseCode || !courseName || !departmentId) {
+    if (!courseCode || !courseName || !departmentName) {
       return NextResponse.json(
         { error: 'Course code, name, and department are required' },
         { status: 400 }
@@ -65,9 +59,9 @@ export async function POST(request: Request) {
     const course = await Course.create({
       courseCode,
       courseName,
-      departmentId,
+      departmentName,
       description,
-      duration: duration || '4 years',
+      totalHours: totalHours || 500,
     });
     
     return NextResponse.json({
