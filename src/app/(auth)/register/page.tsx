@@ -23,6 +23,12 @@ interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
+  departmentId: string;
+  departmentIdObj?: {
+    _id: string;
+    departmentName: string;
+    departmentCode: string;
+  };
   departmentName: string;
 }
 
@@ -59,6 +65,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    departmentId: '', // Selected existing department
     departmentName: '',
     departmentCode: '',
     location: '',
@@ -106,11 +113,26 @@ export default function RegisterPage() {
       }
     };
 
-    if (activeTab === 'student') {
+    if (activeTab === 'student' || activeTab === 'department') {
       fetchDepartments();
       fetchCourses();
     }
   }, [activeTab]);
+
+  // Update department form when department is selected
+  useEffect(() => {
+    if (departmentForm.departmentId) {
+      const selectedDept = departments.find(d => d._id === departmentForm.departmentId);
+      if (selectedDept) {
+        setDepartmentForm(prev => ({
+          ...prev,
+          departmentName: selectedDept.departmentName,
+          departmentCode: selectedDept.departmentCode,
+          location: selectedDept.location,
+        }));
+      }
+    }
+  }, [departmentForm.departmentId, departments]);
 
   // Update when course changes (department is auto-derived from course)
   useEffect(() => {
@@ -119,7 +141,7 @@ export default function RegisterPage() {
       if (selectedCourse) {
         setStudentForm(prev => ({ 
           ...prev, 
-          departmentName: selectedCourse.departmentName 
+          departmentName: selectedCourse.departmentIdObj?.departmentName || selectedCourse.departmentName 
         }));
       }
     }
@@ -347,7 +369,7 @@ export default function RegisterPage() {
                       ) : (
                         courses.map((course) => (
                           <SelectItem key={course._id} value={course._id}>
-                            {course.courseName} ({course.courseCode}) - {course.departmentName}
+                            {course.courseName} ({course.courseCode}) - {course.departmentIdObj?.departmentName || course.departmentName}
                           </SelectItem>
                         ))
                       )}
@@ -463,6 +485,37 @@ export default function RegisterPage() {
 
             <TabsContent value="department">
               <form onSubmit={handleDepartmentSubmit} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dept-select">Select Department *</Label>
+                  <Select
+                    value={departmentForm.departmentId}
+                    onValueChange={(value) => {
+                      setDepartmentForm(prev => ({ ...prev, departmentId: value }));
+                    }}
+                    disabled={isLoadingDepartments}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select existing department"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.length === 0 ? (
+                        <SelectItem value="no-depts" disabled>
+                          No approved departments available
+                        </SelectItem>
+                      ) : (
+                        departments.map((dept) => (
+                          <SelectItem key={dept._id} value={dept._id}>
+                            {dept.departmentName} ({dept.departmentCode}) - {dept.location}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Select the department you are assigned to. Contact admin if your department is not listed.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="dept-email">Email</Label>
@@ -479,10 +532,10 @@ export default function RegisterPage() {
                     <Label htmlFor="dept-code">Department Code</Label>
                     <Input
                       id="dept-code"
-                      placeholder="e.g., CCS, COE"
+                      placeholder="Auto-filled from department"
                       value={departmentForm.departmentCode}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, departmentCode: e.target.value })}
-                      required
+                      readOnly
+                      className="bg-gray-100"
                     />
                   </div>
                 </div>
@@ -491,10 +544,10 @@ export default function RegisterPage() {
                   <Label htmlFor="dept-name">Department Name</Label>
                   <Input
                     id="dept-name"
-                    placeholder="Enter department name"
+                    placeholder="Auto-filled from department"
                     value={departmentForm.departmentName}
-                    onChange={(e) => setDepartmentForm({ ...departmentForm, departmentName: e.target.value })}
-                    required
+                    readOnly
+                    className="bg-gray-100"
                   />
                 </div>
 
@@ -526,10 +579,10 @@ export default function RegisterPage() {
                     <Label htmlFor="dept-location">Location</Label>
                     <Input
                       id="dept-location"
-                      placeholder="Enter location"
+                      placeholder="Auto-filled from department"
                       value={departmentForm.location}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, location: e.target.value })}
-                      required
+                      readOnly
+                      className="bg-gray-100"
                     />
                   </div>
                   <div className="space-y-2">
@@ -583,7 +636,7 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   className="w-full bg-[#003366] hover:bg-[#002244]"
-                  disabled={isLoading}
+                  disabled={isLoading || !departmentForm.departmentId}
                 >
                   {isLoading ? 'Registering...' : 'Register Department'}
                 </Button>

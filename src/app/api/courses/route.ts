@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     let query: any = { isActive: true };
     
     const courses = await Course.find(query)
+      .populate('departmentId', 'departmentName departmentCode')
       .select('-__v')
       .sort({ courseName: 1 });
     
@@ -38,9 +39,9 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { courseCode, courseName, departmentName, description, totalHours } = body;
+    const { courseCode, courseName, departmentId, departmentName, description, totalHours } = body;
     
-    if (!courseCode || !courseName || !departmentName) {
+    if (!courseCode || !courseName || !departmentId) {
       return NextResponse.json(
         { error: 'Course code, name, and department are required' },
         { status: 400 }
@@ -59,7 +60,8 @@ export async function POST(request: Request) {
     const course = await Course.create({
       courseCode,
       courseName,
-      departmentName,
+      departmentId,
+      departmentName: departmentName || '',
       description,
       totalHours: totalHours || 500,
     });

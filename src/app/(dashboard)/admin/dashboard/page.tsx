@@ -43,6 +43,12 @@ interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
+  departmentId: string;
+  departmentIdObj?: {
+    _id: string;
+    departmentName: string;
+    departmentCode: string;
+  };
   departmentName: string;
   totalHours: number;
   isActive: boolean;
@@ -70,7 +76,7 @@ export default function AdminDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', accountType: 'admin' });
-  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
+  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentId: '', departmentName: '', totalHours: 500 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -265,7 +271,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         toast.success('Course created successfully');
-        setNewCourse({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
+        setNewCourse({ courseCode: '', courseName: '', departmentId: '', departmentName: '', totalHours: 500 });
         fetchCourses();
       } else {
         const data = await response.json();
@@ -740,13 +746,35 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="course-dept">Department</Label>
-                      <Input
-                        id="course-dept"
-                        placeholder="e.g., College of Computer Studies"
-                        value={newCourse.departmentName}
-                        onChange={(e) => setNewCourse({ ...newCourse, departmentName: e.target.value })}
+                      <Select
+                        value={newCourse.departmentId}
+                        onValueChange={(value) => {
+                          const selectedDept = departments.find(d => d._id === value);
+                          setNewCourse({ 
+                            ...newCourse, 
+                            departmentId: value,
+                            departmentName: selectedDept?.departmentName || ''
+                          });
+                        }}
                         required
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments.length === 0 ? (
+                            <SelectItem value="" disabled>
+                              No approved departments available
+                            </SelectItem>
+                          ) : (
+                            departments.map((dept) => (
+                              <SelectItem key={dept._id} value={dept._id}>
+                                {dept.departmentName} ({dept.departmentCode})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="totalHours">Total Hours</Label>
@@ -796,7 +824,7 @@ export default function AdminDashboard() {
                         <TableRow key={course._id}>
                           <TableCell>{course.courseCode}</TableCell>
                           <TableCell>{course.courseName}</TableCell>
-                          <TableCell>{course.departmentName}</TableCell>
+                          <TableCell>{course.departmentIdObj?.departmentName || course.departmentName}</TableCell>
                           <TableCell>{course.totalHours}</TableCell>
                           <TableCell>
                             <Button
