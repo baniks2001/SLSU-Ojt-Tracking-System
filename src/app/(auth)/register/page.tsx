@@ -103,7 +103,7 @@ export default function RegisterPage() {
                 _id: course._id, // Use course ID as reference
                 departmentName: course.departmentName,
                 departmentCode: course.departmentName.split(' ').map(word => word[0]).join('').toUpperCase(), // Generate code from name
-                location: 'Main Campus', // Default location
+                location: course.campusId?.campusName || 'Unknown Campus', // Use actual campus from course
               });
             }
             return acc;
