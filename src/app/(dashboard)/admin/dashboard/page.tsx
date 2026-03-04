@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Users, Building, Shield, LogOut, Trash2, Edit, Key, Check, X } from 'lucide-react';
+import { Users, Building, Shield, LogOut, Trash2, Edit, Key, Check, X, School } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -44,7 +44,20 @@ interface Course {
   courseCode: string;
   courseName: string;
   departmentName: string;
+  campusId: string;
+  campusName?: string;
   totalHours: number;
+  isActive: boolean;
+}
+
+interface Campus {
+  _id: string;
+  campusName: string;
+  campusCode: string;
+  location: string;
+  address?: string;
+  contactEmail?: string;
+  contactNumber?: string;
   isActive: boolean;
 }
 
@@ -68,9 +81,18 @@ export default function AdminDashboard() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [pendingDepartments, setPendingDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', accountType: 'admin' });
-  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
+  const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', campusId: '', totalHours: 500 });
+  const [newCampus, setNewCampus] = useState({
+    campusName: '',
+    campusCode: '',
+    location: '',
+    address: '',
+    contactEmail: '',
+    contactNumber: '',
+  });
   const [newDepartment, setNewDepartment] = useState({
     email: '',
     password: '',
@@ -88,6 +110,8 @@ export default function AdminDashboard() {
   const [editingStudent, setEditingStudent] = useState<UserData | null>(null);
   const [isAdminEditDialogOpen, setIsAdminEditDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<UserData | null>(null);
+  const [isCampusEditDialogOpen, setIsCampusEditDialogOpen] = useState(false);
+  const [editingCampus, setEditingCampus] = useState<Campus | null>(null);
   const [newStudent, setNewStudent] = useState({
     email: '',
     password: '',
@@ -134,10 +158,27 @@ export default function AdminDashboard() {
       const response = await fetch('/api/courses');
       if (response.ok) {
         const data = await response.json();
-        setCourses(data.courses || []);
+        // Enrich courses with campus names
+        const coursesWithCampus = (data.courses || []).map((course: Course) => {
+          const campus = campuses.find(c => c._id === course.campusId);
+          return { ...course, campusName: campus?.campusName || 'Unknown' };
+        });
+        setCourses(coursesWithCampus);
       }
     } catch (error) {
       console.error('Error fetching courses:', error);
+    }
+  };
+
+  const fetchCampuses = async () => {
+    try {
+      const response = await fetch('/api/campuses');
+      if (response.ok) {
+        const data = await response.json();
+        setCampuses(data.campuses || []);
+      }
+    } catch (error) {
+      console.error('Error fetching campuses:', error);
     }
   };
 
@@ -173,6 +214,7 @@ export default function AdminDashboard() {
       fetchAllUsers();
       fetchDepartments();
       fetchPendingDepartments();
+      fetchCampuses();
       fetchCourses();
       fetchSystemLogs();
     } catch (error) {
@@ -295,7 +337,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         toast.success('Course created successfully');
-        setNewCourse({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
+        setNewCourse({ courseCode: '', courseName: '', departmentName: '', campusId: '', totalHours: 500 });
         fetchCourses();
       } else {
         const data = await response.json();
@@ -646,6 +688,132 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateCampus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/campuses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCampus),
+      });
+
+      if (response.ok) {
+        toast.success('Campus created successfully');
+        setNewCampus({
+          campusName: '',
+          campusCode: '',
+          location: '',
+          address: '',
+          contactEmail: '',
+          contactNumber: '',
+        });
+        fetchCampuses();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create campus');
+      }
+    } catch (error) {
+      console.error('Error creating campus:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditCampus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCampus) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/campuses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campusId: editingCampus._id,
+          updates: {
+            campusName: editingCampus.campusName,
+            campusCode: editingCampus.campusCode,
+            location: editingCampus.location,
+            address: editingCampus.address,
+            contactEmail: editingCampus.contactEmail,
+            contactNumber: editingCampus.contactNumber,
+            isActive: editingCampus.isActive,
+          }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Campus updated successfully');
+        setIsCampusEditDialogOpen(false);
+        setEditingCampus(null);
+        fetchCampuses();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update campus');
+      }
+    } catch (error) {
+      console.error('Error updating campus:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCampus = async (campusId: string) => {
+    if (!confirm('Are you sure you want to delete this campus? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/campuses?id=${campusId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Campus deleted successfully');
+        fetchCampuses();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete campus');
+      }
+    } catch (error) {
+      console.error('Error deleting campus:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleToggleCampusStatus = async (campusId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch('/api/campuses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campusId,
+          updates: { isActive: !currentStatus },
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`Campus ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+        fetchCampuses();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update campus status');
+      }
+    } catch (error) {
+      console.error('Error updating campus status:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const openCampusEditDialog = (campus: Campus) => {
+    setEditingCampus(campus);
+    setIsCampusEditDialogOpen(true);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -668,10 +836,13 @@ export default function AdminDashboard() {
     }
   };
 
-  // Refetch courses when courses tab is selected
+  // Refetch courses and campuses when their tabs are selected
   useEffect(() => {
     if (activeTab === 'courses') {
       fetchCourses();
+    }
+    if (activeTab === 'campuses') {
+      fetchCampuses();
     }
   }, [activeTab]);
 
@@ -687,6 +858,8 @@ export default function AdminDashboard() {
   const departmentUsers = users.filter(u => u.accountType === 'department');
   const adminUsers = users.filter(u => ['admin', 'superadmin'].includes(u.accountType));
   const activeUsers = users.filter(u => u.isActive);
+
+  const campusCount = campuses.length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -792,6 +965,17 @@ export default function AdminDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-gray-600">Campuses</p>
+                  <p className="text-2xl font-bold text-teal-600">{campusCount}</p>
+                </div>
+                <School className="h-8 w-8 text-teal-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-gray-600">Admins</p>
                   <p className="text-2xl font-bold text-purple-600">{adminUsers.length}</p>
                 </div>
@@ -813,11 +997,12 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-[1400px]">
+          <TabsList className="grid w-full grid-cols-8 lg:w-[1600px]">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="campuses">Campuses</TabsTrigger>
             <TabsTrigger value="pending">
               Pending
               {pendingDepartments.length > 0 && (
@@ -1495,7 +1680,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCreateCourse} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="course-code">Course Code</Label>
                       <Input
@@ -1525,6 +1710,30 @@ export default function AdminDashboard() {
                         onChange={(e) => setNewCourse({ ...newCourse, departmentName: e.target.value })}
                         required
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="course-campus">Campus *</Label>
+                      <Select
+                        value={newCourse.campusId}
+                        onValueChange={(value) => setNewCourse({ ...newCourse, campusId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select campus" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {campuses.length === 0 ? (
+                            <SelectItem value="_none_" disabled>
+                              No campuses available
+                            </SelectItem>
+                          ) : (
+                            campuses.map((campus) => (
+                              <SelectItem key={campus._id} value={campus._id}>
+                                {campus.campusName} ({campus.campusCode})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="totalHours">Total Hours</Label>
@@ -1565,6 +1774,7 @@ export default function AdminDashboard() {
                         <TableHead>Course Code</TableHead>
                         <TableHead>Course Name</TableHead>
                         <TableHead>Department</TableHead>
+                        <TableHead>Campus</TableHead>
                         <TableHead>Total Hours</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -1575,6 +1785,7 @@ export default function AdminDashboard() {
                           <TableCell>{course.courseCode}</TableCell>
                           <TableCell>{course.courseName}</TableCell>
                           <TableCell>{course.departmentName}</TableCell>
+                          <TableCell>{course.campusName || 'Unknown'}</TableCell>
                           <TableCell>{course.totalHours}</TableCell>
                           <TableCell>
                             <Button
@@ -1592,6 +1803,235 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="campuses" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Campus</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCreateCampus} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="campus-name">Campus Name</Label>
+                      <Input
+                        id="campus-name"
+                        placeholder="e.g., Main Campus"
+                        value={newCampus.campusName}
+                        onChange={(e) => setNewCampus({ ...newCampus, campusName: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campus-code">Campus Code</Label>
+                      <Input
+                        id="campus-code"
+                        placeholder="e.g., MC"
+                        value={newCampus.campusCode}
+                        onChange={(e) => setNewCampus({ ...newCampus, campusCode: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campus-location">Location</Label>
+                      <Input
+                        id="campus-location"
+                        placeholder="e.g., Sogod, Southern Leyte"
+                        value={newCampus.location}
+                        onChange={(e) => setNewCampus({ ...newCampus, location: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-3">
+                      <Label htmlFor="campus-address">Address</Label>
+                      <Input
+                        id="campus-address"
+                        placeholder="e.g., Building A, Main Street"
+                        value={newCampus.address}
+                        onChange={(e) => setNewCampus({ ...newCampus, address: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campus-contact-email">Contact Email</Label>
+                      <Input
+                        id="campus-contact-email"
+                        type="email"
+                        placeholder="e.g., campus@slsu.edu.ph"
+                        value={newCampus.contactEmail}
+                        onChange={(e) => setNewCampus({ ...newCampus, contactEmail: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campus-contact-number">Contact Number</Label>
+                      <Input
+                        id="campus-contact-number"
+                        placeholder="e.g., +63 123 456 7890"
+                        value={newCampus.contactNumber}
+                        onChange={(e) => setNewCampus({ ...newCampus, contactNumber: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-[#003366] hover:bg-[#002244]"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Campus'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>All Campuses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {campuses.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No campuses created yet.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Campus Code</TableHead>
+                        <TableHead>Campus Name</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {campuses.map((campus) => (
+                        <TableRow key={campus._id}>
+                          <TableCell>{campus.campusCode}</TableCell>
+                          <TableCell>{campus.campusName}</TableCell>
+                          <TableCell>{campus.location}</TableCell>
+                          <TableCell>
+                            <Badge variant={campus.isActive ? "default" : "secondary"}>
+                              {campus.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openCampusEditDialog(campus)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleCampusStatus(campus._id, campus.isActive)}
+                              >
+                                {campus.isActive ? 'Deactivate' : 'Activate'}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteCampus(campus._id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Edit Campus Dialog */}
+            <Dialog open={isCampusEditDialogOpen} onOpenChange={setIsCampusEditDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Campus</DialogTitle>
+                  <DialogDescription>
+                    Update campus information below.
+                  </DialogDescription>
+                </DialogHeader>
+                {editingCampus && (
+                  <form onSubmit={handleEditCampus} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-campus-name">Campus Name</Label>
+                        <Input
+                          id="edit-campus-name"
+                          value={editingCampus.campusName}
+                          onChange={(e) => setEditingCampus({ ...editingCampus, campusName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-campus-code">Campus Code</Label>
+                        <Input
+                          id="edit-campus-code"
+                          value={editingCampus.campusCode}
+                          onChange={(e) => setEditingCampus({ ...editingCampus, campusCode: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-campus-location">Location</Label>
+                        <Input
+                          id="edit-campus-location"
+                          value={editingCampus.location}
+                          onChange={(e) => setEditingCampus({ ...editingCampus, location: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-3">
+                        <Label htmlFor="edit-campus-address">Address</Label>
+                        <Input
+                          id="edit-campus-address"
+                          value={editingCampus.address || ''}
+                          onChange={(e) => setEditingCampus({ ...editingCampus, address: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-campus-email">Contact Email</Label>
+                        <Input
+                          id="edit-campus-email"
+                          type="email"
+                          value={editingCampus.contactEmail || ''}
+                          onChange={(e) => setEditingCampus({ ...editingCampus, contactEmail: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-campus-number">Contact Number</Label>
+                        <Input
+                          id="edit-campus-number"
+                          value={editingCampus.contactNumber || ''}
+                          onChange={(e) => setEditingCampus({ ...editingCampus, contactNumber: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCampusEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-[#003366] hover:bg-[#002244]"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">

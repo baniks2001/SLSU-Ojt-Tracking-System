@@ -6,6 +6,8 @@ export { default as Department } from './Department';
 export type { IDepartment } from './Department';
 export { default as Course } from './Course';
 export type { ICourse } from './Course';
+export { default as Campus } from './Campus';
+export type { ICampus } from './Campus';
 export { default as Attendance } from './Attendance';
 export type { IAttendance } from './Attendance';
 export { default as Announcement } from './Announcement';

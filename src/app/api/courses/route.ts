@@ -38,11 +38,11 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { courseCode, courseName, departmentName, description, totalHours } = body;
+    const { courseCode, courseName, departmentName, campusId, description, totalHours } = body;
     
-    if (!courseCode || !courseName || !departmentName) {
+    if (!courseCode || !courseName || !departmentName || !campusId) {
       return NextResponse.json(
-        { error: 'Course code, name, and department name are required' },
+        { error: 'Course code, name, department name, and campus are required' },
         { status: 400 }
       );
     }
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       courseCode,
       courseName,
       departmentName,
+      campusId,
       description,
       totalHours: totalHours || 500,
     });
