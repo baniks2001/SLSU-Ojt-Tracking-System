@@ -80,6 +80,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [pendingDepartments, setPendingDepartments] = useState<Department[]>([]);
+  const [pendingStudents, setPendingStudents] = useState<UserData[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
@@ -153,6 +154,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchPendingStudents = async () => {
+    try {
+      const response = await fetch('/api/users?accountType=student&isAccepted=false');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingStudents(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching pending students:', error);
+    }
+  };
+
   const fetchCourses = async () => {
     try {
       const response = await fetch('/api/courses');
@@ -214,6 +227,7 @@ export default function AdminDashboard() {
       fetchAllUsers();
       fetchDepartments();
       fetchPendingDepartments();
+      fetchPendingStudents();
       fetchCampuses();
       fetchCourses();
       fetchSystemLogs();
@@ -288,6 +302,60 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error rejecting department:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleAcceptStudent = async (studentId: string) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: studentId,
+          updates: { isAccepted: true }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student approved successfully');
+        fetchAllUsers();
+        fetchPendingStudents();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to approve student');
+      }
+    } catch (error) {
+      console.error('Error accepting student:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleRejectStudent = async (studentId: string) => {
+    if (!confirm('Are you sure you want to reject this student? This will deactivate their account.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: studentId,
+          updates: { isAccepted: false, isActive: false }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student rejected and account deactivated');
+        fetchAllUsers();
+        fetchPendingStudents();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to reject student');
+      }
+    } catch (error) {
+      console.error('Error rejecting student:', error);
       toast.error('An error occurred');
     }
   };
@@ -846,6 +914,7 @@ export default function AdminDashboard() {
     }
     if (activeTab === 'pending') {
       fetchPendingDepartments();
+      fetchPendingStudents();
     }
   }, [activeTab]);
 
@@ -1008,9 +1077,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="campuses">Campuses</TabsTrigger>
             <TabsTrigger value="pending">
               Pending
-              {pendingDepartments.length > 0 && (
+              {(pendingDepartments.length + pendingStudents.length) > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {pendingDepartments.length}
+                  {pendingDepartments.length + pendingStudents.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -1795,6 +1864,65 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
+            {/* Pending Students */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Student Approvals</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pendingStudents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No pending student registrations.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingStudents.map((student) => (
+                        <TableRow key={student._id}>
+                          <TableCell>{student.details?.studentId}</TableCell>
+                          <TableCell>
+                            {student.details?.firstName} {student.details?.lastName}
+                          </TableCell>
+                          <TableCell>{student.email}</TableCell>
+                          <TableCell>{student.details?.course}</TableCell>
+                          <TableCell>{student.details?.department}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleAcceptStudent(student._id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRejectStudent(student._id)}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Pending Departments */}
             <Card>
               <CardHeader>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
-import { Course } from '@/lib/models';
+import { Course, Campus } from '@/lib/models';
 
 // GET - Fetch courses
 export async function GET(request: Request) {
@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     let query: any = { isActive: true };
     
     const courses = await Course.find(query)
+      .populate('campusId', 'campusName campusCode')
       .select('-__v')
       .sort({ courseName: 1 });
     

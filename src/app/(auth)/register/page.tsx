@@ -25,7 +25,11 @@ interface Course {
   courseName: string;
   departmentName: string;
   campusName?: string;
-  campusId?: string;
+  campusId?: {
+    _id: string;
+    campusName: string;
+    campusCode: string;
+  };
 }
 
 interface Campus {
@@ -87,11 +91,24 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await fetch('/api/departments?forRegistration=true');
+        const response = await fetch('/api/courses?forRegistration=true');
         const data = await response.json();
         
-        if (response.ok && data.departments) {
-          setDepartments(data.departments);
+        if (response.ok && data.courses) {
+          // Extract unique departments from courses
+          const uniqueDepartments = data.courses.reduce((acc: any[], course: Course) => {
+            const existingDept = acc.find(dept => dept.departmentName === course.departmentName);
+            if (!existingDept) {
+              acc.push({
+                _id: course._id, // Use course ID as reference
+                departmentName: course.departmentName,
+                departmentCode: course.departmentName.split(' ').map(word => word[0]).join('').toUpperCase(), // Generate code from name
+                location: 'Main Campus', // Default location
+              });
+            }
+            return acc;
+          }, []);
+          setDepartments(uniqueDepartments);
         } else {
           toast.error('Failed to load departments');
         }
@@ -247,11 +264,6 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!departmentForm.departmentId) {
-      toast.error('Please select a department');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -392,7 +404,8 @@ export default function RegisterPage() {
                         setStudentForm(prev => ({ 
                           ...prev, 
                           courseId: value,
-                          departmentName: selectedCourse.departmentName
+                          departmentName: selectedCourse.departmentName,
+                          campusId: selectedCourse.campusId?._id || ''
                         }));
                       }
                     }}
@@ -409,7 +422,7 @@ export default function RegisterPage() {
                       ) : (
                         courses.map((course) => (
                           <SelectItem key={course._id} value={course._id}>
-                            {course.courseName} ({course.courseCode}) - {course.departmentName}
+                            {course.courseName} ({course.courseCode}) - {course.departmentName} - {course.campusId?.campusName || 'No Campus'}
                           </SelectItem>
                         ))
                       )}
@@ -591,12 +604,12 @@ export default function RegisterPage() {
                     disabled={isLoadingDepartments}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select existing department"} />
+                      <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select department from available courses"} />
                     </SelectTrigger>
                     <SelectContent>
                       {departments.length === 0 ? (
                         <SelectItem value="_none_" disabled>
-                          No approved departments available
+                          No departments available (no courses found)
                         </SelectItem>
                       ) : (
                         departments.map((dept) => (
@@ -608,7 +621,7 @@ export default function RegisterPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500">
-                    Select the department you are assigned to. Contact admin if your department is not listed.
+                    Departments are derived from available courses. Contact admin if your department is not listed.
                   </p>
                 </div>
 
