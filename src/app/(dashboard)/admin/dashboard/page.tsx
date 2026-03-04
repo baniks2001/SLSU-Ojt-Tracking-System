@@ -82,6 +82,25 @@ export default function AdminDashboard() {
     ojtAdvisorName: '',
     ojtAdvisorPosition: '',
   });
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isStudentEditDialogOpen, setIsStudentEditDialogOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<UserData | null>(null);
+  const [isAdminEditDialogOpen, setIsAdminEditDialogOpen] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState<UserData | null>(null);
+  const [newStudent, setNewStudent] = useState({
+    email: '',
+    password: '',
+    studentId: '',
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    course: '',
+    department: '',
+    hostEstablishment: '',
+    contactNumber: '',
+    address: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -290,58 +309,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCreateDepartment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'register',
-          email: newDepartment.email,
-          password: newDepartment.password,
-          accountType: 'department',
-          departmentData: {
-            departmentName: newDepartment.departmentName,
-            departmentCode: newDepartment.departmentCode,
-            location: newDepartment.location,
-            contactEmail: newDepartment.contactEmail,
-            contactNumber: newDepartment.contactNumber,
-            ojtAdvisorName: newDepartment.ojtAdvisorName,
-            ojtAdvisorPosition: newDepartment.ojtAdvisorPosition,
-          },
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Department created successfully. It will be pending approval.');
-        setNewDepartment({
-          email: '',
-          password: '',
-          departmentName: '',
-          departmentCode: '',
-          location: '',
-          contactEmail: '',
-          contactNumber: '',
-          ojtAdvisorName: '',
-          ojtAdvisorPosition: '',
-        });
-        fetchAllUsers();
-        fetchPendingDepartments();
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to create department');
-      }
-    } catch (error) {
-      console.error('Error creating department:', error);
-      toast.error('An error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDeleteCourse = async (courseId: string) => {
     if (!confirm('Are you sure you want to delete this course?')) {
       return;
@@ -433,6 +400,249 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating user status:', error);
       toast.error('An error occurred');
+    }
+  };
+
+  const handleCreateDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          email: newDepartment.email,
+          password: newDepartment.password,
+          accountType: 'department',
+          departmentData: {
+            departmentName: newDepartment.departmentName,
+            departmentCode: newDepartment.departmentCode,
+            location: newDepartment.location,
+            contactEmail: newDepartment.contactEmail,
+            contactNumber: newDepartment.contactNumber,
+            ojtAdvisorName: newDepartment.ojtAdvisorName,
+            ojtAdvisorPosition: newDepartment.ojtAdvisorPosition,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Department created successfully');
+        setNewDepartment({
+          email: '',
+          password: '',
+          departmentName: '',
+          departmentCode: '',
+          location: '',
+          contactEmail: '',
+          contactNumber: '',
+          ojtAdvisorName: '',
+          ojtAdvisorPosition: '',
+        });
+        fetchAllUsers();
+        fetchDepartments();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create department');
+      }
+    } catch (error) {
+      console.error('Error creating department:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDepartment) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/departments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          departmentId: editingDepartment._id,
+          action: 'update',
+          updates: {
+            departmentName: editingDepartment.departmentName,
+            departmentCode: editingDepartment.departmentCode,
+            location: editingDepartment.location,
+            contactEmail: editingDepartment.contactEmail,
+            contactNumber: editingDepartment.contactNumber,
+            ojtAdvisorName: editingDepartment.ojtAdvisorName,
+            ojtAdvisorPosition: editingDepartment.ojtAdvisorPosition,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Department updated successfully');
+        setIsEditDialogOpen(false);
+        setEditingDepartment(null);
+        fetchAllUsers();
+        fetchDepartments();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update department');
+      }
+    } catch (error) {
+      console.error('Error updating department:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEditDialog = (dept: Department) => {
+    setEditingDepartment(dept);
+    setIsEditDialogOpen(true);
+  };
+
+  const openStudentEditDialog = (student: UserData) => {
+    setEditingStudent(student);
+    setIsStudentEditDialogOpen(true);
+  };
+
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          email: newStudent.email,
+          password: newStudent.password,
+          accountType: 'student',
+          studentData: {
+            studentId: newStudent.studentId,
+            firstName: newStudent.firstName,
+            lastName: newStudent.lastName,
+            middleName: newStudent.middleName,
+            course: newStudent.course,
+            department: newStudent.department,
+            hostEstablishment: newStudent.hostEstablishment,
+            contactNumber: newStudent.contactNumber,
+            address: newStudent.address,
+            shiftType: 'regular',
+          },
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student created successfully');
+        setNewStudent({
+          email: '',
+          password: '',
+          studentId: '',
+          firstName: '',
+          lastName: '',
+          middleName: '',
+          course: '',
+          department: '',
+          hostEstablishment: '',
+          contactNumber: '',
+          address: '',
+        });
+        fetchAllUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create student');
+      }
+    } catch (error) {
+      console.error('Error creating student:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editingStudent._id,
+          updates: {
+            studentData: {
+              studentId: editingStudent.details?.studentId,
+              firstName: editingStudent.details?.firstName,
+              lastName: editingStudent.details?.lastName,
+              middleName: editingStudent.details?.middleName,
+              course: editingStudent.details?.course,
+              department: editingStudent.details?.department,
+              hostEstablishment: editingStudent.details?.hostEstablishment,
+              contactNumber: editingStudent.details?.contactNumber,
+              address: editingStudent.details?.address,
+            }
+          }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student updated successfully');
+        setIsStudentEditDialogOpen(false);
+        setEditingStudent(null);
+        fetchAllUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update student');
+      }
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openAdminEditDialog = (admin: UserData) => {
+    setEditingAdmin(admin);
+    setIsAdminEditDialogOpen(true);
+  };
+
+  const handleEditAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAdmin) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editingAdmin._id,
+          updates: {
+            email: editingAdmin.email,
+          }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Admin updated successfully');
+        setIsAdminEditDialogOpen(false);
+        setEditingAdmin(null);
+        fetchAllUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update admin');
+      }
+    } catch (error) {
+      console.error('Error updating admin:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -647,6 +857,136 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="students" className="space-y-4">
+            {isSuperAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create New Student</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleCreateStudent} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="student-email">Email</Label>
+                        <Input
+                          id="student-email"
+                          type="email"
+                          value={newStudent.email}
+                          onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                          placeholder="Enter student email"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-password">Password</Label>
+                        <Input
+                          id="student-password"
+                          type="password"
+                          value={newStudent.password}
+                          onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
+                          placeholder="Enter password"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-id">Student ID</Label>
+                        <Input
+                          id="student-id"
+                          value={newStudent.studentId}
+                          onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
+                          placeholder="e.g., 2021-00123"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-firstname">First Name</Label>
+                        <Input
+                          id="student-firstname"
+                          value={newStudent.firstName}
+                          onChange={(e) => setNewStudent({ ...newStudent, firstName: e.target.value })}
+                          placeholder="Enter first name"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-lastname">Last Name</Label>
+                        <Input
+                          id="student-lastname"
+                          value={newStudent.lastName}
+                          onChange={(e) => setNewStudent({ ...newStudent, lastName: e.target.value })}
+                          placeholder="Enter last name"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-middlename">Middle Name</Label>
+                        <Input
+                          id="student-middlename"
+                          value={newStudent.middleName}
+                          onChange={(e) => setNewStudent({ ...newStudent, middleName: e.target.value })}
+                          placeholder="Enter middle name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-course">Course</Label>
+                        <Input
+                          id="student-course"
+                          value={newStudent.course}
+                          onChange={(e) => setNewStudent({ ...newStudent, course: e.target.value })}
+                          placeholder="e.g., BSIT"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-department">Department</Label>
+                        <Input
+                          id="student-department"
+                          value={newStudent.department}
+                          onChange={(e) => setNewStudent({ ...newStudent, department: e.target.value })}
+                          placeholder="e.g., CCS"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-host">Host Establishment</Label>
+                        <Input
+                          id="student-host"
+                          value={newStudent.hostEstablishment}
+                          onChange={(e) => setNewStudent({ ...newStudent, hostEstablishment: e.target.value })}
+                          placeholder="Enter host company"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="student-contact">Contact Number</Label>
+                        <Input
+                          id="student-contact"
+                          value={newStudent.contactNumber}
+                          onChange={(e) => setNewStudent({ ...newStudent, contactNumber: e.target.value })}
+                          placeholder="Enter contact number"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="student-address">Address</Label>
+                        <Input
+                          id="student-address"
+                          value={newStudent.address}
+                          onChange={(e) => setNewStudent({ ...newStudent, address: e.target.value })}
+                          placeholder="Enter address"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="bg-[#003366] hover:bg-[#002244]"
+                    >
+                      {isSubmitting ? 'Creating...' : 'Create Student'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>All Students</CardTitle>
@@ -690,6 +1030,13 @@ export default function AdminDashboard() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => openStudentEditDialog(studentUser)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleToggleUserStatus(studentUser._id, studentUser.isActive)}
                               >
                                 {studentUser.isActive ? 'Deactivate' : 'Activate'}
@@ -710,119 +1057,260 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Edit Student Dialog */}
+            <Dialog open={isStudentEditDialogOpen} onOpenChange={setIsStudentEditDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Student</DialogTitle>
+                  <DialogDescription>
+                    Update student information below.
+                  </DialogDescription>
+                </DialogHeader>
+                {editingStudent && (
+                  <form onSubmit={handleEditStudent} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-id">Student ID</Label>
+                        <Input
+                          id="edit-student-id"
+                          value={editingStudent.details?.studentId || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, studentId: e.target.value }
+                          })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-firstname">First Name</Label>
+                        <Input
+                          id="edit-student-firstname"
+                          value={editingStudent.details?.firstName || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, firstName: e.target.value }
+                          })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-lastname">Last Name</Label>
+                        <Input
+                          id="edit-student-lastname"
+                          value={editingStudent.details?.lastName || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, lastName: e.target.value }
+                          })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-middlename">Middle Name</Label>
+                        <Input
+                          id="edit-student-middlename"
+                          value={editingStudent.details?.middleName || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, middleName: e.target.value }
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-course">Course</Label>
+                        <Input
+                          id="edit-student-course"
+                          value={editingStudent.details?.course || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, course: e.target.value }
+                          })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-department">Department</Label>
+                        <Input
+                          id="edit-student-department"
+                          value={editingStudent.details?.department || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, department: e.target.value }
+                          })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-host">Host Establishment</Label>
+                        <Input
+                          id="edit-student-host"
+                          value={editingStudent.details?.hostEstablishment || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, hostEstablishment: e.target.value }
+                          })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-student-contact">Contact Number</Label>
+                        <Input
+                          id="edit-student-contact"
+                          value={editingStudent.details?.contactNumber || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, contactNumber: e.target.value }
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-3">
+                        <Label htmlFor="edit-student-address">Address</Label>
+                        <Input
+                          id="edit-student-address"
+                          value={editingStudent.details?.address || ''}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            details: { ...editingStudent.details, address: e.target.value }
+                          })}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsStudentEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-[#003366] hover:bg-[#002244]"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="departments" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New Department Account</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateDepartment} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-email">Email</Label>
-                      <Input
-                        id="dept-email"
-                        type="email"
-                        value={newDepartment.email}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, email: e.target.value })}
-                        placeholder="Enter department email"
-                        required
-                      />
+            {isSuperAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create New Department</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleCreateDepartment} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-email">Email</Label>
+                        <Input
+                          id="dept-email"
+                          type="email"
+                          value={newDepartment.email}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, email: e.target.value })}
+                          placeholder="Enter department email"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-password">Password</Label>
+                        <Input
+                          id="dept-password"
+                          type="password"
+                          value={newDepartment.password}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, password: e.target.value })}
+                          placeholder="Enter password"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-name">Department Name</Label>
+                        <Input
+                          id="dept-name"
+                          value={newDepartment.departmentName}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, departmentName: e.target.value })}
+                          placeholder="e.g., College of Computer Studies"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-code">Department Code</Label>
+                        <Input
+                          id="dept-code"
+                          value={newDepartment.departmentCode}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, departmentCode: e.target.value })}
+                          placeholder="e.g., CCS"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-location">Campus</Label>
+                        <Input
+                          id="dept-location"
+                          value={newDepartment.location}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, location: e.target.value })}
+                          placeholder="e.g., Main Campus, Building A"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-contact-email">Contact Email</Label>
+                        <Input
+                          id="dept-contact-email"
+                          type="email"
+                          value={newDepartment.contactEmail}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, contactEmail: e.target.value })}
+                          placeholder="e.g., dept@slsu.edu.ph"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-contact-number">Contact Number</Label>
+                        <Input
+                          id="dept-contact-number"
+                          value={newDepartment.contactNumber}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, contactNumber: e.target.value })}
+                          placeholder="e.g., +63 123 456 7890"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-advisor-name">OJT Advisor Name</Label>
+                        <Input
+                          id="dept-advisor-name"
+                          value={newDepartment.ojtAdvisorName}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorName: e.target.value })}
+                          placeholder="e.g., Dr. Juan Dela Cruz"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="dept-advisor-position">OJT Advisor Position</Label>
+                        <Input
+                          id="dept-advisor-position"
+                          value={newDepartment.ojtAdvisorPosition}
+                          onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorPosition: e.target.value })}
+                          placeholder="e.g., Department Chair"
+                          required
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-password">Password</Label>
-                      <Input
-                        id="dept-password"
-                        type="password"
-                        value={newDepartment.password}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, password: e.target.value })}
-                        placeholder="Enter password"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-name">Department Name</Label>
-                      <Input
-                        id="dept-name"
-                        value={newDepartment.departmentName}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, departmentName: e.target.value })}
-                        placeholder="e.g., College of Computer Studies"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-code">Department Code</Label>
-                      <Input
-                        id="dept-code"
-                        value={newDepartment.departmentCode}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, departmentCode: e.target.value })}
-                        placeholder="e.g., CCS"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-location">Location</Label>
-                      <Input
-                        id="dept-location"
-                        value={newDepartment.location}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, location: e.target.value })}
-                        placeholder="e.g., Main Campus, Building A"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-contact-email">Contact Email</Label>
-                      <Input
-                        id="dept-contact-email"
-                        type="email"
-                        value={newDepartment.contactEmail}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, contactEmail: e.target.value })}
-                        placeholder="e.g., dept@slsu.edu.ph"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-contact-number">Contact Number</Label>
-                      <Input
-                        id="dept-contact-number"
-                        value={newDepartment.contactNumber}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, contactNumber: e.target.value })}
-                        placeholder="e.g., +63 123 456 7890"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-advisor-name">OJT Advisor Name</Label>
-                      <Input
-                        id="dept-advisor-name"
-                        value={newDepartment.ojtAdvisorName}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorName: e.target.value })}
-                        placeholder="e.g., Dr. Juan Dela Cruz"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="dept-advisor-position">OJT Advisor Position</Label>
-                      <Input
-                        id="dept-advisor-position"
-                        value={newDepartment.ojtAdvisorPosition}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorPosition: e.target.value })}
-                        placeholder="e.g., Department Chair"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-[#003366] hover:bg-[#002244]"
-                  >
-                    {isSubmitting ? 'Creating...' : 'Create Department Account'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="bg-[#003366] hover:bg-[#002244]"
+                    >
+                      {isSubmitting ? 'Creating...' : 'Create Department'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
@@ -840,7 +1328,7 @@ export default function AdminDashboard() {
                         <TableHead>Department Code</TableHead>
                         <TableHead>Department Name</TableHead>
                         <TableHead>OJT Advisor</TableHead>
-                        <TableHead>Location</TableHead>
+                        <TableHead>Campus</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -859,6 +1347,25 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog({
+                                  _id: deptUser._id,
+                                  userId: deptUser._id,
+                                  departmentName: deptUser.details?.departmentName || '',
+                                  departmentCode: deptUser.details?.departmentCode || '',
+                                  location: deptUser.details?.location || '',
+                                  contactEmail: deptUser.details?.contactEmail || '',
+                                  contactNumber: deptUser.details?.contactNumber || '',
+                                  ojtAdvisorName: deptUser.details?.ojtAdvisorName || '',
+                                  ojtAdvisorPosition: deptUser.details?.ojtAdvisorPosition || '',
+                                  isActive: deptUser.isActive,
+                                  isAccepted: deptUser.details?.isAccepted || true,
+                                })}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -882,6 +1389,103 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Edit Department Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Department</DialogTitle>
+                  <DialogDescription>
+                    Update department information below.
+                  </DialogDescription>
+                </DialogHeader>
+                {editingDepartment && (
+                  <form onSubmit={handleEditDepartment} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept-name">Department Name</Label>
+                        <Input
+                          id="edit-dept-name"
+                          value={editingDepartment.departmentName}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, departmentName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept-code">Department Code</Label>
+                        <Input
+                          id="edit-dept-code"
+                          value={editingDepartment.departmentCode}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, departmentCode: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept-location">Campus</Label>
+                        <Input
+                          id="edit-dept-location"
+                          value={editingDepartment.location}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, location: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept-contact-email">Contact Email</Label>
+                        <Input
+                          id="edit-dept-contact-email"
+                          type="email"
+                          value={editingDepartment.contactEmail}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, contactEmail: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept-contact-number">Contact Number</Label>
+                        <Input
+                          id="edit-dept-contact-number"
+                          value={editingDepartment.contactNumber}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, contactNumber: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept-advisor-name">OJT Advisor Name</Label>
+                        <Input
+                          id="edit-dept-advisor-name"
+                          value={editingDepartment.ojtAdvisorName}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, ojtAdvisorName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="edit-dept-advisor-position">OJT Advisor Position</Label>
+                        <Input
+                          id="edit-dept-advisor-position"
+                          value={editingDepartment.ojtAdvisorPosition}
+                          onChange={(e) => setEditingDepartment({ ...editingDepartment, ojtAdvisorPosition: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-[#003366] hover:bg-[#002244]"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="courses" className="space-y-4">
@@ -1156,6 +1760,7 @@ export default function AdminDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="superadmin">Super Admin</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1214,6 +1819,13 @@ export default function AdminDashboard() {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => openAdminEditDialog(adminUser)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => handleToggleUserStatus(adminUser._id, adminUser.isActive)}
                                   >
                                     {adminUser.isActive ? 'Deactivate' : 'Activate'}
@@ -1236,6 +1848,48 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Edit Admin Dialog */}
+            <Dialog open={isAdminEditDialogOpen} onOpenChange={setIsAdminEditDialogOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Edit Admin</DialogTitle>
+                  <DialogDescription>
+                    Update administrator information below.
+                  </DialogDescription>
+                </DialogHeader>
+                {editingAdmin && (
+                  <form onSubmit={handleEditAdmin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-admin-email">Email</Label>
+                      <Input
+                        id="edit-admin-email"
+                        type="email"
+                        value={editingAdmin.email}
+                        onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsAdminEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-[#003366] hover:bg-[#002244]"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
       </main>

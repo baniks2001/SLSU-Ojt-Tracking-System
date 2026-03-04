@@ -600,7 +600,7 @@ export default function RegisterPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dept-location">Location</Label>
+                    <Label htmlFor="dept-location">Campus</Label>
                     <Input
                       id="dept-location"
                       placeholder="Auto-filled from department"

@@ -53,17 +53,44 @@ export async function PUT(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { departmentId, action, isActive } = body;
-    
+    const { departmentId, action, updates, isActive } = body;
+
     if (!departmentId) {
       return NextResponse.json(
         { error: 'Department ID is required' },
         { status: 400 }
       );
     }
-    
+
+    // Handle update action for editing department
+    if (action === 'update') {
+      const department = await Department.findById(departmentId);
+      if (!department) {
+        return NextResponse.json(
+          { error: 'Department not found' },
+          { status: 404 }
+        );
+      }
+
+      // Update department fields
+      if (updates.departmentName) department.departmentName = updates.departmentName;
+      if (updates.departmentCode) department.departmentCode = updates.departmentCode;
+      if (updates.location) department.location = updates.location;
+      if (updates.contactEmail) department.contactEmail = updates.contactEmail;
+      if (updates.contactNumber !== undefined) department.contactNumber = updates.contactNumber;
+      if (updates.ojtAdvisorName) department.ojtAdvisorName = updates.ojtAdvisorName;
+      if (updates.ojtAdvisorPosition) department.ojtAdvisorPosition = updates.ojtAdvisorPosition;
+
+      await department.save();
+
+      return NextResponse.json({
+        message: 'Department updated successfully',
+        department
+      });
+    }
+
+    // Handle accept/reject actions
     const updateData: any = {};
-    
     if (action === 'accept') {
       updateData.isAccepted = true;
     } else if (action === 'reject') {

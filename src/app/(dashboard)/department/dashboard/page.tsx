@@ -904,7 +904,7 @@ export default function DepartmentDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="dept-location">Location</Label>
+                      <Label htmlFor="dept-location">Campus</Label>
                       <Input
                         id="dept-location"
                         value={newDepartment.location}
