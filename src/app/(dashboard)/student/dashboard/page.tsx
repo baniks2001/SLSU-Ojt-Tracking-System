@@ -17,6 +17,7 @@ import AttendanceLogs from '@/components/AttendanceLogs';
 import DTRTemplate from '@/components/DTRTemplate';
 import Announcements from '@/components/Announcements';
 import ScheduleChangeRequest from '@/components/ScheduleChangeRequest';
+import Logo from '@/components/Logo';
 
 interface StudentData {
   _id: string;
@@ -115,17 +116,18 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-[#003366] text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-xl font-bold">SLSU OJT Tracking System</h1>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Logo size="small" />
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold">SLSU OJT Tracking</h1>
                 <p className="text-xs text-blue-200">Southern Leyte State University</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm sm:text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
                 <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
               </div>
               <Button
@@ -134,7 +136,7 @@ export default function StudentDashboard() {
                 onClick={handleLogout}
                 className="text-white hover:bg-blue-800"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
@@ -144,22 +146,22 @@ export default function StudentDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-[#003366] text-white text-xl">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
+              <AvatarFallback className="bg-[#003366] text-white text-lg sm:text-xl">
                 {student.firstName.charAt(0)}{student.lastName.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Welcome, {fullName}</h2>
-              <p className="text-gray-600">Student ID: {student.studentId}</p>
-              <div className="flex items-center space-x-2 mt-1">
-                <Badge variant={student.isAccepted ? "default" : "secondary"}>
+            <div className="text-center sm:text-left">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome, {fullName}</h2>
+              <p className="text-sm sm:text-base text-gray-600">Student ID: {student.studentId}</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1 sm:gap-2 mt-1">
+                <Badge variant={student.isAccepted ? "default" : "secondary"} className="text-xs">
                   {student.isAccepted ? "Active" : "Pending Approval"}
                 </Badge>
-                <Badge variant="outline">{student.course}</Badge>
-                <Badge variant="outline">{student.shiftType === 'graveyard' ? 'Graveyard Shift' : 'Regular Shift'}</Badge>
+                <Badge variant="outline" className="text-xs">{student.course}</Badge>
+                <Badge variant="outline" className="text-xs">{student.shiftType === 'graveyard' ? 'Graveyard Shift' : 'Regular Shift'}</Badge>
               </div>
             </div>
           </div>
@@ -176,30 +178,30 @@ export default function StudentDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-[700px]">
-            <TabsTrigger value="clock" className="flex items-center space-x-2">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Clock In/Out</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 lg:gap-2">
+            <TabsTrigger value="clock" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Clock</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center space-x-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
+            <TabsTrigger value="profile" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <User className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Attendance Logs</span>
+            <TabsTrigger value="logs" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Logs</span>
             </TabsTrigger>
-            <TabsTrigger value="dtr" className="flex items-center space-x-2">
-              <Camera className="h-4 w-4" />
-              <span className="hidden sm:inline">DTR</span>
+            <TabsTrigger value="dtr" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">DTR</span>
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="flex items-center space-x-2">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Schedule Request</span>
+            <TabsTrigger value="schedule" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Schedule</span>
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center space-x-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Announcements</span>
+            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Announce</span>
             </TabsTrigger>
           </TabsList>
 

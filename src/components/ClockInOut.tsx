@@ -9,7 +9,7 @@ import { Camera, Clock, LogIn, LogOut } from 'lucide-react';
 
 interface ClockInOutProps {
   studentId: string;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
   shiftConfig?: {
     morningStart?: string;
     morningEnd?: string;
@@ -41,6 +41,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   const [showCamera, setShowCamera] = useState(false);
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [countdown, setCountdown] = useState(0);
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -85,6 +86,25 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
   };
 
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setShowCamera(false);
+  };
+
+  const handleClockAction = async (action: string) => {
+    if (!isAccepted) {
+      toast.error('Your account is pending approval');
+      return;
+    }
+
+    setCurrentAction(action);
+    // Start camera capture flow
+    await startCamera();
+  };
+
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -96,26 +116,17 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         ctx.drawImage(video, 0, 0);
         const imageData = canvas.toDataURL('image/jpeg');
         setCapturedImage(imageData);
+        // Auto-execute clock action after capture
+        if (currentAction) {
+          executeClockAction(currentAction);
+        }
       }
     }
   };
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-    }
-    setShowCamera(false);
-  };
-
-  const handleClockAction = async (action: string) => {
+  const executeClockAction = async (action: string) => {
     if (!capturedImage) {
       toast.error('Please capture your image first');
-      return;
-    }
-
-    if (!isAccepted) {
-      toast.error('Your account is pending approval');
       return;
     }
 
@@ -135,10 +146,13 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(`${action.replace(/([A-Z])/g, ' $1').trim()} recorded successfully!`);
+        const actionText = action.replace(/([A-Z])/g, ' $1').trim();
+        toast.success(`${actionText} recorded successfully!`);
         setCapturedImage(null);
         setShowCamera(false);
-        setCountdown(10); // Start 10 second countdown
+        stopCamera();
+        setCurrentAction(null);
+        setCountdown(5); // Start 5 second countdown
         fetchTodayRecord();
       } else {
         toast.error(data.error || 'Failed to record attendance');
@@ -183,7 +197,12 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         <CardContent>
           <Badge variant="outline" className="text-base px-3 py-1">
             {shiftType === 'regular' && 'Regular: 7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM'}
+            {shiftType === 'regular-split' && 'Regular Split: Morning & Afternoon Shifts'}
             {shiftType === 'graveyard' && 'Graveyard: 7:00 PM - 7:00 AM'}
+            {shiftType === 'morning' && 'Morning Shift Only'}
+            {shiftType === 'afternoon' && 'Afternoon Shift Only'}
+            {shiftType === '1shift' && 'Single Shift'}
+            {shiftType === '2shift' && 'Two Shifts'}
             {shiftType === 'custom' && (shiftConfig?.description || `Custom: ${shiftConfig?.eveningStart} - ${shiftConfig?.eveningEnd}`)}
           </Badge>
         </CardContent>
@@ -269,7 +288,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('morningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !capturedImage || !isAccepted}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
                   className="w-full bg-green-600 hover:bg-green-700"
                   size="sm"
                 >
@@ -285,7 +304,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('morningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !capturedImage || !isAccepted || !todayRecord?.morningIn}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
                   className="w-full bg-red-600 hover:bg-red-700"
                   size="sm"
                 >
@@ -301,7 +320,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('afternoonIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !capturedImage || !isAccepted}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !isAccepted}
                   className="w-full bg-green-600 hover:bg-green-700"
                   size="sm"
                 >
@@ -317,7 +336,169 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('afternoonOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !capturedImage || !isAccepted || !todayRecord?.afternoonIn}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !isAccepted || !todayRecord?.afternoonIn}
+                  className="w-full bg-red-600 hover:bg-red-700"
+                  size="sm"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Clock Out
+                </Button>
+              </div>
+            </div>
+          ) : shiftType === 'morning' ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Morning In</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.morningIn)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('morningIn')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Clock In
+                </Button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Morning Out</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.morningOut)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('morningOut')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
+                  className="w-full bg-red-600 hover:bg-red-700"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Clock Out
+                </Button>
+              </div>
+            </div>
+          ) : shiftType === 'afternoon' ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Afternoon In</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.afternoonIn)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('afternoonIn')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !isAccepted}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Clock In
+                </Button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Afternoon Out</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.afternoonOut)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('afternoonOut')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !isAccepted || !todayRecord?.afternoonIn}
+                  className="w-full bg-red-600 hover:bg-red-700"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Clock Out
+                </Button>
+              </div>
+            </div>
+          ) : shiftType === '1shift' ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Shift In</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.morningIn)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('morningIn')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Clock In
+                </Button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Shift Out</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.morningOut)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('morningOut')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
+                  className="w-full bg-red-600 hover:bg-red-700"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Clock Out
+                </Button>
+              </div>
+            </div>
+          ) : shiftType === '2shift' ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Shift 1 In</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.morningIn)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('morningIn')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="sm"
+                >
+                  <LogIn className="h-4 w-4 mr-1" />
+                  Clock In
+                </Button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Shift 1 Out</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.morningOut)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('morningOut')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
+                  className="w-full bg-red-600 hover:bg-red-700"
+                  size="sm"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Clock Out
+                </Button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Shift 2 In</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.afternoonIn)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('afternoonIn')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !isAccepted}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="sm"
+                >
+                  <LogIn className="h-4 w-4 mr-1" />
+                  Clock In
+                </Button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Shift 2 Out</p>
+                <Badge variant="outline" className="mb-2">
+                  {formatTime(todayRecord?.afternoonOut)}
+                </Badge>
+                <Button
+                  onClick={() => handleClockAction('afternoonOut')}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !isAccepted || !todayRecord?.afternoonIn}
                   className="w-full bg-red-600 hover:bg-red-700"
                   size="sm"
                 >
@@ -335,7 +516,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('eveningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningIn') || !capturedImage || !isAccepted}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningIn') || !isAccepted}
                   className="w-full bg-green-600 hover:bg-green-700"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
@@ -350,7 +531,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                 </Badge>
                 <Button
                   onClick={() => handleClockAction('eveningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningOut') || !capturedImage || !isAccepted || !todayRecord?.eveningIn}
+                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningOut') || !isAccepted || !todayRecord?.eveningIn}
                   className="w-full bg-red-600 hover:bg-red-700"
                 >
                   <LogOut className="h-4 w-4 mr-2" />

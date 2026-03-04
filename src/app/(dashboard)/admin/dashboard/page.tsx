@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Logo from '@/components/Logo';
 
 interface UserData {
   _id: string;
@@ -942,19 +943,20 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-[#003366] text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-xl font-bold">SLSU OJT Tracking System</h1>
-                <p className="text-xs text-blue-200">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Logo size="small" />
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold">SLSU OJT Tracking</h1>
+                <p className="text-xs text-blue-200 hidden lg:block">
                   {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm sm:text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
                 <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
               </div>
               <Button
@@ -963,7 +965,7 @@ export default function AdminDashboard() {
                 onClick={handleLogout}
                 className="text-white hover:bg-blue-800"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
@@ -993,103 +995,103 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold">{users.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Total Users</p>
+                  <p className="text-lg sm:text-2xl font-bold">{users.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-[#003366]" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-[#003366]" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Students</p>
-                  <p className="text-2xl font-bold text-blue-600">{students.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Students</p>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-600">{students.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-600" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Departments</p>
-                  <p className="text-2xl font-bold text-green-600">{departmentUsers.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Departments</p>
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">{departmentUsers.length}</p>
                 </div>
-                <Building className="h-8 w-8 text-green-600" />
+                <Building className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Courses</p>
-                  <p className="text-2xl font-bold text-orange-600">{courses.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Courses</p>
+                  <p className="text-lg sm:text-2xl font-bold text-purple-600">{courses.length}</p>
                 </div>
-                <Building className="h-8 w-8 text-orange-600" />
+                <School className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Campuses</p>
-                  <p className="text-2xl font-bold text-teal-600">{campusCount}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Active Users</p>
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">{activeUsers.length}</p>
                 </div>
-                <School className="h-8 w-8 text-teal-600" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Admins</p>
-                  <p className="text-2xl font-bold text-purple-600">{adminUsers.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Campuses</p>
+                  <p className="text-lg sm:text-2xl font-bold text-teal-600">{campusCount}</p>
                 </div>
-                <Shield className="h-8 w-8 text-purple-600" />
+                <Building className="h-6 w-6 sm:h-8 sm:w-8 text-teal-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Active Users</p>
-                  <p className="text-2xl font-bold text-green-600">{activeUsers.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Admins</p>
+                  <p className="text-lg sm:text-2xl font-bold text-purple-600">{adminUsers.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-green-600" />
+                <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 lg:w-[1600px]">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="departments">Departments</TabsTrigger>
-            <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="campuses">Campuses</TabsTrigger>
-            <TabsTrigger value="pending">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 lg:gap-2">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="students" className="text-xs sm:text-sm">Students</TabsTrigger>
+            <TabsTrigger value="departments" className="text-xs sm:text-sm">Departments</TabsTrigger>
+            <TabsTrigger value="courses" className="text-xs sm:text-sm">Courses</TabsTrigger>
+            <TabsTrigger value="campuses" className="text-xs sm:text-sm">Campuses</TabsTrigger>
+            <TabsTrigger value="pending" className="text-xs sm:text-sm">
               Pending
               {(pendingDepartments.length + pendingStudents.length) > 0 && (
-                <Badge variant="destructive" className="ml-2">
+                <Badge variant="destructive" className="ml-1 text-xs">
                   {pendingDepartments.length + pendingStudents.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="logs">System Logs</TabsTrigger>
-            <TabsTrigger value="admins">Admins</TabsTrigger>
+            <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
+            <TabsTrigger value="admins" className="text-xs sm:text-sm">Admins</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">

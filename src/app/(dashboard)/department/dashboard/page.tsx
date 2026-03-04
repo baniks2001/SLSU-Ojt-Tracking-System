@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Logo from '@/components/Logo';
 
 interface DepartmentData {
   _id: string;
@@ -113,23 +115,11 @@ export default function DepartmentDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [departments, setDepartments] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
-  const [newDepartment, setNewDepartment] = useState({
-    email: '',
-    password: '',
-    departmentName: '',
-    departmentCode: '',
-    location: '',
-    contactEmail: '',
-    contactNumber: '',
-    ojtAdvisorName: '',
-    ojtAdvisorPosition: '',
-  });
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
   const [newSupervisor, setNewSupervisor] = useState({
+    name: '',
     email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
+    department: '',
     contactNumber: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -357,7 +347,7 @@ export default function DepartmentDashboard() {
 
       if (response.ok) {
         toast.success('OJT Supervisor account created successfully');
-        setNewSupervisor({ email: '', password: '', firstName: '', lastName: '', contactNumber: '' });
+        setNewSupervisor({ name: '', email: '', department: '', contactNumber: '' });
         fetchSupervisors(user.details._id);
       } else {
         const data = await response.json();
@@ -394,56 +384,6 @@ export default function DepartmentDashboard() {
     }
   };
 
-  const handleCreateDepartment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'register',
-          email: newDepartment.email,
-          password: newDepartment.password,
-          accountType: 'department',
-          departmentData: {
-            departmentName: newDepartment.departmentName,
-            departmentCode: newDepartment.departmentCode,
-            location: newDepartment.location,
-            contactEmail: newDepartment.contactEmail,
-            contactNumber: newDepartment.contactNumber,
-            ojtAdvisorName: newDepartment.ojtAdvisorName,
-            ojtAdvisorPosition: newDepartment.ojtAdvisorPosition,
-          },
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Department created successfully. It will be pending admin approval.');
-        setNewDepartment({
-          email: '',
-          password: '',
-          departmentName: '',
-          departmentCode: '',
-          location: '',
-          contactEmail: '',
-          contactNumber: '',
-          ojtAdvisorName: '',
-          ojtAdvisorPosition: '',
-        });
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to create department');
-      }
-    } catch (error) {
-      console.error('Error creating department:', error);
-      toast.error('An error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const pendingStudents = students.filter((s: Student) => !s.isAccepted);
   const activeStudents = students.filter((s: Student) => s.isAccepted);
   const pendingRequests = scheduleRequests.filter((r: ScheduleRequest) => r.status === 'pending');
@@ -452,17 +392,18 @@ export default function DepartmentDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-[#003366] text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-xl font-bold">SLSU OJT Tracking System</h1>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Logo size="small" />
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold">SLSU OJT Tracking</h1>
                 <p className="text-xs text-blue-200">Department Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm sm:text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
                 <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
               </div>
               <Button
@@ -471,7 +412,7 @@ export default function DepartmentDashboard() {
                 onClick={handleLogout}
                 className="text-white hover:bg-blue-800"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
@@ -497,84 +438,80 @@ export default function DepartmentDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Students</p>
-                  <p className="text-2xl font-bold">{students.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Total Students</p>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-600">{students.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-[#003366]" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Active Students</p>
-                  <p className="text-2xl font-bold text-green-600">{activeStudents.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Active Students</p>
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">{activeStudents.length}</p>
                 </div>
-                <UserCheck className="h-8 w-8 text-green-600" />
+                <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending Approval</p>
-                  <p className="text-2xl font-bold text-yellow-600">{pendingStudents.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Pending Approval</p>
+                  <p className="text-lg sm:text-2xl font-bold text-yellow-600">{pendingStudents.length}</p>
                 </div>
-                <UserX className="h-8 w-8 text-yellow-600" />
+                <UserX className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Announcements</p>
-                  <p className="text-2xl font-bold text-blue-600">{announcements.length}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Announcements</p>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-600">{announcements.length}</p>
                 </div>
-                <Bell className="h-8 w-8 text-blue-600" />
+                <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-[1200px]">
-            <TabsTrigger value="students" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Students</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 lg:gap-2">
+            <TabsTrigger value="students" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Students</span>
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Attendance</span>
+            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Attendance</span>
             </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center space-x-2">
-              <UserX className="h-4 w-4" />
-              <span className="hidden sm:inline">Pending</span>
+            <TabsTrigger value="pending" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <UserX className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Pending</span>
               {pendingStudents.length > 0 && (
-                <Badge variant="destructive" className="ml-2">{pendingStudents.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{pendingStudents.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="schedule-requests" className="flex items-center space-x-2">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Schedule Requests</span>
+            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Schedule</span>
               {pendingRequests.length > 0 && (
-                <Badge variant="destructive" className="ml-2">{pendingRequests.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{pendingRequests.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="departments" className="flex items-center space-x-2">
-              <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">Departments</span>
-            </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center space-x-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Announcements</span>
+            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Announce</span>
             </TabsTrigger>
           </TabsList>
 
@@ -849,119 +786,6 @@ export default function DepartmentDashboard() {
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="departments" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New Department</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateDepartment} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-email">Email</Label>
-                      <Input
-                        id="dept-email"
-                        type="email"
-                        value={newDepartment.email}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, email: e.target.value })}
-                        placeholder="Enter department email"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-password">Password</Label>
-                      <Input
-                        id="dept-password"
-                        type="password"
-                        value={newDepartment.password}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, password: e.target.value })}
-                        placeholder="Enter password"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-name">Department Name</Label>
-                      <Input
-                        id="dept-name"
-                        value={newDepartment.departmentName}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, departmentName: e.target.value })}
-                        placeholder="e.g., College of Computer Studies"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-code">Department Code</Label>
-                      <Input
-                        id="dept-code"
-                        value={newDepartment.departmentCode}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, departmentCode: e.target.value })}
-                        placeholder="e.g., CCS"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-location">Campus</Label>
-                      <Input
-                        id="dept-location"
-                        value={newDepartment.location}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, location: e.target.value })}
-                        placeholder="e.g., Main Campus, Building A"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-contact-email">Contact Email</Label>
-                      <Input
-                        id="dept-contact-email"
-                        type="email"
-                        value={newDepartment.contactEmail}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, contactEmail: e.target.value })}
-                        placeholder="e.g., dept@slsu.edu.ph"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-contact-number">Contact Number</Label>
-                      <Input
-                        id="dept-contact-number"
-                        value={newDepartment.contactNumber}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, contactNumber: e.target.value })}
-                        placeholder="e.g., +63 123 456 7890"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dept-advisor-name">OJT Advisor Name</Label>
-                      <Input
-                        id="dept-advisor-name"
-                        value={newDepartment.ojtAdvisorName}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorName: e.target.value })}
-                        placeholder="e.g., Dr. Juan Dela Cruz"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="dept-advisor-position">OJT Advisor Position</Label>
-                      <Input
-                        id="dept-advisor-position"
-                        value={newDepartment.ojtAdvisorPosition}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorPosition: e.target.value })}
-                        placeholder="e.g., Department Chair"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-[#003366] hover:bg-[#002244]"
-                  >
-                    {isSubmitting ? 'Creating...' : 'Create Department'}
-                  </Button>
-                </form>
               </CardContent>
             </Card>
           </TabsContent>
