@@ -23,12 +23,6 @@ interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
-  departmentId: string;
-  departmentIdObj?: {
-    _id: string;
-    departmentName: string;
-    departmentCode: string;
-  };
   departmentName: string;
 }
 
@@ -141,7 +135,7 @@ export default function RegisterPage() {
       if (selectedCourse) {
         setStudentForm(prev => ({ 
           ...prev, 
-          departmentName: selectedCourse.departmentIdObj?.departmentName || selectedCourse.departmentName 
+          departmentName: selectedCourse.departmentName
         }));
       }
     }
@@ -369,7 +363,7 @@ export default function RegisterPage() {
                       ) : (
                         courses.map((course) => (
                           <SelectItem key={course._id} value={course._id}>
-                            {course.courseName} ({course.courseCode}) - {course.departmentIdObj?.departmentName || course.departmentName}
+                            {course.courseName} ({course.courseCode}) - {course.departmentName}
                           </SelectItem>
                         ))
                       )}

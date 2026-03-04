@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
-import { Course, Department } from '@/lib/models';
+import { Course } from '@/lib/models';
 
 // GET - Fetch courses
 export async function GET(request: Request) {
@@ -13,7 +13,6 @@ export async function GET(request: Request) {
     let query: any = { isActive: true };
     
     const courses = await Course.find(query)
-      .populate('departmentId', 'departmentName departmentCode')
       .select('-__v')
       .sort({ courseName: 1 });
     
@@ -39,11 +38,11 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { courseCode, courseName, departmentId, departmentName, description, totalHours } = body;
+    const { courseCode, courseName, departmentName, description, totalHours } = body;
     
-    if (!courseCode || !courseName || !departmentId) {
+    if (!courseCode || !courseName || !departmentName) {
       return NextResponse.json(
-        { error: 'Course code, name, and department are required' },
+        { error: 'Course code, name, and department name are required' },
         { status: 400 }
       );
     }
@@ -60,8 +59,7 @@ export async function POST(request: Request) {
     const course = await Course.create({
       courseCode,
       courseName,
-      departmentId,
-      departmentName: departmentName || '',
+      departmentName,
       description,
       totalHours: totalHours || 500,
     });

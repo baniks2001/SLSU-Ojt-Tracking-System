@@ -3,10 +3,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ICourse extends Document {
   courseCode: string;
   courseName: string;
-  departmentId: mongoose.Types.ObjectId;
-  departmentName: string; // Kept for backward compatibility
+  departmentName: string; // Name of the department offering this course
   description?: string;
-  totalHours: number;
+  totalHours: number; // Total hours required to complete OJT
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -15,8 +14,7 @@ export interface ICourse extends Document {
 const CourseSchema: Schema = new Schema({
   courseCode: { type: String, required: true, unique: true },
   courseName: { type: String, required: true },
-  departmentId: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
-  departmentName: { type: String, required: true }, // Denormalized for quick access
+  departmentName: { type: String, required: true }, // Name of the department
   description: { type: String },
   totalHours: { type: Number, default: 500 },
   isActive: { type: Boolean, default: true },
