@@ -80,6 +80,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [pendingDepartments, setPendingDepartments] = useState<Department[]>([]);
+  const [pendingStudents, setPendingStudents] = useState<UserData[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
@@ -153,6 +154,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchPendingStudents = async () => {
+    try {
+      const response = await fetch('/api/users?accountType=student&isAccepted=false');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingStudents(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching pending students:', error);
+    }
+  };
+
   const fetchCourses = async () => {
     try {
       const response = await fetch('/api/courses');
@@ -214,6 +227,7 @@ export default function AdminDashboard() {
       fetchAllUsers();
       fetchDepartments();
       fetchPendingDepartments();
+      fetchPendingStudents();
       fetchCampuses();
       fetchCourses();
       fetchSystemLogs();
@@ -288,6 +302,60 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error rejecting department:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleAcceptStudent = async (studentId: string) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: studentId,
+          updates: { isAccepted: true }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student approved successfully');
+        fetchAllUsers();
+        fetchPendingStudents();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to approve student');
+      }
+    } catch (error) {
+      console.error('Error accepting student:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleRejectStudent = async (studentId: string) => {
+    if (!confirm('Are you sure you want to reject this student? This will deactivate their account.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: studentId,
+          updates: { isAccepted: false, isActive: false }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student rejected and account deactivated');
+        fetchAllUsers();
+        fetchPendingStudents();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to reject student');
+      }
+    } catch (error) {
+      console.error('Error rejecting student:', error);
       toast.error('An error occurred');
     }
   };
@@ -836,13 +904,17 @@ export default function AdminDashboard() {
     }
   };
 
-  // Refetch courses and campuses when their tabs are selected
+  // Refetch courses, campuses, and pending data when their tabs are selected
   useEffect(() => {
     if (activeTab === 'courses') {
       fetchCourses();
     }
     if (activeTab === 'campuses') {
       fetchCampuses();
+    }
+    if (activeTab === 'pending') {
+      fetchPendingDepartments();
+      fetchPendingStudents();
     }
   }, [activeTab]);
 
@@ -1005,9 +1077,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="campuses">Campuses</TabsTrigger>
             <TabsTrigger value="pending">
               Pending
-              {pendingDepartments.length > 0 && (
+              {(pendingDepartments.length + pendingStudents.length) > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {pendingDepartments.length}
+                  {pendingDepartments.length + pendingStudents.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -1042,136 +1114,6 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="students" className="space-y-4">
-            {isSuperAdmin && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Student</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleCreateStudent} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="student-email">Email</Label>
-                        <Input
-                          id="student-email"
-                          type="email"
-                          value={newStudent.email}
-                          onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
-                          placeholder="Enter student email"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-password">Password</Label>
-                        <Input
-                          id="student-password"
-                          type="password"
-                          value={newStudent.password}
-                          onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
-                          placeholder="Enter password"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-id">Student ID</Label>
-                        <Input
-                          id="student-id"
-                          value={newStudent.studentId}
-                          onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
-                          placeholder="e.g., 2021-00123"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-firstname">First Name</Label>
-                        <Input
-                          id="student-firstname"
-                          value={newStudent.firstName}
-                          onChange={(e) => setNewStudent({ ...newStudent, firstName: e.target.value })}
-                          placeholder="Enter first name"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-lastname">Last Name</Label>
-                        <Input
-                          id="student-lastname"
-                          value={newStudent.lastName}
-                          onChange={(e) => setNewStudent({ ...newStudent, lastName: e.target.value })}
-                          placeholder="Enter last name"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-middlename">Middle Name</Label>
-                        <Input
-                          id="student-middlename"
-                          value={newStudent.middleName}
-                          onChange={(e) => setNewStudent({ ...newStudent, middleName: e.target.value })}
-                          placeholder="Enter middle name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-course">Course</Label>
-                        <Input
-                          id="student-course"
-                          value={newStudent.course}
-                          onChange={(e) => setNewStudent({ ...newStudent, course: e.target.value })}
-                          placeholder="e.g., BSIT"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-department">Department</Label>
-                        <Input
-                          id="student-department"
-                          value={newStudent.department}
-                          onChange={(e) => setNewStudent({ ...newStudent, department: e.target.value })}
-                          placeholder="e.g., CCS"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-host">Host Establishment</Label>
-                        <Input
-                          id="student-host"
-                          value={newStudent.hostEstablishment}
-                          onChange={(e) => setNewStudent({ ...newStudent, hostEstablishment: e.target.value })}
-                          placeholder="Enter host company"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-contact">Contact Number</Label>
-                        <Input
-                          id="student-contact"
-                          value={newStudent.contactNumber}
-                          onChange={(e) => setNewStudent({ ...newStudent, contactNumber: e.target.value })}
-                          placeholder="Enter contact number"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="student-address">Address</Label>
-                        <Input
-                          id="student-address"
-                          value={newStudent.address}
-                          onChange={(e) => setNewStudent({ ...newStudent, address: e.target.value })}
-                          placeholder="Enter address"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-[#003366] hover:bg-[#002244]"
-                    >
-                      {isSubmitting ? 'Creating...' : 'Create Student'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
-
             <Card>
               <CardHeader>
                 <CardTitle>All Students</CardTitle>
@@ -1384,119 +1326,6 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="departments" className="space-y-4">
-            {isSuperAdmin && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Department</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleCreateDepartment} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-email">Email</Label>
-                        <Input
-                          id="dept-email"
-                          type="email"
-                          value={newDepartment.email}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, email: e.target.value })}
-                          placeholder="Enter department email"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-password">Password</Label>
-                        <Input
-                          id="dept-password"
-                          type="password"
-                          value={newDepartment.password}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, password: e.target.value })}
-                          placeholder="Enter password"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-name">Department Name</Label>
-                        <Input
-                          id="dept-name"
-                          value={newDepartment.departmentName}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, departmentName: e.target.value })}
-                          placeholder="e.g., College of Computer Studies"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-code">Department Code</Label>
-                        <Input
-                          id="dept-code"
-                          value={newDepartment.departmentCode}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, departmentCode: e.target.value })}
-                          placeholder="e.g., CCS"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-location">Campus</Label>
-                        <Input
-                          id="dept-location"
-                          value={newDepartment.location}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, location: e.target.value })}
-                          placeholder="e.g., Main Campus, Building A"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-contact-email">Contact Email</Label>
-                        <Input
-                          id="dept-contact-email"
-                          type="email"
-                          value={newDepartment.contactEmail}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, contactEmail: e.target.value })}
-                          placeholder="e.g., dept@slsu.edu.ph"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-contact-number">Contact Number</Label>
-                        <Input
-                          id="dept-contact-number"
-                          value={newDepartment.contactNumber}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, contactNumber: e.target.value })}
-                          placeholder="e.g., +63 123 456 7890"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dept-advisor-name">OJT Advisor Name</Label>
-                        <Input
-                          id="dept-advisor-name"
-                          value={newDepartment.ojtAdvisorName}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorName: e.target.value })}
-                          placeholder="e.g., Dr. Juan Dela Cruz"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="dept-advisor-position">OJT Advisor Position</Label>
-                        <Input
-                          id="dept-advisor-position"
-                          value={newDepartment.ojtAdvisorPosition}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorPosition: e.target.value })}
-                          placeholder="e.g., Department Chair"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-[#003366] hover:bg-[#002244]"
-                    >
-                      {isSubmitting ? 'Creating...' : 'Create Department'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
-
             <Card>
               <CardHeader>
                 <CardTitle>All Departments</CardTitle>
@@ -2035,6 +1864,66 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
+            {/* Pending Students */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Student Approvals</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pendingStudents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No pending student registrations.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingStudents.map((student) => (
+                        <TableRow key={student._id}>
+                          <TableCell>{student.details?.studentId}</TableCell>
+                          <TableCell>
+                            {student.details?.firstName} {student.details?.lastName}
+                          </TableCell>
+                          <TableCell>{student.email}</TableCell>
+                          <TableCell>{student.details?.course}</TableCell>
+                          <TableCell>{student.details?.department}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleAcceptStudent(student._id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRejectStudent(student._id)}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pending Departments */}
             <Card>
               <CardHeader>
                 <CardTitle>Pending Department Approvals</CardTitle>

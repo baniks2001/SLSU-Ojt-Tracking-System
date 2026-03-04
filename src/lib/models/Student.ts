@@ -19,6 +19,7 @@ export interface IStudent extends Document {
   lastName: string;
   middleName?: string;
   courseId: mongoose.Types.ObjectId;
+  campusId: mongoose.Types.ObjectId;
   department: string; // Department name (derived from course)
   hostEstablishment: string;
   contactNumber?: string;
@@ -26,7 +27,7 @@ export interface IStudent extends Document {
   emergencyContactNumber?: string;
   address?: string;
   ojtAdvisor?: mongoose.Types.ObjectId;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
   shiftConfig?: ShiftConfig;
   isAccepted: boolean;
   isActive: boolean;
@@ -52,6 +53,7 @@ const StudentSchema: Schema = new Schema({
   lastName: { type: String, required: true },
   middleName: { type: String },
   courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+  campusId: { type: Schema.Types.ObjectId, ref: 'Campus', required: true },
   department: { type: String, required: true }, // Department name from course
   hostEstablishment: { type: String, required: true },
   contactNumber: { type: String },
@@ -61,7 +63,7 @@ const StudentSchema: Schema = new Schema({
   ojtAdvisor: { type: Schema.Types.ObjectId, ref: 'Department' },
   shiftType: { 
     type: String, 
-    enum: ['regular', 'regular-split', 'graveyard', 'custom'],
+    enum: ['regular', 'regular-split', 'graveyard', 'custom', 'morning', 'afternoon', '1shift', '2shift'],
     default: 'regular'
   },
   shiftConfig: { type: ShiftConfigSchema },

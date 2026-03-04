@@ -24,6 +24,15 @@ interface Course {
   courseCode: string;
   courseName: string;
   departmentName: string;
+  campusName?: string;
+  campusId?: string;
+}
+
+interface Campus {
+  _id: string;
+  campusName: string;
+  campusCode: string;
+  location: string;
 }
 
 export default function RegisterPage() {
@@ -32,8 +41,10 @@ export default function RegisterPage() {
   const [activeTab, setActiveTab] = useState('student');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [isLoadingCampuses, setIsLoadingCampuses] = useState(true);
 
   // Student form state - department is auto-derived from course
   const [studentForm, setStudentForm] = useState({
@@ -45,6 +56,7 @@ export default function RegisterPage() {
     lastName: '',
     middleName: '',
     courseId: '',
+    campusId: '',
     departmentName: '', // Auto-filled from selected course
     hostEstablishment: '',
     contactNumber: '',
@@ -75,11 +87,24 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await fetch('/api/departments?forRegistration=true');
+        const response = await fetch('/api/courses?forRegistration=true');
         const data = await response.json();
         
-        if (response.ok && data.departments) {
-          setDepartments(data.departments);
+        if (response.ok && data.courses) {
+          // Extract unique departments from courses
+          const uniqueDepartments = data.courses.reduce((acc: any[], course: Course) => {
+            const existingDept = acc.find(dept => dept.departmentName === course.departmentName);
+            if (!existingDept) {
+              acc.push({
+                _id: course._id, // Use course ID as reference
+                departmentName: course.departmentName,
+                departmentCode: course.departmentName.split(' ').map(word => word[0]).join('').toUpperCase(), // Generate code from name
+                location: 'Main Campus', // Default location
+              });
+            }
+            return acc;
+          }, []);
+          setDepartments(uniqueDepartments);
         } else {
           toast.error('Failed to load departments');
         }
@@ -109,9 +134,28 @@ export default function RegisterPage() {
       }
     };
 
+    const fetchCampuses = async () => {
+      try {
+        const response = await fetch('/api/campuses?forRegistration=true');
+        const data = await response.json();
+        
+        if (response.ok && data.campuses) {
+          setCampuses(data.campuses);
+        } else {
+          toast.error('Failed to load campuses');
+        }
+      } catch (error) {
+        console.error('Error fetching campuses:', error);
+        toast.error('Failed to load campuses');
+      } finally {
+        setIsLoadingCampuses(false);
+      }
+    };
+
     if (activeTab === 'student' || activeTab === 'department') {
       fetchDepartments();
       fetchCourses();
+      fetchCampuses();
     }
   }, [activeTab]);
 
@@ -156,6 +200,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!studentForm.campusId) {
+      toast.error('Please select a campus');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -173,6 +222,7 @@ export default function RegisterPage() {
             lastName: studentForm.lastName,
             middleName: studentForm.middleName,
             courseId: studentForm.courseId,
+            campusId: studentForm.campusId,
             department: studentForm.departmentName, // Department derived from course
             hostEstablishment: studentForm.hostEstablishment,
             contactNumber: studentForm.contactNumber,
@@ -376,6 +426,32 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="campus">Campus *</Label>
+                  <Select
+                    value={studentForm.campusId}
+                    onValueChange={(value) => setStudentForm({ ...studentForm, campusId: value })}
+                    disabled={isLoadingCampuses}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingCampuses ? "Loading..." : "Select campus"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campuses.length === 0 ? (
+                        <SelectItem value="_none_" disabled>
+                          No campuses available
+                        </SelectItem>
+                      ) : (
+                        campuses.map((campus) => (
+                          <SelectItem key={campus._id} value={campus._id}>
+                            {campus.campusName} ({campus.campusCode})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="host-establishment">Host Establishment</Label>
                   <Input
                     id="host-establishment"
@@ -406,7 +482,11 @@ export default function RegisterPage() {
                         <SelectValue placeholder="Select shift type" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="morning">Morning (7:00 AM - 12:00 PM)</SelectItem>
+                        <SelectItem value="afternoon">Afternoon (1:00 PM - 5:00 PM)</SelectItem>
                         <SelectItem value="regular">Regular (7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM)</SelectItem>
+                        <SelectItem value="1shift">1 Shift Only (7:00 AM - 12:00 PM)</SelectItem>
+                        <SelectItem value="2shift">2 Shift Only (1:00 PM - 5:00 PM)</SelectItem>
                         <SelectItem value="graveyard">Graveyard (7:00 PM - 7:00 AM)</SelectItem>
                         <SelectItem value="custom">Custom Time</SelectItem>
                       </SelectContent>
@@ -519,12 +599,12 @@ export default function RegisterPage() {
                     disabled={isLoadingDepartments}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select existing department"} />
+                      <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select department from available courses"} />
                     </SelectTrigger>
                     <SelectContent>
                       {departments.length === 0 ? (
                         <SelectItem value="_none_" disabled>
-                          No approved departments available
+                          No departments available (no courses found)
                         </SelectItem>
                       ) : (
                         departments.map((dept) => (
@@ -536,7 +616,7 @@ export default function RegisterPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500">
-                    Select the department you are assigned to. Contact admin if your department is not listed.
+                    Departments are derived from available courses. Contact admin if your department is not listed.
                   </p>
                 </div>
 

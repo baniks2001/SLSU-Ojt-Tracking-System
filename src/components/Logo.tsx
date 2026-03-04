@@ -17,9 +17,9 @@ export default function Logo({ className = '', size = 'medium' }: LogoProps) {
   const { width, height } = dimensions[size];
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div className={`flex items-center justify-center bg-[#003366] rounded-lg ${className}`}>
       <Image
-        src="/state%20u%20logo.png"
+        src="/logo.png"
         alt="SLSU OJT Tracking System"
         width={width}
         height={height}
