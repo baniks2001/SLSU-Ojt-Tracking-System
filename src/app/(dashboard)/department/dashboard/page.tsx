@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Users, FileText, Bell, LogOut, UserCheck, UserX, CheckCircle, Clock } from 'lucide-react';
+import { Users, FileText, Bell, LogOut, UserCheck, UserX, CheckCircle, Clock, Shield, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -111,7 +111,15 @@ export default function DepartmentDashboard() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [scheduleRequests, setScheduleRequests] = useState<ScheduleRequest[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [supervisors, setSupervisors] = useState<any[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
+  const [newSupervisor, setNewSupervisor] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    contactNumber: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -133,6 +141,7 @@ export default function DepartmentDashboard() {
       setUser(userData);
       fetchStudents(userData.details.departmentName);
       fetchAnnouncements(userData.id);
+      fetchSupervisors(userData.details._id);
     } catch (error) {
       router.push('/login');
       return;
@@ -292,6 +301,18 @@ export default function DepartmentDashboard() {
     }
   };
 
+  const fetchSupervisors = async (departmentId: string) => {
+    try {
+      const response = await fetch(`/api/supervisors?departmentId=${departmentId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSupervisors(data.supervisors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching supervisors:', error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -307,9 +328,63 @@ export default function DepartmentDashboard() {
     );
   }
 
-  const pendingStudents = students.filter(s => !s.isAccepted);
-  const activeStudents = students.filter(s => s.isAccepted);
-  const pendingRequests = scheduleRequests.filter(r => r.status === 'pending');
+  const handleCreateSupervisor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/supervisors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newSupervisor,
+          departmentId: user.details._id,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('OJT Supervisor account created successfully');
+        setNewSupervisor({ email: '', password: '', firstName: '', lastName: '', contactNumber: '' });
+        fetchSupervisors(user.details._id);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create supervisor');
+      }
+    } catch (error) {
+      console.error('Error creating supervisor:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSupervisor = async (supervisorId: string) => {
+    if (!confirm('Are you sure you want to delete this supervisor account?')) return;
+
+    try {
+      const response = await fetch(`/api/supervisors?id=${supervisorId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Supervisor account deleted successfully');
+        if (user) {
+          fetchSupervisors(user.details._id);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete supervisor');
+      }
+    } catch (error) {
+      console.error('Error deleting supervisor:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const pendingStudents = students.filter((s: Student) => !s.isAccepted);
+  const activeStudents = students.filter((s: Student) => s.isAccepted);
+  const pendingRequests = scheduleRequests.filter((r: ScheduleRequest) => r.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50">
