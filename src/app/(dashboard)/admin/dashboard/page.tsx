@@ -395,6 +395,13 @@ export default function AdminDashboard() {
     }
   };
 
+  // Refetch courses when courses tab is selected
+  useEffect(() => {
+    if (activeTab === 'courses') {
+      fetchCourses();
+    }
+  }, [activeTab]);
+
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -407,13 +414,6 @@ export default function AdminDashboard() {
   const departmentUsers = users.filter(u => u.accountType === 'department');
   const adminUsers = users.filter(u => ['admin', 'superadmin'].includes(u.accountType));
   const activeUsers = users.filter(u => u.isActive);
-
-  // Refetch courses when courses tab is selected
-  useEffect(() => {
-    if (activeTab === 'courses') {
-      fetchCourses();
-    }
-  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-gray-50">
