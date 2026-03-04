@@ -363,7 +363,7 @@ export default function RegisterPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {courses.length === 0 ? (
-                        <SelectItem value="no-courses" disabled>
+                        <SelectItem value="_none_" disabled>
                           No courses available
                         </SelectItem>
                       ) : (
@@ -499,7 +499,7 @@ export default function RegisterPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {departments.length === 0 ? (
-                        <SelectItem value="no-depts" disabled>
+                        <SelectItem value="_none_" disabled>
                           No approved departments available
                         </SelectItem>
                       ) : (
