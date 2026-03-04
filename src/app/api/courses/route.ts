@@ -12,6 +12,11 @@ export async function GET(request: Request) {
     
     let query: any = { isActive: true };
     
+    if (forRegistration === 'true') {
+      // For registration - only get active courses
+      query = { isActive: true };
+    }
+    
     const courses = await Course.find(query)
       .populate('campusId', 'campusName campusCode')
       .select('-__v')

@@ -171,8 +171,13 @@ export default function AdminDashboard() {
       const response = await fetch('/api/courses');
       if (response.ok) {
         const data = await response.json();
-        // Enrich courses with campus names
-        const coursesWithCampus = (data.courses || []).map((course: Course) => {
+        // Handle both populated and non-populated campusId
+        const coursesWithCampus = (data.courses || []).map((course: any) => {
+          // If campusId is already populated, use it
+          if (course.campusId && typeof course.campusId === 'object') {
+            return { ...course, campusName: course.campusId.campusName || 'Unknown' };
+          }
+          // Fallback: if campusId is a string, find it in campuses array
           const campus = campuses.find(c => c._id === course.campusId);
           return { ...course, campusName: campus?.campusName || 'Unknown' };
         });
