@@ -71,6 +71,17 @@ export default function AdminDashboard() {
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', accountType: 'admin' });
   const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', totalHours: 500 });
+  const [newDepartment, setNewDepartment] = useState({
+    email: '',
+    password: '',
+    departmentName: '',
+    departmentCode: '',
+    location: '',
+    contactEmail: '',
+    contactNumber: '',
+    ojtAdvisorName: '',
+    ojtAdvisorPosition: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -273,6 +284,58 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error creating course:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          email: newDepartment.email,
+          password: newDepartment.password,
+          accountType: 'department',
+          departmentData: {
+            departmentName: newDepartment.departmentName,
+            departmentCode: newDepartment.departmentCode,
+            location: newDepartment.location,
+            contactEmail: newDepartment.contactEmail,
+            contactNumber: newDepartment.contactNumber,
+            ojtAdvisorName: newDepartment.ojtAdvisorName,
+            ojtAdvisorPosition: newDepartment.ojtAdvisorPosition,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Department created successfully. It will be pending approval.');
+        setNewDepartment({
+          email: '',
+          password: '',
+          departmentName: '',
+          departmentCode: '',
+          location: '',
+          contactEmail: '',
+          contactNumber: '',
+          ojtAdvisorName: '',
+          ojtAdvisorPosition: '',
+        });
+        fetchAllUsers();
+        fetchPendingDepartments();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create department');
+      }
+    } catch (error) {
+      console.error('Error creating department:', error);
       toast.error('An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -650,6 +713,117 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="departments" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Department Account</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCreateDepartment} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-email">Email</Label>
+                      <Input
+                        id="dept-email"
+                        type="email"
+                        value={newDepartment.email}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, email: e.target.value })}
+                        placeholder="Enter department email"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-password">Password</Label>
+                      <Input
+                        id="dept-password"
+                        type="password"
+                        value={newDepartment.password}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, password: e.target.value })}
+                        placeholder="Enter password"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-name">Department Name</Label>
+                      <Input
+                        id="dept-name"
+                        value={newDepartment.departmentName}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, departmentName: e.target.value })}
+                        placeholder="e.g., College of Computer Studies"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-code">Department Code</Label>
+                      <Input
+                        id="dept-code"
+                        value={newDepartment.departmentCode}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, departmentCode: e.target.value })}
+                        placeholder="e.g., CCS"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-location">Location</Label>
+                      <Input
+                        id="dept-location"
+                        value={newDepartment.location}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, location: e.target.value })}
+                        placeholder="e.g., Main Campus, Building A"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-contact-email">Contact Email</Label>
+                      <Input
+                        id="dept-contact-email"
+                        type="email"
+                        value={newDepartment.contactEmail}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, contactEmail: e.target.value })}
+                        placeholder="e.g., dept@slsu.edu.ph"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-contact-number">Contact Number</Label>
+                      <Input
+                        id="dept-contact-number"
+                        value={newDepartment.contactNumber}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, contactNumber: e.target.value })}
+                        placeholder="e.g., +63 123 456 7890"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dept-advisor-name">OJT Advisor Name</Label>
+                      <Input
+                        id="dept-advisor-name"
+                        value={newDepartment.ojtAdvisorName}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorName: e.target.value })}
+                        placeholder="e.g., Dr. Juan Dela Cruz"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="dept-advisor-position">OJT Advisor Position</Label>
+                      <Input
+                        id="dept-advisor-position"
+                        value={newDepartment.ojtAdvisorPosition}
+                        onChange={(e) => setNewDepartment({ ...newDepartment, ojtAdvisorPosition: e.target.value })}
+                        placeholder="e.g., Department Chair"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-[#003366] hover:bg-[#002244]"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Department Account'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>All Departments</CardTitle>
