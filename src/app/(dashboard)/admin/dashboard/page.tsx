@@ -944,7 +944,7 @@ export default function AdminDashboard() {
             {isSuperAdmin && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Create New Admin/Department Account</CardTitle>
+                  <CardTitle>Create New Admin Account</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleCreateAdmin} className="space-y-4">
@@ -982,7 +982,6 @@ export default function AdminDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="department">Department</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

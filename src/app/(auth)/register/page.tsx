@@ -52,6 +52,8 @@ export default function RegisterPage() {
     emergencyContactNumber: '',
     address: '',
     shiftType: 'regular',
+    customStartTime: '',
+    customEndTime: '',
   });
 
   // Department form state
@@ -178,6 +180,8 @@ export default function RegisterPage() {
             emergencyContactNumber: studentForm.emergencyContactNumber,
             address: studentForm.address,
             shiftType: studentForm.shiftType,
+            customStartTime: studentForm.customStartTime,
+            customEndTime: studentForm.customEndTime,
           },
         }),
       });
@@ -404,10 +408,36 @@ export default function RegisterPage() {
                       <SelectContent>
                         <SelectItem value="regular">Regular (7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM)</SelectItem>
                         <SelectItem value="graveyard">Graveyard (7:00 PM - 7:00 AM)</SelectItem>
+                        <SelectItem value="custom">Custom Time</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {studentForm.shiftType === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-start-time">Custom Start Time</Label>
+                      <Input
+                        id="custom-start-time"
+                        type="time"
+                        value={studentForm.customStartTime}
+                        onChange={(e) => setStudentForm({ ...studentForm, customStartTime: e.target.value })}
+                        required={studentForm.shiftType === 'custom'}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-end-time">Custom End Time</Label>
+                      <Input
+                        id="custom-end-time"
+                        type="time"
+                        value={studentForm.customEndTime}
+                        onChange={(e) => setStudentForm({ ...studentForm, customEndTime: e.target.value })}
+                        required={studentForm.shiftType === 'custom'}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="address">Address</Label>
