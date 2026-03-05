@@ -15,7 +15,7 @@ export interface IAttendance extends Document {
   afternoonOutImage?: string;
   eveningInImage?: string;
   eveningOutImage?: string;
-  shiftType: 'regular' | 'graveyard';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
   totalHours: number;
   undertimeMinutes: number;
   status: 'present' | 'absent' | 'late' | 'half_day';
@@ -41,7 +41,7 @@ const AttendanceSchema: Schema = new Schema({
   eveningOutImage: { type: String },
   shiftType: { 
     type: String, 
-    enum: ['regular', 'graveyard'],
+    enum: ['regular', 'regular-split', 'graveyard', 'custom', 'morning', 'afternoon', '1shift', '2shift'],
     default: 'regular'
   },
   totalHours: { type: Number, default: 0 },

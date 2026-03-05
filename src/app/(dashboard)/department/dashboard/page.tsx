@@ -17,6 +17,73 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Logo from '@/components/Logo';
 
+// Add custom styles for better visibility
+const customStyles = `
+  .btn-visible-outline {
+    border: 2px solid #003366 !important;
+    outline: 2px solid #003366 !important;
+    outline-offset: 2px !important;
+  }
+  
+  .btn-visible-outline:hover {
+    border-color: #002244 !important;
+    outline-color: #002244 !important;
+    background-color: #f0f4f8 !important;
+  }
+  
+  .btn-visible-outline:focus {
+    border-color: #003366 !important;
+    outline-color: #003366 !important;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.3) !important;
+  }
+  
+  .table-visible-outline {
+    border: 2px solid #e2e8f0 !important;
+    outline: 1px solid #cbd5e1 !important;
+  }
+  
+  .table-visible-outline th {
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    font-weight: 600 !important;
+  }
+  
+  .table-visible-outline td {
+    border: 1px solid #e2e8f0 !important;
+  }
+  
+  .table-visible-outline tr:hover {
+    background-color: #f1f5f9 !important;
+  }
+  
+  .image-btn {
+    border: 2px solid #3b82f6 !important;
+    outline: 1px solid #2563eb !important;
+    color: #1e40af !important;
+    font-weight: 500 !important;
+    padding: 6px 12px !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .image-btn:hover {
+    border-color: #2563eb !important;
+    background-color: #eff6ff !important;
+    color: #1e40af !important;
+  }
+  
+  .image-btn:focus {
+    border-color: #1e40af !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+  }
+`;
+
+// Inject styles into the document
+if (typeof window !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = customStyles;
+  document.head.appendChild(styleSheet);
+}
+
 interface DepartmentData {
   _id: string;
   departmentName: string;
@@ -48,7 +115,7 @@ interface Student {
   hostEstablishment: string;
   contactNumber?: string;
   address?: string;
-  shiftType: 'regular' | 'graveyard';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
   isAccepted: boolean;
   isActive: boolean;
   createdAt: string;
@@ -100,7 +167,7 @@ interface AttendanceRecord {
   eveningInImage?: string;
   eveningOutImage?: string;
   totalHours: number;
-  shiftType: 'regular' | 'graveyard';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
 }
 
 export default function DepartmentDashboard() {
@@ -113,6 +180,9 @@ export default function DepartmentDashboard() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [scheduleRequests, setScheduleRequests] = useState<ScheduleRequest[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'list' | 'attendance'>('list');
+  const [selectedStudentData, setSelectedStudentData] = useState<Student | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [departments, setDepartments] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -193,6 +263,62 @@ export default function DepartmentDashboard() {
       console.error('Error fetching schedule requests:', error);
     }
   };
+
+  // Helper functions to determine which columns to show based on shift type
+  const shouldShowMorningColumns = (shiftType: string) => {
+    return ['regular', 'morning', '1shift', '2shift'].includes(shiftType);
+  };
+
+  const shouldShowAfternoonColumns = (shiftType: string) => {
+    return ['regular', 'afternoon', '1shift', '2shift'].includes(shiftType);
+  };
+
+  const shouldShowEveningColumns = (shiftType: string) => {
+    return ['graveyard'].includes(shiftType);
+  };
+
+  const getShiftTypeDisplay = (shiftType: string) => {
+    const shiftMap: { [key: string]: string } = {
+      'regular': 'Regular',
+      'regular-split': 'Regular Split',
+      'morning': 'Morning Only',
+      'afternoon': 'Afternoon Only', 
+      '1shift': 'Single Shift',
+      '2shift': 'Two Shifts',
+      'graveyard': 'Graveyard',
+      'custom': 'Custom'
+    };
+    return shiftMap[shiftType] || shiftType;
+  };
+
+  const getEffectiveShiftType = (record: any) => {
+    // Try to get shift type from multiple sources
+    return record.studentId?.shiftType || 
+           record.shiftType || 
+           'regular'; // fallback
+  };
+
+  const handleViewStudentAttendance = (student: Student) => {
+    setSelectedStudentData(student);
+    setSelectedStudent(student._id);
+    setViewMode('attendance');
+    fetchAttendance(student._id);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedStudentData(null);
+    setSelectedStudent('');
+    setAttendanceRecords([]);
+  };
+
+  const filteredStudents = students.filter(student => {
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+    const studentId = student.studentId.toLowerCase();
+    
+    return fullName.includes(searchLower) || studentId.includes(searchLower);
+  });
 
   const fetchAttendance = async (studentId?: string) => {
     try {
@@ -562,115 +688,358 @@ export default function DepartmentDashboard() {
           <TabsContent value="attendance" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Student Attendance Records</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Student Attendance Records</span>
+                  {viewMode === 'attendance' && selectedStudentData && (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleBackToList}
+                      className="flex items-center btn-visible-outline"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Back to Student List
+                    </Button>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
-                  <Label htmlFor="student-select">Select Student</Label>
-                  <select
-                    id="student-select"
-                    className="w-full p-2 border rounded mt-1"
-                    value={selectedStudent}
-                    onChange={(e) => {
-                      setSelectedStudent(e.target.value);
-                      fetchAttendance(e.target.value || undefined);
-                    }}
-                  >
-                    <option value="">All Students</option>
-                    {activeStudents.map((student) => (
-                      <option key={student._id} value={student._id}>
-                        {student.studentId} - {student.firstName} {student.lastName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {attendanceRecords.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No attendance records found.
+                {viewMode === 'list' ? (
+                  // Student List View
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600 mb-4">
+                      Select a student to view their detailed attendance records.
+                    </div>
+                    
+                    {/* Search Bar */}
+                    <div className="mb-4">
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          placeholder="Search students by name or ID..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-7 0 0 0-11 7m11 7v4a7 7 0 0011-7h-4a7 7 0 00-7 7v-4a7 7 0 00-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Search Results Count */}
+                    {searchTerm && (
+                      <div className="mb-4 text-sm text-gray-600">
+                        Found {filteredStudents.length} student{filteredStudents.length === 1 ? '' : 's'} matching "{searchTerm}"
+                      </div>
+                    )}
+                    
+                    <div className="grid gap-4">
+                      {filteredStudents.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500 col-span-full">
+                          {searchTerm ? `No students found matching "${searchTerm}"` : 'No active students found.'}
+                        </div>
+                      ) : (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {filteredStudents.map((student) => (
+                            <Card key={student._id} className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-4">
+                                  <Avatar className="h-12 w-12">
+                                    <AvatarFallback>
+                                      {student.firstName?.[0]}{student.lastName?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold">
+                                      {student.firstName} {student.lastName}
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                      {student.studentId}
+                                    </p>
+                                    <div className="flex items-center space-x-2 mt-2">
+                                      <Badge variant="outline">
+                                        {getShiftTypeDisplay(student.shiftType || 'regular')}
+                                      </Badge>
+                                      <Badge 
+                                        variant={student.status === 'active' ? 'default' : 'secondary'}
+                                        className="text-xs"
+                                      >
+                                        {student.status}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t">
+                                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                                    <div>
+                                      <span className="font-medium">Course:</span> {student.course}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Contact:</span> {student.contactNumber || 'N/A'}
+                                    </div>
+                                    <div className="col-span-2">
+                                      <span className="font-medium">Host Establishment:</span> {student.hostEstablishment}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                  <Button 
+                                    onClick={() => handleViewStudentAttendance(student)}
+                                    className="bg-[#003366] hover:bg-[#002244] btn-visible-outline"
+                                  >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    View Attendance
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Morning In</TableHead>
-                        <TableHead>Morning Out</TableHead>
-                        <TableHead>Afternoon In</TableHead>
-                        <TableHead>Afternoon Out</TableHead>
-                        <TableHead>Total Hours</TableHead>
-                        <TableHead>Images</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {attendanceRecords.map((record) => (
-                        <TableRow key={record._id}>
-                          <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            {record.morningIn ? new Date(record.morningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {record.morningOut ? new Date(record.morningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {record.afternoonIn ? new Date(record.afternoonIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {record.afternoonOut ? new Date(record.afternoonOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                          </TableCell>
-                          <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-1">
-                              {record.morningInImage && (
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">AM In</Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-3xl">
-                                    <DialogTitle>Morning Clock In Image</DialogTitle>
-                                    <img src={record.morningInImage} alt="Morning In" className="w-full" />
-                                  </DialogContent>
-                                </Dialog>
+                  // Individual Student Attendance View
+                  <div className="space-y-4">
+                    {selectedStudentData && (
+                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback>
+                              {selectedStudentData.firstName?.[0]}{selectedStudentData.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold">
+                              {selectedStudentData.firstName} {selectedStudentData.lastName}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {selectedStudentData.studentId} • {getShiftTypeDisplay(selectedStudentData.shiftType || 'regular')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {attendanceRecords.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No attendance records found for this student.
+                      </div>
+                    ) : (
+                      <Table className="table-visible-outline">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            {shouldShowMorningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Morning In</TableHead>}
+                            {shouldShowMorningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Morning Out</TableHead>}
+                            {shouldShowAfternoonColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Afternoon In</TableHead>}
+                            {shouldShowAfternoonColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Afternoon Out</TableHead>}
+                            {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening In</TableHead>}
+                            {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening Out</TableHead>}
+                            <TableHead>Total Hours</TableHead>
+                            <TableHead>Images</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {attendanceRecords.map((record) => {
+                            const studentShiftType = getEffectiveShiftType(record);
+                            return (
+                            <TableRow key={record._id}>
+                              <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                              {shouldShowMorningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.morningIn ? new Date(record.morningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
                               )}
-                              {record.morningOutImage && (
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">AM Out</Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-3xl">
-                                    <DialogTitle>Morning Clock Out Image</DialogTitle>
-                                    <img src={record.morningOutImage} alt="Morning Out" className="w-full" />
-                                  </DialogContent>
-                                </Dialog>
+                              {shouldShowMorningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.morningOut ? new Date(record.morningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
                               )}
-                              {record.afternoonInImage && (
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">PM In</Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-3xl">
-                                    <DialogTitle>Afternoon Clock In Image</DialogTitle>
-                                    <img src={record.afternoonInImage} alt="Afternoon In" className="w-full" />
-                                  </DialogContent>
-                                </Dialog>
+                              {shouldShowAfternoonColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.afternoonIn ? new Date(record.afternoonIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
                               )}
-                              {record.afternoonOutImage && (
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">PM Out</Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-3xl">
-                                    <DialogTitle>Afternoon Clock Out Image</DialogTitle>
-                                    <img src={record.afternoonOutImage} alt="Afternoon Out" className="w-full" />
-                                  </DialogContent>
-                                </Dialog>
+                              {shouldShowAfternoonColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.afternoonOut ? new Date(record.afternoonOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
                               )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                              {shouldShowEveningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.eveningIn ? new Date(record.eveningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              {shouldShowEveningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.eveningOut ? new Date(record.eveningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>MORNING IN
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Morning Clock In Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.morningIn).toLocaleString()}
+                                          </p>
+                                          <img 
+                                            src={record.morningInImage} 
+                                            alt="Morning In" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowMorningColumns(studentShiftType) && record.morningOutImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>MORNING OUT
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Morning Clock Out Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.morningOut).toLocaleString()}
+                                          </p>
+                                          <img 
+                                            src={record.morningOutImage} 
+                                            alt="Morning Out" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonInImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>AFTERNOON IN
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Afternoon Clock In Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.afternoonIn).toLocaleString()}
+                                          </p>
+                                          <img 
+                                            src={record.afternoonInImage} 
+                                            alt="Afternoon In" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonOutImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>AFTERNOON OUT
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Afternoon Clock Out Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.afternoonOut).toLocaleString()}
+                                          </p>
+                                          <img 
+                                            src={record.afternoonOutImage} 
+                                            alt="Afternoon Out" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowEveningColumns(studentShiftType) && record.eveningInImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>EVENING IN
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Evening Clock In Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.eveningIn).toLocaleString()}
+                                          </p>
+                                          <img 
+                                            src={record.eveningInImage} 
+                                            alt="Evening In" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowEveningColumns(studentShiftType) && record.eveningOutImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>EVENING OUT
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Evening Clock Out Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.eveningOut).toLocaleString()}
+                                          </p>
+                                          <img 
+                                            src={record.eveningOutImage} 
+                                            alt="Evening Out" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

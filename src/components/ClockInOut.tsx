@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Camera, Clock, LogIn, LogOut } from 'lucide-react';
+import { Camera, Clock, LogIn, LogOut, Calendar, CheckCircle, Lock } from 'lucide-react';
 
 interface ClockInOutProps {
   studentId: string;
@@ -42,12 +43,63 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     fetchTodayRecord();
   }, [studentId]);
+
+  // Update nextAction when todayRecord changes
+  useEffect(() => {
+    setNextAction(getNextClockAction());
+  }, [todayRecord, shiftType]);
+
+  // Update shift status based on current time
+  useEffect(() => {
+    const updateShiftStatus = () => {
+      const status = getShiftStatus();
+      setCurrentShiftStatus(status);
+      // Also update nextAction when shift status changes
+      setNextAction(getNextClockAction());
+    };
+
+    // Only update on client side
+    if (typeof window !== 'undefined') {
+      updateShiftStatus();
+    }
+    
+    // Update every 5 seconds for real-time tracking
+    const interval = setInterval(updateShiftStatus, 5000);
+    return () => clearInterval(interval);
+  }, [shiftType, todayRecord]); // Add todayRecord as dependency
+
+  // Update time-based values only on client side to prevent hydration issues
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      setCurrentDateTime(now.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }));
+      setNextAction(getNextClockAction());
+    };
+    
+    if (typeof window !== 'undefined') {
+      updateDateTime(); // Set initial values only on client
+    }
+    
+    // Update every 5 seconds for more responsive time tracking
+    const interval = setInterval(updateDateTime, 5000);
+    return () => clearInterval(interval);
+  }, [todayRecord, shiftType]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -67,6 +119,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         const data = await response.json();
         if (data.attendance && data.attendance.length > 0) {
           setTodayRecord(data.attendance[0]);
+        } else {
+          setTodayRecord(null);
         }
       }
     } catch (error) {
@@ -101,6 +155,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
 
     setCurrentAction(action);
+    setShowCameraModal(true);
     // Start camera capture flow
     await startCamera();
   };
@@ -116,10 +171,10 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         ctx.drawImage(video, 0, 0);
         const imageData = canvas.toDataURL('image/jpeg');
         setCapturedImage(imageData);
-        // Auto-execute clock action after capture
-        if (currentAction) {
-          executeClockAction(currentAction);
-        }
+        // Close verification modal and open review modal
+        setShowCameraModal(false);
+        setShowReviewModal(true);
+        stopCamera();
       }
     }
   };
@@ -150,6 +205,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         toast.success(`${actionText} recorded successfully!`);
         setCapturedImage(null);
         setShowCamera(false);
+        setShowCameraModal(false);
+        setShowReviewModal(false);
         stopCamera();
         setCurrentAction(null);
         setCountdown(5); // Start 5 second countdown
@@ -165,18 +222,453 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
   };
 
-  const getClockButtonState = (action: string) => {
-    if (!todayRecord) return false;
-    switch (action) {
-      case 'morningIn': return !!todayRecord.morningIn;
-      case 'morningOut': return !!todayRecord.morningOut;
-      case 'afternoonIn': return !!todayRecord.afternoonIn;
-      case 'afternoonOut': return !!todayRecord.afternoonOut;
-      case 'eveningIn': return !!todayRecord.eveningIn;
-      case 'eveningOut': return !!todayRecord.eveningOut;
-      default: return false;
+  const getShiftTimes = () => {
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    
+    switch (shiftType) {
+      case 'regular':
+        return {
+          morningStart: 7 * 60,    // 7:00 AM
+          morningEnd: 12 * 60,     // 12:00 PM
+          afternoonStart: 13 * 60, // 1:00 PM
+          afternoonEnd: 17 * 60,   // 5:00 PM
+        };
+      case 'morning':
+        return {
+          morningStart: 7 * 60,    // 7:00 AM
+          morningEnd: 12 * 60,     // 12:00 PM
+        };
+      case 'afternoon':
+        return {
+          afternoonStart: 13 * 60, // 1:00 PM
+          afternoonEnd: 17 * 60,   // 5:00 PM
+        };
+      case '1shift':
+        return {
+          morningStart: 7 * 60,    // 7:00 AM
+          morningEnd: 17 * 60,     // 5:00 PM
+        };
+      case '2shift':
+        return {
+          morningStart: 7 * 60,    // 7:00 AM
+          morningEnd: 11 * 60,     // 11:00 AM
+          afternoonStart: 12 * 60, // 12:00 PM
+          afternoonEnd: 17 * 60,   // 5:00 PM
+        };
+      case 'graveyard':
+        return {
+          eveningStart: 19 * 60,   // 7:00 PM
+          eveningEnd: 7 * 60,     // 7:00 AM (next day)
+        };
+      case 'custom':
+        if (shiftConfig) {
+          return {
+            morningStart: shiftConfig.morningStart ? parseInt(shiftConfig.morningStart.split(':')[0]) * 60 + parseInt(shiftConfig.morningStart.split(':')[1]) : undefined,
+            morningEnd: shiftConfig.morningEnd ? parseInt(shiftConfig.morningEnd.split(':')[0]) * 60 + parseInt(shiftConfig.morningEnd.split(':')[1]) : undefined,
+            afternoonStart: shiftConfig.afternoonStart ? parseInt(shiftConfig.afternoonStart.split(':')[0]) * 60 + parseInt(shiftConfig.afternoonStart.split(':')[1]) : undefined,
+            afternoonEnd: shiftConfig.afternoonEnd ? parseInt(shiftConfig.afternoonEnd.split(':')[0]) * 60 + parseInt(shiftConfig.afternoonEnd.split(':')[1]) : undefined,
+            eveningStart: shiftConfig.eveningStart ? parseInt(shiftConfig.eveningStart.split(':')[0]) * 60 + parseInt(shiftConfig.eveningStart.split(':')[1]) : undefined,
+            eveningEnd: shiftConfig.eveningEnd ? parseInt(shiftConfig.eveningEnd.split(':')[0]) * 60 + parseInt(shiftConfig.eveningEnd.split(':')[1]) : undefined,
+          };
+        }
+        break;
+      default:
+        return {
+          morningStart: 7 * 60,
+          morningEnd: 12 * 60,
+          afternoonStart: 13 * 60,
+          afternoonEnd: 17 * 60,
+        };
+    }
+    return {};
+  };
+
+  const isShiftTimeWindowPassed = (shift: 'morning' | 'afternoon' | 'evening') => {
+    // Prevent hydration issues by running only on client
+    if (typeof window === 'undefined') return false;
+    
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const shiftTimes = getShiftTimes();
+    
+    // Add 1-hour grace period (60 minutes) to shift end times
+    switch (shift) {
+      case 'morning':
+        return shiftTimes.morningEnd && currentTime > (shiftTimes.morningEnd + 60);
+      case 'afternoon':
+        return shiftTimes.afternoonEnd && currentTime > (shiftTimes.afternoonEnd + 60);
+      case 'evening':
+        return shiftTimes.eveningEnd && currentTime > (shiftTimes.eveningEnd + 60);
+      default:
+        return false;
     }
   };
+
+  const getCurrentActiveShift = () => {
+    // Prevent hydration issues by running only on client
+    if (typeof window === 'undefined') return null;
+    
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const shiftTimes = getShiftTimes();
+    
+    // Check if we're in graveyard shift (crosses midnight)
+    if (shiftType === 'graveyard' && shiftTimes.eveningStart !== undefined) {
+      if (currentTime >= shiftTimes.eveningStart || currentTime < (shiftTimes.eveningEnd || 7 * 60)) {
+        return 'evening';
+      }
+    }
+    
+    // Check morning shift (with 1-hour grace period)
+    if (shiftTimes.morningStart !== undefined && shiftTimes.morningEnd !== undefined) {
+      if (currentTime >= shiftTimes.morningStart && currentTime <= (shiftTimes.morningEnd + 60)) {
+        return 'morning';
+      }
+    }
+    
+    // Check afternoon shift (with 1-hour grace period)
+    if (shiftTimes.afternoonStart !== undefined && shiftTimes.afternoonEnd !== undefined) {
+      if (currentTime >= shiftTimes.afternoonStart && currentTime <= (shiftTimes.afternoonEnd + 60)) {
+        return 'afternoon';
+      }
+    }
+    
+    // Check evening shift (non-graveyard, with 1-hour grace period)
+    if (shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined && shiftType !== 'graveyard') {
+      if (currentTime >= shiftTimes.eveningStart && currentTime <= (shiftTimes.eveningEnd + 60)) {
+        return 'evening';
+      }
+    }
+    
+    return null; // No active shift
+  };
+
+  const getShiftStatus = () => {
+    // Prevent hydration issues by running only on client
+    if (typeof window === 'undefined') return null;
+    
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const shiftTimes = getShiftTimes();
+    
+    let status: 'active' | 'upcoming' | 'completed' | 'expired' | 'locked' | 'morning-locked' | 'afternoon-locked' = 'active';
+    let currentShift: string | null = null;
+    let nextShiftTime: string | null = null;
+    let timeRemaining: string | null = null;
+    let isLocked = false;
+    let isMorningLocked = false;
+    let isAfternoonLocked = false;
+
+    // Helper function to format minutes to time
+    const formatMinutes = (minutes: number) => {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+      return `${displayHours}:${mins.toString().padStart(2, '0')} ${period}`;
+    };
+
+    // Helper function to calculate time difference
+    const getTimeRemaining = (targetTime: number) => {
+      const diff = targetTime - currentTime;
+      if (diff > 0) {
+        const hours = Math.floor(diff / 60);
+        const minutes = diff % 60;
+        return `${hours}h ${minutes}m`;
+      }
+      return null;
+    };
+
+    // Enhanced shift logic with separate lock states
+    switch (shiftType) {
+      case 'graveyard':
+        if (shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined) {
+          // Graveyard shift crosses midnight (7 PM - 7 AM next day)
+          if (currentTime >= shiftTimes.eveningStart || currentTime < (shiftTimes.eveningEnd || 7 * 60)) {
+            currentShift = 'Evening';
+            status = 'active';
+            timeRemaining = getTimeRemaining((shiftTimes.eveningEnd || 7 * 60) + (currentTime < (shiftTimes.eveningEnd || 7 * 60) ? 24 * 60 : 0));
+          } else {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.eveningStart);
+            timeRemaining = getTimeRemaining(shiftTimes.eveningStart);
+          }
+        }
+        break;
+
+      case 'morning':
+        if (shiftTimes.morningStart !== undefined && shiftTimes.morningEnd !== undefined) {
+          if (currentTime >= shiftTimes.morningStart && currentTime <= (shiftTimes.morningEnd + 60)) {
+            currentShift = 'Morning';
+            status = 'active';
+            timeRemaining = getTimeRemaining(shiftTimes.morningEnd + 60);
+          } else if (currentTime < shiftTimes.morningStart) {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.morningStart);
+            timeRemaining = getTimeRemaining(shiftTimes.morningStart);
+          } else {
+            // Morning shift has expired
+            currentShift = 'Morning';
+            status = 'morning-locked';
+            isMorningLocked = true;
+            timeRemaining = null;
+          }
+        }
+        break;
+
+      case 'afternoon':
+        if (shiftTimes.afternoonStart !== undefined && shiftTimes.afternoonEnd !== undefined) {
+          if (currentTime >= shiftTimes.afternoonStart && currentTime <= (shiftTimes.afternoonEnd + 60)) {
+            currentShift = 'Afternoon';
+            status = 'active';
+            timeRemaining = getTimeRemaining(shiftTimes.afternoonEnd + 60);
+          } else if (currentTime < shiftTimes.afternoonStart) {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.afternoonStart);
+            timeRemaining = getTimeRemaining(shiftTimes.afternoonStart);
+          } else {
+            // Afternoon shift has expired
+            currentShift = 'Afternoon';
+            status = 'afternoon-locked';
+            isAfternoonLocked = true;
+            timeRemaining = null;
+          }
+        }
+        break;
+
+      case '1shift':
+        if (shiftTimes.morningStart !== undefined && shiftTimes.morningEnd !== undefined) {
+          if (currentTime >= shiftTimes.morningStart && currentTime <= (shiftTimes.morningEnd + 60)) {
+            currentShift = 'Shift';
+            status = 'active';
+            timeRemaining = getTimeRemaining(shiftTimes.morningEnd + 60);
+          } else if (currentTime < shiftTimes.morningStart) {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.morningStart);
+            timeRemaining = getTimeRemaining(shiftTimes.morningStart);
+          } else {
+            // Single shift has expired
+            currentShift = 'Shift';
+            status = 'locked';
+            isLocked = true;
+            timeRemaining = null;
+          }
+        }
+        break;
+
+      case 'regular':
+      case '2shift':
+        // Enhanced logic for regular/2shift types
+        if (currentTime >= shiftTimes.morningStart && currentTime <= (shiftTimes.morningEnd + 60)) {
+          // Morning shift is active
+          currentShift = 'Morning';
+          status = 'active';
+          timeRemaining = getTimeRemaining(shiftTimes.morningEnd + 60);
+        } else if (currentTime < shiftTimes.morningStart) {
+          // Morning shift is upcoming
+          status = 'upcoming';
+          nextShiftTime = formatMinutes(shiftTimes.morningStart);
+          timeRemaining = getTimeRemaining(shiftTimes.morningStart);
+        } else if (currentTime >= shiftTimes.morningEnd + 60 && currentTime < shiftTimes.afternoonStart) {
+          // Morning shift completed, afternoon shift is upcoming
+          if (shiftTimes.afternoonStart !== undefined && shiftTimes.afternoonEnd !== undefined) {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.afternoonStart);
+            timeRemaining = getTimeRemaining(shiftTimes.afternoonStart);
+            // Morning shift is now locked
+            isMorningLocked = true;
+          } else {
+            // No afternoon shift available, morning shift is completed
+            currentShift = null;
+            status = 'completed';
+            isLocked = true;
+            timeRemaining = null;
+          }
+        } else if (currentTime >= shiftTimes.afternoonStart && currentTime <= (shiftTimes.afternoonEnd + 60)) {
+          // Afternoon shift is active
+          currentShift = 'Afternoon';
+          status = 'active';
+          timeRemaining = getTimeRemaining(shiftTimes.afternoonEnd + 60);
+          // Morning shift should be locked now
+          isMorningLocked = true;
+        } else if (currentTime >= shiftTimes.afternoonEnd + 60) {
+          // Afternoon shift has expired
+          currentShift = 'Afternoon';
+          status = 'afternoon-locked';
+          isAfternoonLocked = true;
+          timeRemaining = null;
+          // Morning shift should also be locked
+          isMorningLocked = true;
+        } else {
+          // Both shifts completed
+          currentShift = null;
+          status = 'completed';
+          isLocked = true;
+          timeRemaining = null;
+        }
+        break;
+
+      default:
+        status = 'expired';
+        isLocked = true;
+        break;
+    }
+
+    return {
+      shift: currentShift,
+      status,
+      nextShiftTime,
+      timeRemaining,
+      isLocked,
+      isMorningLocked,
+      isAfternoonLocked
+    };
+  };
+
+  const getNextClockAction = () => {
+    const currentShift = getCurrentActiveShift();
+    const shiftTimes = getShiftTimes();
+    const shiftStatus = getShiftStatus();
+    
+    // If shift is locked, prevent any clock actions
+    if (shiftStatus.isLocked) {
+      return { action: null, label: 'Shift Locked', type: 'locked', shift: shiftStatus.shift || 'Expired' };
+    }
+    
+    // For single shift types, only show their specific shifts
+    if (shiftType === 'morning') {
+      if (!todayRecord?.morningIn) {
+        if (isShiftTimeWindowPassed('morning')) {
+          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Morning' };
+        }
+        return { action: 'morningIn', label: 'Clock In', type: 'in', shift: 'Morning' };
+      }
+      if (!todayRecord?.morningOut) {
+        return { action: 'morningOut', label: 'Clock Out', type: 'out', shift: 'Morning' };
+      }
+      return { action: null, label: 'Completed', type: 'completed', shift: 'Morning' };
+    }
+    
+    if (shiftType === 'afternoon') {
+      if (!todayRecord?.morningIn) { // Using morningIn for afternoon shift
+        if (isShiftTimeWindowPassed('afternoon')) {
+          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Afternoon' };
+        }
+        return { action: 'afternoonIn', label: 'Clock In', type: 'in', shift: 'Afternoon' };
+      }
+      if (!todayRecord?.morningOut) { // Using morningOut for afternoon shift
+        return { action: 'afternoonOut', label: 'Clock Out', type: 'out', shift: 'Afternoon' };
+      }
+      return { action: null, label: 'Completed', type: 'completed', shift: 'Afternoon' };
+    }
+    
+    if (shiftType === '1shift') {
+      if (!todayRecord?.morningIn) {
+        if (isShiftTimeWindowPassed('morning')) {
+          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Shift' };
+        }
+        return { action: 'morningIn', label: 'Clock In', type: 'in', shift: 'Shift' };
+      }
+      if (!todayRecord?.morningOut) {
+        return { action: 'morningOut', label: 'Clock Out', type: 'out', shift: 'Shift' };
+      }
+      return { action: null, label: 'Completed', type: 'completed', shift: 'Shift' };
+    }
+    
+    if (shiftType === 'graveyard') {
+      if (!todayRecord?.eveningIn) {
+        return { action: 'eveningIn', label: 'Clock In', type: 'in', shift: 'Evening' };
+      }
+      if (!todayRecord?.eveningOut) {
+        return { action: 'eveningOut', label: 'Clock Out', type: 'out', shift: 'Evening' };
+      }
+      return { action: null, label: 'Completed', type: 'completed', shift: 'Evening' };
+    }
+    
+    // For regular and 2shift types
+    // First check if morning shift is completed
+    if (todayRecord?.morningIn) {
+      if (!todayRecord?.morningOut) {
+        return { action: 'morningOut', label: 'Clock Out', type: 'out', shift: 'Morning' };
+      }
+      
+      // Morning is completed, check afternoon shift
+      if (shiftType === 'regular' || shiftType === '2shift') {
+        if (!todayRecord?.afternoonIn) {
+          if (isShiftTimeWindowPassed('afternoon')) {
+            return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Afternoon' };
+          }
+          return { action: 'afternoonIn', label: 'Clock In', type: 'in', shift: 'Afternoon' };
+        }
+        
+        if (!todayRecord?.afternoonOut) {
+          return { action: 'afternoonOut', label: 'Clock Out', type: 'out', shift: 'Afternoon' };
+        }
+      }
+      
+      // All actions completed for today
+      return { action: null, label: 'Completed', type: 'completed', shift: 'All' };
+    }
+    
+    // Morning shift not started yet
+    if (!todayRecord?.morningIn) {
+      if (isShiftTimeWindowPassed('morning')) {
+        // If morning shift time has passed, move to afternoon if it's available
+        if (shiftType === '2shift' || shiftType === 'regular') {
+          if (!todayRecord?.afternoonIn) {
+            if (isShiftTimeWindowPassed('afternoon')) {
+              return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'All' };
+            }
+            return { action: 'afternoonIn', label: 'Clock In', type: 'in', shift: 'Afternoon' };
+          }
+        } else {
+          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Morning' };
+        }
+      }
+      return { action: 'morningIn', label: 'Clock In', type: 'in', shift: 'Morning' };
+    }
+    
+    // All actions completed for today
+    return { action: null, label: 'Completed', type: 'completed', shift: 'All' };
+  };
+
+  
+  const [currentDateTime, setCurrentDateTime] = useState('');
+  const [nextAction, setNextAction] = useState<any>({
+    action: null,
+    label: 'Loading...',
+    type: 'loading',
+    shift: 'Loading'
+  });
+  
+  // Initialize nextAction on client side only
+  useEffect(() => {
+    setNextAction(getNextClockAction());
+  }, [todayRecord, shiftType]);
+  const [currentShiftStatus, setCurrentShiftStatus] = useState<{
+    shift: string | null;
+    status: 'active' | 'upcoming' | 'completed' | 'expired' | 'locked' | 'morning-locked' | 'afternoon-locked';
+    nextShiftTime: string | null;
+    timeRemaining: string | null;
+    isLocked: boolean;
+    isMorningLocked: boolean;
+    isAfternoonLocked: boolean;
+  }>({
+    shift: null,
+    status: 'loading', // Start with loading state
+    nextShiftTime: null,
+    timeRemaining: null,
+    isLocked: false,
+    isMorningLocked: false,
+    isAfternoonLocked: false
+  });
+  
+  // Initialize shift status on client side only
+  useEffect(() => {
+    const status = getShiftStatus();
+    setCurrentShiftStatus(status);
+  }, [shiftType]);
 
   const formatTime = (timeString?: string) => {
     if (!timeString) return '--:--';
@@ -194,7 +686,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             <span>Current Schedule</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Shift Type */}
           <Badge variant="outline" className="text-base px-3 py-1">
             {shiftType === 'regular' && 'Regular: 7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM'}
             {shiftType === 'regular-split' && 'Regular Split: Morning & Afternoon Shifts'}
@@ -205,349 +698,294 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             {shiftType === '2shift' && 'Two Shifts'}
             {shiftType === 'custom' && (shiftConfig?.description || `Custom: ${shiftConfig?.eveningStart} - ${shiftConfig?.eveningEnd}`)}
           </Badge>
+          
+          {/* Current Shift Status */}
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Current Shift Status</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  {currentShiftStatus.status === 'locked' && (
+                    <>
+                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                      <span className="font-semibold text-red-700">
+                        Shift Locked - {currentShiftStatus.shift}
+                      </span>
+                    </>
+                  )}
+                  {currentShiftStatus.status === 'morning-locked' && (
+                    <>
+                      <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                      <span className="font-semibold text-orange-700">
+                        Morning Shift Locked
+                      </span>
+                    </>
+                  )}
+                  {currentShiftStatus.status === 'afternoon-locked' && (
+                    <>
+                      <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                      <span className="font-semibold text-orange-700">
+                        Afternoon Shift Locked
+                      </span>
+                    </>
+                  )}
+                  {currentShiftStatus.status === 'active' && (
+                    <>
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="font-semibold text-green-700">
+                        {currentShiftStatus.shift} Shift - Active
+                      </span>
+                    </>
+                  )}
+                  {currentShiftStatus.status === 'upcoming' && (
+                    <>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                      <span className="font-semibold text-yellow-700">
+                        Upcoming - {currentShiftStatus.nextShiftTime}
+                      </span>
+                    </>
+                  )}
+                  {currentShiftStatus.status === 'completed' && (
+                    <>
+                      <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                      <span className="font-semibold text-gray-700">
+                        Shift Completed
+                      </span>
+                    </>
+                  )}
+                  {currentShiftStatus.status === 'expired' && (
+                    <>
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <span className="font-semibold text-red-700">
+                        Shift Time Expired
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Time Remaining */}
+            {currentShiftStatus.timeRemaining && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-gray-600">Time Remaining</p>
+                <p className="text-lg font-bold text-[#003366]">
+                  {currentShiftStatus.timeRemaining}
+                </p>
+              </div>
+            )}
+            
+            {/* Next Shift Time */}
+            {currentShiftStatus.nextShiftTime && currentShiftStatus.status === 'upcoming' && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-gray-600">Next Shift Starts At</p>
+                <p className="text-lg font-bold text-[#003366]">
+                  {currentShiftStatus.nextShiftTime}
+                </p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Camera Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Camera className="h-5 w-5" />
-            <span>Image Capture Required</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!showCamera && !capturedImage && (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">You must capture your image before clocking in or out</p>
-              <Button onClick={startCamera} className="bg-[#003366] hover:bg-[#002244]">
-                <Camera className="h-4 w-4 mr-2" />
-                Open Camera
-              </Button>
-            </div>
-          )}
-
-          {showCamera && (
-            <div className="space-y-4">
-              <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex justify-center space-x-4">
-                <Button onClick={captureImage} className="bg-[#003366] hover:bg-[#002244]">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Capture
-                </Button>
-                <Button variant="outline" onClick={stopCamera}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {capturedImage && (
-            <div className="space-y-4">
-              <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                <img
-                  src={capturedImage}
-                  alt="Captured"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex justify-center">
-                <Button variant="outline" onClick={() => { setCapturedImage(null); startCamera(); }}>
-                  Retake Photo
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <canvas ref={canvasRef} className="hidden" />
-        </CardContent>
-      </Card>
-
-      {/* Clock Buttons */}
+      {/* Unified Clock In/Out Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Clock className="h-5 w-5" />
-            <span>Clock In / Clock Out</span>
+            <span>Time Tracking</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {shiftType === 'regular' ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Morning In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="sm"
-                >
-                  <LogIn className="h-4 w-4 mr-1" />
-                  Clock In
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Morning Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                  size="sm"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Clock Out
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Afternoon In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.afternoonIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('afternoonIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="sm"
-                >
-                  <LogIn className="h-4 w-4 mr-1" />
-                  Clock In
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Afternoon Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.afternoonOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('afternoonOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !isAccepted || !todayRecord?.afternoonIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                  size="sm"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Clock Out
-                </Button>
-              </div>
+        <CardContent className="space-y-6">
+          {/* Current Status */}
+          <div className="text-center space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">{nextAction?.shift || 'Loading'} Shift</h3>
+              <p className="text-3xl font-bold text-[#003366]">{nextAction?.label || 'Loading...'}</p>
             </div>
-          ) : shiftType === 'morning' ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Morning In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Clock In
-                </Button>
+            
+            {nextAction?.action && !currentShiftStatus.isLocked && 
+  ((currentShiftStatus.shift === 'Morning' && !currentShiftStatus.isMorningLocked) ||
+   (currentShiftStatus.shift === 'Afternoon' && !currentShiftStatus.isAfternoonLocked) ||
+   (currentShiftStatus.shift === 'Evening' && !currentShiftStatus.isLocked) ||
+   (currentShiftStatus.shift === 'Shift' && !currentShiftStatus.isLocked) ||
+   (currentShiftStatus.shift === null && !currentShiftStatus.isLocked)) && (
+              <Button
+                onClick={() => handleClockAction(nextAction.action!)}
+                disabled={isLoading || countdown > 0 || !isAccepted}
+                className={`w-full max-w-xs ${nextAction?.type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                size="lg"
+              >
+                {nextAction?.type === 'in' ? <LogIn className="h-5 w-5 mr-2" /> : <LogOut className="h-5 w-5 mr-2" />}
+                {nextAction?.label}
+              </Button>
+            )}
+            
+            {(currentShiftStatus.isLocked || 
+  (currentShiftStatus.isMorningLocked && currentShiftStatus.shift === 'Morning') ||
+  (currentShiftStatus.isAfternoonLocked && currentShiftStatus.shift === 'Afternoon')) && (
+              <div className="mt-4 p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                <div className="flex items-center space-x-2">
+                  <Lock className="h-5 w-5 text-red-600" />
+                  <div>
+                    <p className="font-semibold text-red-800">
+                      {currentShiftStatus.status === 'morning-locked' && 'Morning Shift Locked'}
+                      {currentShiftStatus.status === 'afternoon-locked' && 'Afternoon Shift Locked'}
+                      {currentShiftStatus.status === 'locked' && 'Shift Locked'}
+                    </p>
+                    <p className="text-sm text-red-600">
+                      {currentShiftStatus.status === 'morning-locked' && 'Morning shift time has expired (8:00 AM - 12:00 PM). No clock actions allowed for morning shift.'}
+                      {currentShiftStatus.status === 'afternoon-locked' && 'Afternoon shift time has expired (1:00 PM - 5:00 PM). No clock actions allowed for afternoon shift.'}
+                      {currentShiftStatus.status === 'locked' && `${currentShiftStatus.shift} shift time has expired. No clock actions allowed.`}
+                    </p>
+                  </div>
+                </div>
               </div>
+            )}
+            
+            {nextAction?.type === 'expired' && (
+              <div className="text-center space-y-2">
+                <Badge variant="destructive" className="text-lg px-4 py-2">
+                  {nextAction?.label}
+                </Badge>
+                <p className="text-sm text-gray-600">
+                  The time window for this shift has passed
+                </p>
+              </div>
+            )}
+            
+            {!nextAction?.action && nextAction?.type !== 'expired' && (
+              <div className="text-center space-y-2">
+                <Badge variant="secondary" className="text-lg px-4 py-2">
+                  All shifts completed for today
+                </Badge>
+              </div>
+            )}
 
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Morning Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningOut)}
+            {/* Current Time and Shift Status */}
+            <div className="text-center space-y-2 mt-4">
+              <p className="text-sm text-gray-600">
+                Current Time: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              {getCurrentActiveShift() && (
+                <Badge variant="outline" className="text-xs">
+                  Active Shift: {getCurrentActiveShift()}
                 </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Clock Out
-                </Button>
-              </div>
+              )}
             </div>
-          ) : shiftType === 'afternoon' ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Afternoon In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.afternoonIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('afternoonIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Clock In
-                </Button>
-              </div>
+          </div>
 
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Afternoon Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.afternoonOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('afternoonOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !isAccepted || !todayRecord?.afternoonIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Clock Out
-                </Button>
-              </div>
+          {/* Today's Progress */}
+          <div className="border-t pt-4">
+            <h4 className="text-sm font-medium text-gray-600 mb-3">Today's Progress</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Morning Shift */}
+              {(shiftType === 'regular' || shiftType === '2shift' || shiftType === 'morning' || shiftType === '1shift') && (
+                <div className="text-center space-y-2 p-3 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Morning</p>
+                    {isShiftTimeWindowPassed('morning') && !todayRecord?.morningIn && (
+                      <Badge variant="destructive" className="text-xs">Expired</Badge>
+                    )}
+                    {!isShiftTimeWindowPassed('morning') && !todayRecord?.morningIn && (
+                      <Badge variant="secondary" className="text-xs">Available</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Badge variant={todayRecord?.morningIn ? "default" : "outline"} className="w-full">
+                      In: {formatTime(todayRecord?.morningIn)}
+                    </Badge>
+                    <Badge variant={todayRecord?.morningOut ? "default" : "outline"} className="w-full">
+                      Out: {formatTime(todayRecord?.morningOut)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {shiftType === '2shift' ? '7:00 AM - 11:00 AM (12:00 PM expiry)' : '7:00 AM - 12:00 PM (1:00 PM expiry)'}
+                  </p>
+                </div>
+              )}
+              
+              {/* Afternoon Shift */}
+              {(shiftType === 'regular' || shiftType === '2shift' || shiftType === 'afternoon') && (
+                <div className="text-center space-y-2 p-3 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Afternoon</p>
+                    {isShiftTimeWindowPassed('afternoon') && !todayRecord?.afternoonIn && (
+                      <Badge variant="destructive" className="text-xs">Expired</Badge>
+                    )}
+                    {!isShiftTimeWindowPassed('afternoon') && !todayRecord?.afternoonIn && (
+                      <Badge variant="secondary" className="text-xs">Available</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Badge variant={todayRecord?.afternoonIn ? "default" : "outline"} className="w-full">
+                      In: {formatTime(todayRecord?.afternoonIn)}
+                    </Badge>
+                    <Badge variant={todayRecord?.afternoonOut ? "default" : "outline"} className="w-full">
+                      Out: {formatTime(todayRecord?.afternoonOut)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {shiftType === '2shift' ? '12:00 PM - 5:00 PM (6:00 PM expiry)' : '1:00 PM - 5:00 PM (6:00 PM expiry)'}
+                  </p>
+                </div>
+              )}
+
+              {/* Single Shift */}
+              {shiftType === '1shift' && (
+                <div className="text-center space-y-2 p-3 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Shift</p>
+                    {isShiftTimeWindowPassed('morning') && !todayRecord?.morningIn && (
+                      <Badge variant="destructive" className="text-xs">Expired</Badge>
+                    )}
+                    {!isShiftTimeWindowPassed('morning') && !todayRecord?.morningIn && (
+                      <Badge variant="secondary" className="text-xs">Available</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Badge variant={todayRecord?.morningIn ? "default" : "outline"} className="w-full">
+                      In: {formatTime(todayRecord?.morningIn)}
+                    </Badge>
+                    <Badge variant={todayRecord?.morningOut ? "default" : "outline"} className="w-full">
+                      Out: {formatTime(todayRecord?.morningOut)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">7:00 AM - 5:00 PM (6:00 PM expiry)</p>
+                </div>
+              )}
+
+              {/* Graveyard Shift */}
+              {shiftType === 'graveyard' && (
+                <div className="text-center space-y-2 p-3 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Graveyard</p>
+                    {!todayRecord?.eveningIn && (
+                      <Badge variant="secondary" className="text-xs">Available</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Badge variant={todayRecord?.eveningIn ? "default" : "outline"} className="w-full">
+                      In: {formatTime(todayRecord?.eveningIn)}
+                    </Badge>
+                    <Badge variant={todayRecord?.eveningOut ? "default" : "outline"} className="w-full">
+                      Out: {formatTime(todayRecord?.eveningOut)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">7:00 PM - 7:00 AM (8:00 AM expiry)</p>
+                </div>
+              )}
             </div>
-          ) : shiftType === '1shift' ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Shift In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Clock In
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Shift Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Clock Out
-                </Button>
-              </div>
-            </div>
-          ) : shiftType === '2shift' ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Shift 1 In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="sm"
-                >
-                  <LogIn className="h-4 w-4 mr-1" />
-                  Clock In
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Shift 1 Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.morningOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('morningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('morningOut') || !isAccepted || !todayRecord?.morningIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                  size="sm"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Clock Out
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Shift 2 In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.afternoonIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('afternoonIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="sm"
-                >
-                  <LogIn className="h-4 w-4 mr-1" />
-                  Clock In
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Shift 2 Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.afternoonOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('afternoonOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('afternoonOut') || !isAccepted || !todayRecord?.afternoonIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                  size="sm"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Clock Out
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Evening In</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.eveningIn)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('eveningIn')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningIn') || !isAccepted}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Clock In
-                </Button>
-              </div>
-
-              <div className="text-center space-y-2">
-                <p className="text-sm font-medium">Evening Out</p>
-                <Badge variant="outline" className="mb-2">
-                  {formatTime(todayRecord?.eveningOut)}
-                </Badge>
-                <Button
-                  onClick={() => handleClockAction('eveningOut')}
-                  disabled={isLoading || countdown > 0 || getClockButtonState('eveningOut') || !isAccepted || !todayRecord?.eveningIn}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Clock Out
-                </Button>
-              </div>
-            </div>
-          )}
+          </div>
 
           {!isAccepted && (
-            <p className="text-center text-yellow-600 mt-4 text-sm">
+            <p className="text-center text-yellow-600 text-sm">
               Your account is pending approval. You cannot clock in/out until approved.
             </p>
           )}
+          
           {countdown > 0 && (
-            <p className="text-center text-blue-600 mt-4 text-sm">
+            <p className="text-center text-blue-600 text-sm">
               Please wait {countdown} seconds before next clock action...
             </p>
           )}
@@ -596,6 +1034,126 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
           </CardContent>
         </Card>
       )}
+
+      {/* Camera Modal - Verify Your Identity */}
+      <Dialog open={showCameraModal} onOpenChange={setShowCameraModal}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Camera className="h-5 w-5" />
+              <span>Verify Your Identity</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Date and Time Display */}
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center space-x-2 text-gray-600">
+                <Calendar className="h-4 w-4" />
+                <span className="font-medium">{currentDateTime}</span>
+              </div>
+            </div>
+
+            {/* Camera Section */}
+            {!showCamera && !capturedImage && (
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">Please capture your photo to verify identity</p>
+                <Button onClick={startCamera} className="bg-[#003366] hover:bg-[#002244]">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Open Camera
+                </Button>
+              </div>
+            )}
+
+            {showCamera && (
+              <div className="space-y-4">
+                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex justify-center space-x-4">
+                  <Button onClick={captureImage} className="bg-[#003366] hover:bg-[#002244]">
+                    <Camera className="h-4 w-4 mr-2" />
+                    Capture Photo
+                  </Button>
+                  <Button variant="outline" onClick={() => { setShowCameraModal(false); stopCamera(); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Image Modal */}
+      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span>Review Your Photo</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Date and Time Display */}
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center space-x-2 text-gray-600">
+                <Calendar className="h-4 w-4" />
+                <span className="font-medium">{currentDateTime}</span>
+              </div>
+            </div>
+
+            {/* Captured Image Review */}
+            {capturedImage && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-green-600 font-medium mb-2">✓ Photo Captured Successfully</p>
+                  <div className="relative aspect-video bg-black rounded-lg overflow-hidden border-2 border-green-500">
+                    <img
+                      src={capturedImage}
+                      alt="Captured"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Please review your photo and confirm to {nextAction?.label?.toLowerCase()}
+                  </p>
+                </div>
+                <div className="flex justify-center space-x-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => { 
+                      setCapturedImage(null); 
+                      setShowReviewModal(false);
+                      setShowCameraModal(true);
+                      startCamera(); 
+                    }}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Retake Photo
+                  </Button>
+                  <Button 
+                    onClick={() => executeClockAction(currentAction!)}
+                    disabled={isLoading}
+                    className={nextAction?.type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+                  >
+                    {nextAction?.type === 'in' ? <LogIn className="h-4 w-4 mr-2" /> : <LogOut className="h-4 w-4 mr-2" />}
+                    Confirm {nextAction?.label}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

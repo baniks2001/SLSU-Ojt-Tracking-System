@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     }
 
     const attendanceRecords = await Attendance.find(query)
-      .populate('studentId', 'firstName lastName studentId')
+      .populate('studentId', 'firstName lastName studentId shiftType')
       .sort({ date: -1 });
 
     return NextResponse.json(
@@ -86,6 +86,11 @@ export async function POST(request: Request) {
         date: serverTime,
         shiftType,
       });
+    } else {
+      // Update shiftType if different
+      if (attendance.shiftType !== shiftType) {
+        attendance.shiftType = shiftType;
+      }
     }
 
     // Update based on action using server time
