@@ -11,6 +11,22 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Clock, Send, History } from 'lucide-react';
 
+// Helper function to get shift display name
+const getShiftDisplayName = (shiftType: string) => {
+  const shiftNames = {
+    morning: 'Morning (6:00 AM - 12:00 PM)',
+    afternoon: 'Afternoon (12:00 PM - 6:00 PM)', 
+    evening: 'Evening (6:00 PM - 12:00 AM)',
+    midnight: 'Midnight (12:00 AM - 6:00 AM)',
+    graveyard: 'Graveyard (10:00 PM - 6:00 AM)',
+    '1shift': 'Single Shift (6:00 AM - 6:00 PM)',
+    '2shift': 'Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)',
+    regular: 'Regular (6:00 AM - 6:00 PM)',
+    custom: 'Custom Shift'
+  };
+  return shiftNames[shiftType as keyof typeof shiftNames] || shiftType;
+};
+
 interface ScheduleChangeRequestProps {
   studentId: string;
   currentShiftType: string;
@@ -130,7 +146,7 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
         <CardContent>
           <div className="mb-4">
             <p className="text-sm text-gray-600">
-              Current Schedule: <strong>{currentShiftType === 'regular' ? 'Regular (7AM-12PM / 1PM-5PM)' : 'Graveyard (7PM-7AM)'}</strong>
+              Current Schedule: <strong>{getShiftDisplayName(currentShiftType)}</strong>
             </p>
           </div>
 
@@ -182,8 +198,14 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
                     <SelectValue placeholder="Select shift type" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="morning">Morning (6:00 AM - 12:00 PM)</SelectItem>
+                    <SelectItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</SelectItem>
+                    <SelectItem value="evening">Evening (6:00 PM - 12:00 AM)</SelectItem>
+                    <SelectItem value="midnight">Midnight (12:00 AM - 6:00 AM)</SelectItem>
+                    <SelectItem value="graveyard">Graveyard (10:00 PM - 6:00 AM)</SelectItem>
+                    <SelectItem value="1shift">Single Shift (6:00 AM - 6:00 PM)</SelectItem>
+                    <SelectItem value="2shift">Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)</SelectItem>
                     <SelectItem value="custom">Custom Schedule</SelectItem>
-                    <SelectItem value="graveyard">Graveyard (7PM - 7AM)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

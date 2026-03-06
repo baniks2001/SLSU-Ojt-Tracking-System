@@ -10,7 +10,7 @@ import { Camera, Clock, LogIn, LogOut, Calendar, CheckCircle, Lock } from 'lucid
 
 interface ClockInOutProps {
   studentId: string;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | 'evening' | 'midnight' | '1shift' | '2shift';
   shiftConfig?: {
     morningStart?: string;
     morningEnd?: string;
@@ -19,6 +19,7 @@ interface ClockInOutProps {
     eveningStart?: string;
     eveningEnd?: string;
     description?: string;
+    shiftCount?: number; // Number of shifts for custom schedules
   };
   isAccepted: boolean;
 }
@@ -269,37 +270,47 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     switch (shiftType) {
       case 'regular':
         return {
-          morningStart: 7 * 60,    // 7:00 AM
-          morningEnd: 12 * 60,     // 12:00 PM
-          afternoonStart: 13 * 60, // 1:00 PM
-          afternoonEnd: 17 * 60,   // 5:00 PM
+          morningStart: 6 * 60,    // 6:00 AM
+          morningEnd: 12 * 60,     // 12:00 PM (Noon)
+          afternoonStart: 12 * 60, // 12:00 PM (Noon)
+          afternoonEnd: 18 * 60,   // 6:00 PM
         };
       case 'morning':
         return {
-          morningStart: 7 * 60,    // 7:00 AM
-          morningEnd: 12 * 60,     // 12:00 PM
+          morningStart: 6 * 60,    // 6:00 AM
+          morningEnd: 12 * 60,     // 12:00 PM (Noon)
         };
       case 'afternoon':
         return {
-          afternoonStart: 13 * 60, // 1:00 PM
-          afternoonEnd: 17 * 60,   // 5:00 PM
+          afternoonStart: 12 * 60, // 12:00 PM (Noon)
+          afternoonEnd: 18 * 60,   // 6:00 PM
+        };
+      case 'evening':
+        return {
+          eveningStart: 18 * 60,   // 6:00 PM
+          eveningEnd: 0 * 60,      // 12:00 AM (Midnight)
+        };
+      case 'midnight':
+        return {
+          eveningStart: 0 * 60,     // 12:00 AM (Midnight)
+          eveningEnd: 6 * 60,      // 6:00 AM
         };
       case '1shift':
         return {
-          morningStart: 7 * 60,    // 7:00 AM
-          morningEnd: 17 * 60,     // 5:00 PM
+          morningStart: 6 * 60,    // 6:00 AM
+          morningEnd: 18 * 60,     // 6:00 PM
         };
       case '2shift':
         return {
-          morningStart: 7 * 60,    // 7:00 AM
-          morningEnd: 11 * 60,     // 11:00 AM
-          afternoonStart: 12 * 60, // 12:00 PM
-          afternoonEnd: 17 * 60,   // 5:00 PM
+          morningStart: 6 * 60,    // 6:00 AM
+          morningEnd: 12 * 60,     // 12:00 PM (Noon)
+          afternoonStart: 12 * 60, // 12:00 PM (Noon)
+          afternoonEnd: 18 * 60,   // 6:00 PM
         };
       case 'graveyard':
         return {
-          eveningStart: 19 * 60,   // 7:00 PM
-          eveningEnd: 7 * 60,     // 7:00 AM (next day)
+          eveningStart: 22 * 60,   // 10:00 PM
+          eveningEnd: 6 * 60,      // 6:00 AM (next day)
         };
       case 'custom':
         if (shiftConfig) {
@@ -315,14 +326,40 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         break;
       default:
         return {
-          morningStart: 7 * 60,
+          morningStart: 6 * 60,
           morningEnd: 12 * 60,
-          afternoonStart: 13 * 60,
-          afternoonEnd: 17 * 60,
+          afternoonStart: 12 * 60,
+          afternoonEnd: 18 * 60,
         };
     }
     return {};
   }, [shiftType]);
+
+  // Helper function to format time with AM/PM
+  const formatTimeWithAMPM = (minutes: number | undefined) => {
+    if (minutes === undefined) return '';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${displayHours}:${mins.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Helper function to get shift display name
+  const getShiftDisplayName = (shift: string) => {
+    const shiftNames = {
+      morning: 'Morning (6:00 AM - 12:00 PM)',
+      afternoon: 'Afternoon (12:00 PM - 6:00 PM)', 
+      evening: 'Evening (6:00 PM - 12:00 AM)',
+      midnight: 'Midnight (12:00 AM - 6:00 AM)',
+      graveyard: 'Graveyard (10:00 PM - 6:00 AM)',
+      '1shift': 'Single Shift (6:00 AM - 6:00 PM)',
+      '2shift': 'Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)',
+      regular: 'Regular (6:00 AM - 6:00 PM)',
+      custom: shiftConfig?.description || 'Custom Shift'
+    };
+    return shiftNames[shift as keyof typeof shiftNames] || shift;
+  };
 
   const isShiftTimeWindowPassed = useCallback((shift: 'morning' | 'afternoon' | 'evening') => {
     // Prevent hydration issues by running only on client
@@ -355,7 +392,21 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     
     // Check if we're in graveyard shift (crosses midnight)
     if (shiftType === 'graveyard' && shiftTimes.eveningStart !== undefined) {
-      if (currentTime >= shiftTimes.eveningStart || currentTime < (shiftTimes.eveningEnd || 7 * 60)) {
+      if (currentTime >= shiftTimes.eveningStart || currentTime < (shiftTimes.eveningEnd || 6 * 60)) {
+        return 'evening';
+      }
+    }
+    
+    // Check if we're in evening shift (crosses midnight)
+    if (shiftType === 'evening' && shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined) {
+      if (currentTime >= shiftTimes.eveningStart || currentTime < shiftTimes.eveningEnd) {
+        return 'evening';
+      }
+    }
+    
+    // Check if we're in midnight shift (crosses midnight)
+    if (shiftType === 'midnight' && shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined) {
+      if (currentTime >= shiftTimes.eveningStart || currentTime < shiftTimes.eveningEnd) {
         return 'evening';
       }
     }
@@ -375,7 +426,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
     
     // Check evening shift (non-graveyard, with 1-hour grace period)
-    if (shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined && shiftType !== 'graveyard') {
+    if (shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined && 
+        shiftType !== 'graveyard' && shiftType !== 'evening' && shiftType !== 'midnight') {
       if (currentTime >= shiftTimes.eveningStart && currentTime <= (shiftTimes.eveningEnd + 60)) {
         return 'evening';
       }
@@ -433,6 +485,36 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             status = 'upcoming';
             nextShiftTime = formatMinutes(shiftTimes.eveningStart);
             timeRemaining = getTimeRemaining(shiftTimes.eveningStart);
+          }
+        }
+        break;
+
+      case 'evening':
+        if (shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined) {
+          // Evening shift crosses midnight (6 PM - 12 AM next day)
+          if (currentTime >= shiftTimes.eveningStart || currentTime < shiftTimes.eveningEnd) {
+            currentShift = 'Evening';
+            status = 'active';
+            timeRemaining = getTimeRemaining(shiftTimes.eveningEnd + (currentTime < shiftTimes.eveningEnd ? 24 * 60 : 0));
+          } else {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.eveningStart);
+            timeRemaining = getTimeRemaining(shiftTimes.eveningStart);
+          }
+        }
+        break;
+
+      case 'midnight':
+        if (shiftTimes.eveningStart !== undefined && shiftTimes.eveningEnd !== undefined) {
+          // Midnight shift crosses midnight (12 AM - 6 AM next day)
+          if (currentTime >= shiftTimes.eveningStart || currentTime < shiftTimes.eveningEnd) {
+            currentShift = 'Midnight';
+            status = 'active';
+            timeRemaining = getTimeRemaining(shiftTimes.eveningEnd + (currentTime < shiftTimes.eveningEnd ? 24 * 60 : 0));
+          } else {
+            status = 'upcoming';
+            nextShiftTime = formatMinutes(shiftTimes.eveningStart + (currentTime > shiftTimes.eveningEnd ? 24 * 60 : 0));
+            timeRemaining = getTimeRemaining(shiftTimes.eveningStart + (currentTime > shiftTimes.eveningEnd ? 24 * 60 : 0));
           }
         }
         break;
@@ -761,14 +843,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         <CardContent className="space-y-4">
           {/* Shift Type */}
           <Badge variant="outline" className="text-base px-3 py-1">
-            {shiftType === 'regular' && 'Regular: 7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM'}
-            {shiftType === 'regular-split' && 'Regular Split: Morning & Afternoon Shifts'}
-            {shiftType === 'graveyard' && 'Graveyard: 7:00 PM - 7:00 AM'}
-            {shiftType === 'morning' && 'Morning Shift Only'}
-            {shiftType === 'afternoon' && 'Afternoon Shift Only'}
-            {shiftType === '1shift' && 'Single Shift'}
-            {shiftType === '2shift' && 'Two Shifts'}
-            {shiftType === 'custom' && (shiftConfig?.description || `Custom: ${shiftConfig?.eveningStart} - ${shiftConfig?.eveningEnd}`)}
+            {getShiftDisplayName(shiftType)}
           </Badge>
           
           {/* Current Shift Status */}

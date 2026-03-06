@@ -28,7 +28,7 @@ interface StudentData {
   hostEstablishment: string;
   contactNumber?: string;
   address?: string;
-  shiftType: 'regular' | 'graveyard' | 'custom';
+  shiftType: 'regular' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | 'evening' | 'midnight' | '1shift' | '2shift';
   shiftConfig?: {
     morningStart?: string;
     morningEnd?: string;
@@ -37,6 +37,7 @@ interface StudentData {
     eveningStart?: string;
     eveningEnd?: string;
     description?: string;
+    shiftCount?: number;
   };
   isAccepted: boolean;
   isActive: boolean;
@@ -124,31 +125,31 @@ export default function StudentDashboard() {
       />
       
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="container-responsive py-8">
         {/* Welcome Section */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
-              <Avatar className="h-16 w-16 ring-4 ring-white shadow-lg">
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0 shadow-lg card-responsive-lg">
+          <CardContent className="p-responsive">
+            <div className="flex-responsive">
+              <Avatar className="avatar-responsive ring-4 ring-white shadow-lg">
                 <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xl font-bold">
                   {student.firstName.charAt(0)}{student.lastName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-2xl font-bold text-slate-800 mb-1">
+                <h2 className="text-responsive-lg font-bold text-slate-800 mb-1">
                   Welcome back, <span className="text-blue-600">{student.firstName}</span>!
                 </h2>
-                <p className="text-slate-600 mb-2">{student.course} • {student.department}</p>
+                <p className="text-responsive-sm text-slate-600 mb-2">{student.course} • {student.department}</p>
                 <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    <Users className="w-3 h-3 mr-1" />
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 badge-responsive">
+                    <Users className="icon-responsive-sm mr-1" />
                     {student.studentId}
                   </Badge>
-                  <Badge variant="outline" className="border-blue-200 text-blue-700">
+                  <Badge variant="outline" className="border-blue-200 text-blue-700 badge-responsive">
                     {student.shiftType}
                   </Badge>
                   {student.isAccepted && (
-                    <Badge className="bg-green-500 text-white">
+                    <Badge className="bg-green-500 text-white badge-responsive">
                       Active
                     </Badge>
                   )}
@@ -158,9 +159,9 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
         {!student.isAccepted && (
-          <Card className="mb-6 border-yellow-400 bg-yellow-50">
-            <CardContent className="py-4">
-              <p className="text-yellow-800">
+          <Card className="mb-6 border-yellow-400 bg-yellow-50 card-responsive">
+            <CardContent className="py-4 px-responsive">
+              <p className="text-yellow-800 text-responsive-sm">
                 <strong>Pending Approval:</strong> Your account is awaiting approval from your OJT Advisor. Some features may be limited until approved.
               </p>
             </CardContent>
@@ -169,29 +170,29 @@ export default function StudentDashboard() {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 lg:gap-2">
-            <TabsTrigger value="clock" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">Clock</span>
+            <TabsTrigger value="clock" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Clock className="icon-responsive-sm" />
+              <span className="hide-mobile">Clock</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <User className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">Profile</span>
+            <TabsTrigger value="profile" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <User className="icon-responsive-sm" />
+              <span className="hide-mobile">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">Logs</span>
+            <TabsTrigger value="logs" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <FileText className="icon-responsive-sm" />
+              <span className="hide-mobile">Logs</span>
             </TabsTrigger>
-            <TabsTrigger value="dtr" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">DTR</span>
+            <TabsTrigger value="dtr" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Camera className="icon-responsive-sm" />
+              <span className="hide-mobile">DTR</span>
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">Schedule</span>
+            <TabsTrigger value="schedule" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Clock className="icon-responsive-sm" />
+              <span className="hide-mobile">Schedule</span>
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">Announce</span>
+            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Bell className="icon-responsive-sm" />
+              <span className="hide-mobile">Announce</span>
             </TabsTrigger>
           </TabsList>
 
