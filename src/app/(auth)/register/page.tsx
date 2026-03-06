@@ -356,8 +356,6 @@ export default function RegisterPage() {
                       className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
-                    />
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
