@@ -33,7 +33,7 @@ export default function Header({ user, title, showBackButton = false }: HeaderPr
   };
 
   return (
-    <header className="bg-white shadow-md border-b border-slate-200 sticky top-0 z-50">
+    <header className="bg-blue-900 text-white shadow-md border-b border-blue-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left Section */}
@@ -42,22 +42,21 @@ export default function Header({ user, title, showBackButton = false }: HeaderPr
               <Logo size="small" />
               <div className="hidden sm:block">
                 <div className="flex items-center space-x-2">
-                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="text-lg sm:text-xl font-bold text-white">
                     SLSU OJT Tracking System
                   </h1>
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge className="bg-blue-800 text-white text-xs border-blue-700">
                     v2.0
                   </Badge>
                 </div>
-                <p className="text-xs text-slate-500">Southern Leyte State University</p>
-                <p className="text-xs text-slate-400">Developed by SLSU Tech Team</p>
+                <p className="text-xs text-blue-200">Southern Leyte State University</p>
+                <p className="text-xs text-blue-300">Developed by SLSU Tech Team</p>
               </div>
             </Link>
             
             {showBackButton && (
               <Link href="/">
-                <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
-                  <Menu className="w-4 h-4 mr-2" />
+                <Button variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900">
                   Back to Dashboard
                 </Button>
               </Link>
@@ -71,35 +70,39 @@ export default function Header({ user, title, showBackButton = false }: HeaderPr
 
           {/* Right Section */}
           <div className="flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-3">
-                <div className="text-right hidden sm:block">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-slate-600">
+            {user && (
+              <>
+                <div className="hidden sm:flex items-center space-x-4">
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-white">
                       {user.details?.firstName} {user.details?.lastName}
-                    </span>
-                    {user.details?.studentId && (
-                      <Badge variant="outline" className="ml-2">
-                        {user.details.studentId}
-                      </Badge>
-                    )}
+                    </p>
+                    <p className="text-xs text-blue-200">
+                      {user.accountType.charAt(0).toUpperCase() + user.accountType.slice(1)}
+                    </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                
+                <div className="relative">
+                  <Button variant="ghost" className="text-white hover:bg-blue-800 p-2">
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <div className="relative">
+                  <Button variant="ghost" className="text-white hover:bg-blue-800 p-2">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <Button 
                   onClick={handleLogout}
-                  className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4 mr-2 sm:mr-0" />
+                  <span className="hidden sm:inline">Logout</span>
                 </Button>
-              </div>
-            ) : (
-              <Link href="/login">
-                <Button variant="default" size="sm">
-                  Sign In
-                </Button>
-              </Link>
+              </>
             )}
           </div>
         </div>

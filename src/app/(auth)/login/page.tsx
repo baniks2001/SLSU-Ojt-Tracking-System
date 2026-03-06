@@ -49,16 +49,19 @@ export default function LoginPage() {
             router.push('/department/dashboard');
             break;
           case 'admin':
+            router.push('/admin/dashboard');
+            break;
           case 'superadmin':
             router.push('/admin/dashboard');
             break;
           default:
-            router.push('/');
+            router.push('/login');
         }
       } else {
         toast.error(data.error || 'Login failed');
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast.error('An error occurred during login');
     } finally {
       setIsLoading(false);
@@ -66,32 +69,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white shadow-2xl border-0">
-          <CardHeader className="text-center space-y-6 pb-8">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"></div>
-                <div className="relative bg-white rounded-full p-3">
-                  <Logo size="small" className="w-8 h-8" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold text-slate-800">Welcome Back</CardTitle>
-                <CardDescription className="text-slate-600">
-                  Sign in to your SLSU OJT Tracking account
-                </CardDescription>
-              </div>
-            </div>
+        <div className="text-center mb-8">
+          <Logo size="large" className="mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <p className="text-gray-600">Sign in to your SLSU OJT Tracking account</p>
+        </div>
+
+        <Card className="shadow-lg border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center text-gray-900">Sign In</CardTitle>
+            <CardDescription className="text-center text-gray-600">
+              Enter your credentials to access your account
+            </CardDescription>
           </CardHeader>
-          
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <CardContent className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-700 text-sm font-medium">Email Address</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  Email Address
+                </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
@@ -99,15 +99,17 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="pl-10 bg-slate-50 border-slate-300 text-slate-700 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
+                    className="pl-10 h-11 bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-700 text-sm font-medium">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
+                </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
@@ -115,18 +117,18 @@ export default function LoginPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
-                    className="pl-10 bg-slate-50 border-slate-300 text-slate-700 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
+                    className="pl-10 h-11 bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full px-4 py-2 text-sm sm:px-6 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full h-11 bg-blue-900 hover:bg-blue-800 text-white font-medium shadow-md"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-transparent animate-spin rounded-full"></div>
                     <span>Signing in...</span>
                   </div>
@@ -136,12 +138,12 @@ export default function LoginPage() {
               </Button>
             </form>
             
-            <div className="pt-4 border-t border-slate-200">
-              <div className="text-center text-sm text-slate-600">
+            <div className="pt-4 border-t border-gray-200">
+              <div className="text-center text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link 
                   href="/register" 
-                  className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                  className="text-blue-900 hover:text-blue-800 font-medium"
                 >
                   Register here
                 </Link>
@@ -149,14 +151,11 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
-        
-        <div className="text-center mt-6 text-slate-400 text-sm">
-          <Link 
-            href="/" 
-            className="hover:text-slate-300 transition-colors flex items-center justify-center space-x-2"
-          >
-            <span>← Back to Home</span>
-          </Link>
+
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-500">
+            © 2026 Southern Leyte State University - OJT Tracking System
+          </p>
         </div>
       </div>
     </div>

@@ -304,40 +304,47 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-      <Card className="w-full max-w-2xl bg-white shadow-2xl border-0">
-        <CardHeader className="text-center">
-          <div className="mb-4 flex flex-col items-center">
-            <Logo size="medium" className="mb-2" />
-            <h1 className="text-2xl font-bold text-[#003366]">Southern Leyte State University</h1>
-            <p className="text-sm text-gray-600">OJT Tracking System</p>
-          </div>
-          <CardTitle className="text-xl">Create Account</CardTitle>
-          <CardDescription>
-            Register as a student or department
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="student">Student</TabsTrigger>
-              <TabsTrigger value="department">Department</TabsTrigger>
-            </TabsList>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        <div className="text-center mb-8">
+          <Logo size="large" className="mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
+          <p className="text-gray-600">Register for SLSU OJT Tracking System</p>
+        </div>
 
-            <TabsContent value="student">
-              <form onSubmit={handleStudentSubmit} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="student-email">Email</Label>
-                    <Input
-                      id="student-email"
-                      type="email"
-                      placeholder="your.email@slsu.edu.ph"
-                      value={studentForm.email}
-                      onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
+        <Card className="shadow-lg border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center text-gray-900">Register</CardTitle>
+            <CardDescription className="text-center text-gray-600">
+              Choose your account type and fill in the required information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+                <TabsTrigger 
+                  value="student" 
+                  className="data-[state=active]:bg-blue-900 data-[state=active]:text-white text-gray-700"
+                >
+                  Student
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="department" 
+                  className="data-[state=active]:bg-blue-900 data-[state=active]:text-white text-gray-700"
+                >
+                  Department
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="admin" 
+                  className="data-[state=active]:bg-blue-900 data-[state=active]:text-white text-gray-700"
+                >
+                  Admin
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Student Registration */}
+              <TabsContent value="student" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="student-id">Student ID</Label>
                     <Input
@@ -346,6 +353,9 @@ export default function RegisterPage() {
                       value={studentForm.studentId}
                       onChange={(e) => setStudentForm({ ...studentForm, studentId: e.target.value })}
                       required
+                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                    />
+                  </div>
                     />
                   </div>
                 </div>
