@@ -3,10 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { LogOut, Menu, User, Bell } from 'lucide-react';
 import { toast } from 'sonner';
-import { LogOut, Menu, Home, Settings } from 'lucide-react';
 import Logo from '@/components/Logo';
 
 interface HeaderProps {
@@ -28,15 +27,9 @@ export default function Header({ user, title, showBackButton = false }: HeaderPr
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     toast.success('Logged out successfully');
     router.push('/login');
-  };
-
-  const getInitials = (firstName?: string, lastName?: string) => {
-    if (!firstName || !lastName) return 'U';
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`;
   };
 
   return (

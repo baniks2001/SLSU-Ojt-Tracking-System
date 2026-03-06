@@ -1284,7 +1284,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             {!showCamera && !capturedImage && (
               <div className="text-center py-8">
                 <p className="text-gray-600 mb-4">Please capture your photo to verify identity</p>
-                <Button onClick={startCamera} className="bg-[#003366] hover:bg-[#002244]">
+                <Button onClick={startCamera} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white">
                   <Camera className="h-4 w-4 mr-2" />
                   Open Camera
                 </Button>
@@ -1310,7 +1310,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                   </div>
                 </div>
                 <div className="flex justify-center space-x-4">
-                  <Button onClick={captureImage} className="bg-[#003366] hover:bg-[#002244]">
+                  <Button onClick={captureImage} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white">
                     <Camera className="h-4 w-4 mr-2" />
                     Capture Photo
                   </Button>
