@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -41,22 +43,13 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         toast.success('Login successful!');
         
-        // Debug log to check the account type
-        console.log('User account type:', data.user.accountType);
-        
         // Redirect based on user role
         if (data.user.accountType === 'student') {
-          router.push('/student/dashboard');
+          window.location.href = '/student/dashboard';
         } else if (data.user.accountType === 'department') {
-          router.push('/department/dashboard');
-        } else if (data.user.accountType === 'admin') {
-          router.push('/admin/dashboard');
-        } else if (data.user.accountType === 'superadmin') {
-          router.push('/admin/dashboard');
-        } else {
-          // Fallback to admin dashboard if account type is unknown
-          console.log('Unknown account type, redirecting to admin dashboard');
-          router.push('/admin/dashboard');
+          window.location.href = '/department/dashboard';
+        } else if (data.user.accountType === 'admin' || data.user.accountType === 'superadmin') {
+          window.location.href = '/admin/dashboard';
         }
       } else {
         toast.error(data.error || 'Login failed');

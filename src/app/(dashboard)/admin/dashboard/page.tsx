@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Logo from '@/components/Logo';
+import Image from 'next/image';
 
 interface UserData {
   _id: string;
@@ -92,32 +93,40 @@ export default function AdminDashboard() {
   const activeUsers = users.filter(u => u.isActive);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
       {/* Header */}
-      <header className="bg-blue-900 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Logo size="small" />
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Image 
+                  src="/logo.png" 
+                  alt="SLSU Logo" 
+                  width={24}
+                  height={24}
+                  className="rounded"
+                />
+              </div>
               <div className="hidden sm:block">
-                <h1 className="text-lg sm:text-xl font-bold">SLSU OJT Tracking</h1>
-                <p className="text-xs text-blue-200 hidden lg:block">
+                <h1 className="text-xl font-bold text-gray-900">SLSU OJT Tracking</h1>
+                <p className="text-xs text-gray-600 hidden lg:block">
                   {user.accountType === 'superadmin' ? 'Super Admin Dashboard' : 'Admin Dashboard'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-4">
               <div className="text-right hidden sm:block">
-                <p className="text-sm sm:text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
-                <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
+                <p className="text-sm font-mono text-gray-700">{currentTime.toLocaleTimeString()}</p>
+                <p className="text-xs text-gray-500">{currentTime.toLocaleDateString()}</p>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="text-white hover:bg-blue-800"
+                className="text-gray-700 hover:text-sky-600 hover:bg-sky-50 transition-colors"
               >
-                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+                <LogOut className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -127,68 +136,74 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-8">
           <div className="flex items-center space-x-4">
-            <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
-              <AvatarFallback className="bg-blue-800 text-white text-lg sm:text-xl">
-                <Shield className="h-6 w-6 sm:h-8 sm:w-8" />
-              </AvatarFallback>
-            </Avatar>
+            <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-blue-900">
+              <h2 className="text-2xl font-bold text-gray-900">
                 {user.accountType === 'superadmin' ? 'Super Administrator' : 'Administrator'}
               </h2>
-              <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
+              <p className="text-gray-600">{user.email}</p>
               {user.accountType === 'superadmin' && (
-                <Badge className="mt-1 bg-blue-800 text-white">Super Admin Access</Badge>
+                <Badge className="mt-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white">Super Admin Access</Badge>
               )}
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <Card className="border-blue-200 bg-white shadow-md">
-            <CardContent className="p-3 sm:p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Students</p>
-                  <p className="text-2xl font-bold text-blue-900">{students.length}</p>
+                  <p className="text-sm text-gray-600">Total Students</p>
+                  <p className="text-3xl font-bold text-sky-600">{students.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-600" />
+                <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-sky-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-blue-200 bg-white shadow-md">
-            <CardContent className="p-3 sm:p-4">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Students</p>
-                  <p className="text-2xl font-bold text-blue-900">{students.filter(s => s.isActive).length}</p>
+                  <p className="text-sm text-gray-600">Active Students</p>
+                  <p className="text-3xl font-bold text-green-600">{students.filter(s => s.isActive).length}</p>
                 </div>
-                <UserCheck className="h-8 w-8 text-green-600" />
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <UserCheck className="w-6 h-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-blue-200 bg-white shadow-md">
-            <CardContent className="p-3 sm:p-4">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Departments</p>
-                  <p className="text-2xl font-bold text-blue-900">{departmentUsers.length}</p>
+                  <p className="text-sm text-gray-600">Departments</p>
+                  <p className="text-3xl font-bold text-sky-600">{departmentUsers.length}</p>
                 </div>
-                <Building className="h-8 w-8 text-blue-600" />
+                <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center">
+                  <Building className="w-6 h-6 text-sky-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-blue-200 bg-white shadow-md">
-            <CardContent className="p-3 sm:p-4">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Admin Users</p>
-                  <p className="text-2xl font-bold text-blue-900">{adminUsers.length}</p>
+                  <p className="text-sm text-gray-600">Admin Users</p>
+                  <p className="text-3xl font-bold text-purple-600">{adminUsers.length}</p>
                 </div>
-                <Shield className="h-8 w-8 text-blue-600" />
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-purple-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -196,10 +211,10 @@ export default function AdminDashboard() {
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-white border border-blue-200 rounded-lg p-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-blue-900 text-white">Overview</TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-blue-900 text-white">Users</TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-blue-900 text-white">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-xl">
+            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Users</TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">

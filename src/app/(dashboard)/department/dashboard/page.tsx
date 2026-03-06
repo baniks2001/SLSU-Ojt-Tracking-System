@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Logo from '@/components/Logo';
+import Image from 'next/image';
 
 // Add custom styles for better visibility
 const customStyles = `
@@ -518,30 +519,38 @@ export default function DepartmentDashboard() {
   const pendingRequests = scheduleRequests.filter((r: ScheduleRequest) => r.status === 'pending');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
       {/* Header */}
-      <header className="bg-blue-900 text-white shadow-lg">
-        <div className="container-responsive">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-responsive">
-              <Logo size="small" />
-              <div className="hide-mobile">
-                <h1 className="text-responsive-base font-bold">SLSU OJT Tracking</h1>
-                <p className="text-xs text-blue-200">Department Dashboard</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Image 
+                  src="/logo.png" 
+                  alt="SLSU Logo" 
+                  width={24}
+                  height={24}
+                  className="rounded"
+                />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl font-bold text-gray-900">SLSU OJT Tracking</h1>
+                <p className="text-xs text-gray-600">Department Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center space-x-responsive">
-              <div className="text-right hide-mobile">
-                <p className="text-responsive-sm font-mono">{currentTime.toLocaleTimeString()}</p>
-                <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
+            <div className="flex items-center space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-mono text-gray-700">{currentTime.toLocaleTimeString()}</p>
+                <p className="text-xs text-gray-500">{currentTime.toLocaleDateString()}</p>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="text-white hover:bg-blue-800"
+                className="text-gray-700 hover:text-sky-600 hover:bg-sky-50 transition-colors"
               >
-                <LogOut className="icon-responsive" />
+                <LogOut className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -549,105 +558,111 @@ export default function DepartmentDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="container-responsive py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <div className="flex-responsive">
-            <Avatar className="avatar-responsive">
-              <AvatarFallback className="bg-blue-900 text-white text-xl">
-                {user.details.departmentCode.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-2xl font-bold">{user.details.departmentCode.charAt(0)}</span>
+            </div>
             <div>
-              <h2 className="text-responsive-lg font-bold text-gray-900">{user.details.departmentName}</h2>
-              <p className="text-responsive-sm text-gray-600">{user.details.ojtAdvisorName} - {user.details.ojtAdvisorPosition}</p>
-              <p className="text-xs text-gray-500">{user.email}</p>
+              <h2 className="text-2xl font-bold text-gray-900">{user.details.departmentName}</h2>
+              <p className="text-gray-600">{user.details.ojtAdvisorName} - {user.details.ojtAdvisorPosition}</p>
+              <p className="text-sm text-gray-500">{user.email}</p>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid-responsive mb-6">
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-responsive-xs text-gray-600">Total Students</p>
-                  <p className="text-responsive-lg font-bold text-blue-600">{students.length}</p>
+                  <p className="text-sm text-gray-600">Total Students</p>
+                  <p className="text-3xl font-bold text-sky-600">{students.length}</p>
                 </div>
-                <Users className="icon-responsive text-blue-600" />
+                <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-sky-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-responsive-xs text-gray-600">Active Students</p>
-                  <p className="text-responsive-lg font-bold text-green-600">{activeStudents.length}</p>
+                  <p className="text-sm text-gray-600">Active Students</p>
+                  <p className="text-3xl font-bold text-green-600">{activeStudents.length}</p>
                 </div>
-                <UserCheck className="icon-responsive text-green-600" />
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <UserCheck className="w-6 h-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-responsive-xs text-gray-600">Pending Approval</p>
-                  <p className="text-responsive-lg font-bold text-yellow-600">{pendingStudents.length}</p>
+                  <p className="text-sm text-gray-600">Pending Approval</p>
+                  <p className="text-3xl font-bold text-yellow-600">{pendingStudents.length}</p>
                 </div>
-                <UserX className="icon-responsive text-yellow-600" />
+                <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                  <UserX className="w-6 h-6 text-yellow-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-responsive-xs text-gray-600">Announcements</p>
-                  <p className="text-responsive-lg font-bold text-blue-600">{announcements.length}</p>
+                  <p className="text-sm text-gray-600">Pending Requests</p>
+                  <p className="text-3xl font-bold text-orange-600">{pendingRequests.length}</p>
                 </div>
-                <Bell className="icon-responsive text-blue-600" />
+                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-orange-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 lg:gap-2">
-            <TabsTrigger value="students" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <Users className="icon-responsive-sm" />
-              <span className="hide-mobile">Students</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 bg-gray-100 p-1 rounded-xl">
+            <TabsTrigger value="students" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Students</span>
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <FileText className="icon-responsive-sm" />
-              <span className="hide-mobile">Attendance</span>
+            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Attendance</span>
             </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <UserX className="icon-responsive-sm" />
-              <span className="hide-mobile">Pending</span>
+            <TabsTrigger value="pending" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <UserX className="w-4 h-4" />
+              <span className="hidden sm:inline">Pending</span>
               {pendingStudents.length > 0 && (
-                <Badge variant="destructive" className="ml-1 text-xs badge-responsive">{pendingStudents.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{pendingStudents.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <Clock className="icon-responsive-sm" />
-              <span className="hide-mobile">Schedule</span>
+            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Clock className="w-4 h-4" />
+              <span className="hidden sm:inline">Schedule</span>
               {pendingRequests.length > 0 && (
-                <Badge variant="destructive" className="ml-1 text-xs badge-responsive">{pendingRequests.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{pendingRequests.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <Bell className="icon-responsive-sm" />
-              <span className="hide-mobile">Announce</span>
+            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Announce</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="students" className="space-y-4">
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg">
               <CardHeader>
-                <CardTitle>Active Students</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-900">Active Students</CardTitle>
               </CardHeader>
               <CardContent>
                 {activeStudents.length === 0 ? (
@@ -655,13 +670,14 @@ export default function DepartmentDashboard() {
                     No active students in your department.
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Course</TableHead>
-                        <TableHead>Host Establishment</TableHead>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-gray-700 font-medium">Student ID</TableHead>
+                          <TableHead className="text-gray-700 font-medium">Name</TableHead>
+                          <TableHead className="text-gray-700 font-medium">Course</TableHead>
+                          <TableHead className="text-gray-700 font-medium">Host Establishment</TableHead>
                         <TableHead>Contact</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
@@ -683,6 +699,7 @@ export default function DepartmentDashboard() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
                 )}
               </CardContent>
             </Card>
