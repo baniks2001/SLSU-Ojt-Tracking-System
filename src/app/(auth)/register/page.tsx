@@ -88,7 +88,7 @@ export default function RegisterPage() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch('/api/departments');
+      const response = await fetch('/api/departments?forRegistration=true');
       if (response.ok) {
         const data = await response.json();
         setDepartments(data.departments || []);
@@ -102,7 +102,7 @@ export default function RegisterPage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/courses');
+      const response = await fetch('/api/courses?forRegistration=true');
       if (response.ok) {
         const data = await response.json();
         setCourses(data.courses || []);
@@ -353,14 +353,20 @@ export default function RegisterPage() {
                         <Label htmlFor="course" className="text-sm font-medium text-gray-700">Course</Label>
                         <Select value={studentData.course} onValueChange={(value) => setStudentData({ ...studentData, course: value })}>
                           <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
-                            <SelectValue placeholder="Select course" />
+                            <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select course"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {courses.map((course) => (
-                              <SelectItem key={course._id} value={course.courseName}>
-                                {course.courseName}
-                              </SelectItem>
-                            ))}
+                            {isLoadingCourses ? (
+                              <div className="p-2 text-center text-sm text-gray-500">Loading courses...</div>
+                            ) : courses.length === 0 ? (
+                              <div className="p-2 text-center text-sm text-gray-500">No courses available</div>
+                            ) : (
+                              courses.map((course) => (
+                                <SelectItem key={course._id} value={course.courseName}>
+                                  {course.courseName}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -369,14 +375,20 @@ export default function RegisterPage() {
                         <Label htmlFor="department" className="text-sm font-medium text-gray-700">Department</Label>
                         <Select value={studentData.department} onValueChange={(value) => setStudentData({ ...studentData, department: value })}>
                           <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
-                            <SelectValue placeholder="Select department" />
+                            <SelectValue placeholder={isLoadingDepartments ? "Loading departments..." : "Select department"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {departments.map((dept) => (
-                              <SelectItem key={dept._id} value={dept.departmentName}>
-                                {dept.departmentName}
-                              </SelectItem>
-                            ))}
+                            {isLoadingDepartments ? (
+                              <div className="p-2 text-center text-sm text-gray-500">Loading departments...</div>
+                            ) : departments.length === 0 ? (
+                              <div className="p-2 text-center text-sm text-gray-500">No departments available</div>
+                            ) : (
+                              departments.map((dept) => (
+                                <SelectItem key={dept._id} value={dept.departmentName}>
+                                  {dept.departmentName}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -527,15 +539,34 @@ export default function RegisterPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="dept-name" className="text-sm font-medium text-gray-700">Department Name</Label>
-                        <Input
-                          id="dept-name"
-                          type="text"
-                          placeholder="Computer Science Department"
-                          value={departmentData.departmentName}
-                          onChange={(e) => setDepartmentData({ ...departmentData, departmentName: e.target.value })}
-                          required
-                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
-                        />
+                        <Select 
+                          value={departmentData.departmentName} 
+                          onValueChange={(value) => {
+                            const selectedDept = departments.find(dept => dept.departmentName === value);
+                            setDepartmentData({ 
+                              ...departmentData, 
+                              departmentName: value,
+                              departmentCode: selectedDept?.departmentCode || ''
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <SelectValue placeholder={isLoadingDepartments ? "Loading departments..." : "Select department"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {isLoadingDepartments ? (
+                              <div className="p-2 text-center text-sm text-gray-500">Loading departments...</div>
+                            ) : departments.length === 0 ? (
+                              <div className="p-2 text-center text-sm text-gray-500">No departments available</div>
+                            ) : (
+                              departments.map((dept) => (
+                                <SelectItem key={dept._id} value={dept.departmentName}>
+                                  {dept.departmentName}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                       
                       <div className="space-y-2">
@@ -543,11 +574,10 @@ export default function RegisterPage() {
                         <Input
                           id="dept-code"
                           type="text"
-                          placeholder="CS"
+                          placeholder="Auto-filled from selection"
                           value={departmentData.departmentCode}
-                          onChange={(e) => setDepartmentData({ ...departmentData, departmentCode: e.target.value })}
-                          required
-                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          readOnly
+                          className="h-10 bg-gray-50 border-gray-200 rounded-lg text-gray-600"
                         />
                       </div>
                     </div>

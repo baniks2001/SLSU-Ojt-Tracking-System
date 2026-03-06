@@ -23,12 +23,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          action: 'login',
+          email: formData.email,
+          password: formData.password
+        }),
       });
 
       const data = await response.json();
@@ -37,13 +41,22 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         toast.success('Login successful!');
         
+        // Debug log to check the account type
+        console.log('User account type:', data.user.accountType);
+        
         // Redirect based on user role
         if (data.user.accountType === 'student') {
-          window.location.href = '/student/dashboard';
+          router.push('/student/dashboard');
         } else if (data.user.accountType === 'department') {
-          window.location.href = '/department/dashboard';
+          router.push('/department/dashboard');
         } else if (data.user.accountType === 'admin') {
-          window.location.href = '/admin/dashboard';
+          router.push('/admin/dashboard');
+        } else if (data.user.accountType === 'superadmin') {
+          router.push('/admin/dashboard');
+        } else {
+          // Fallback to admin dashboard if account type is unknown
+          console.log('Unknown account type, redirecting to admin dashboard');
+          router.push('/admin/dashboard');
         }
       } else {
         toast.error(data.error || 'Login failed');
