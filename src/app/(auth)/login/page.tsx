@@ -66,7 +66,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/20 rounded-full blur-3xl"></div>
@@ -84,39 +84,39 @@ export default function LoginPage() {
         <span className="sm:hidden">Home</span>
       </Button>
 
-      <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm max-w-md w-full relative z-10 transition-all duration-300 hover:shadow-3xl">
-        <CardHeader className="text-center space-y-8 pb-8 pt-8">
-          <div className="flex flex-col items-center space-y-4">
+      <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm max-w-md w-full relative z-10 transition-all duration-300 hover:shadow-3xl max-h-[90vh] overflow-y-auto">
+        <CardHeader className="text-center space-y-4 pb-6 pt-6">
+          <div className="flex flex-col items-center space-y-3">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-lg opacity-20 scale-110"></div>
               <div className="relative">
                 <Logo size="large" className="drop-shadow-md" />
               </div>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
                 Southern Leyte State University
               </h1>
               <div className="flex items-center justify-center space-x-2">
-                <div className="h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent w-16"></div>
-                <p className="text-slate-600 font-semibold text-lg">OJT Tracking System</p>
-                <div className="h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent w-16"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent w-12"></div>
+                <p className="text-slate-600 font-semibold text-base">OJT Tracking System</p>
+                <div className="h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent w-12"></div>
               </div>
-              <p className="text-xs text-slate-500 mt-2 font-medium">Developed with ❤️ by SLSU Tech Team</p>
+              <p className="text-xs text-slate-500 font-medium">Developed with ❤️ by SLSU Tech Team</p>
             </div>
           </div>
           
-          <div className="space-y-3">
-            <CardTitle className="text-2xl text-slate-800 font-bold tracking-tight">Welcome Back</CardTitle>
-            <CardDescription className="text-slate-600 text-base leading-relaxed px-4">
+          <div className="space-y-2">
+            <CardTitle className="text-xl text-slate-800 font-bold tracking-tight">Welcome Back</CardTitle>
+            <CardDescription className="text-slate-600 text-sm leading-relaxed">
               Enter your credentials to access your account
             </CardDescription>
           </div>
         </CardHeader>
         
-        <CardContent className="pb-8 px-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-3">
+        <CardContent className="pb-6 px-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700 font-semibold text-sm tracking-wide">Email Address</Label>
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg opacity-0 group-focus-within:opacity-10 transition-opacity duration-200"></div>
@@ -128,12 +128,12 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="pl-12 pr-4 h-12 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-slate-50/50 focus:bg-white transition-all duration-200 text-slate-700 placeholder-slate-400"
+                  className="pl-12 pr-4 h-11 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-slate-50/50 focus:bg-white transition-all duration-200 text-slate-700 placeholder-slate-400"
                 />
               </div>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-700 font-semibold text-sm tracking-wide">Password</Label>
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg opacity-0 group-focus-within:opacity-10 transition-opacity duration-200"></div>
@@ -145,14 +145,14 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="pl-12 pr-4 h-12 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-slate-50/50 focus:bg-white transition-all duration-200 text-slate-700 placeholder-slate-400"
+                  className="pl-12 pr-4 h-11 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-slate-50/50 focus:bg-white transition-all duration-200 text-slate-700 placeholder-slate-400"
                 />
               </div>
             </div>
             
             <Button 
               type="submit" 
-              className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -167,7 +167,7 @@ export default function LoginPage() {
           </form>
         </CardContent>
         
-        <CardFooter className="pt-0 pb-8 px-8 space-y-4">
+        <CardFooter className="pt-0 pb-6 px-6 space-y-3">
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 text-sm text-slate-600">
             <span>Don't have an account?</span>
             <Link 

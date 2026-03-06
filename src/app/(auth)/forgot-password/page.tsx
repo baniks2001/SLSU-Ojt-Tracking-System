@@ -20,20 +20,17 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth', {
+      const response = await fetch('/api/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'forgotPassword',
-          email,
-        }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setIsSubmitted(true);
-        toast.success('Temporary password sent to your email!');
+        toast.success(data.message || 'Temporary password sent to your email!');
       } else {
         toast.error(data.error || 'Failed to process request');
       }

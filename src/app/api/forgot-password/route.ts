@@ -2,17 +2,20 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import { User, Student, Department } from '@/lib/models';
 import crypto from 'crypto';
-import { sendOTPEmail } from '@/lib/auth/email';
+import { hashPassword } from '@/lib/auth/password';
+import { sendTemporaryPasswordEmail } from '@/lib/auth/email';
 
-// Generate OTP code
-function generateOTPCode(): string {
-  return crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+// Generate secure temporary password
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
 }
 
-// Store OTP codes (in production, use Redis or database)
-const otpStore = new Map<string, { code: string; expires: Date; email: string }>();
-
-// POST - Send OTP for password reset
+// POST - Send temporary password for password reset
 export async function POST(request: Request) {
   try {
     await connectDB();
@@ -28,13 +31,16 @@ export async function POST(request: Request) {
 
     // Find user by email
     let user = await User.findOne({ email });
+    let userType = 'user';
     if (!user) {
       // Try student collection
       user = await Student.findOne({ email });
+      if (user) userType = 'student';
     }
     if (!user) {
       // Try department collection
       user = await Department.findOne({ email });
+      if (user) userType = 'department';
     }
 
     if (!user) {
@@ -44,113 +50,42 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate OTP code
-    const otpCode = generateOTPCode();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
+    // Generate temporary password
+    const temporaryPassword = generateTemporaryPassword();
+    const hashedPassword = await hashPassword(temporaryPassword);
 
-    // Store OTP (in production, use proper database storage)
-    otpStore.set(email, {
-      code: otpCode,
-      expires: expiresAt,
-      email
-    });
+    // Update user password with temporary password
+    if (userType === 'user') {
+      await User.findByIdAndUpdate(user._id, { password: hashedPassword });
+    } else if (userType === 'student') {
+      await User.findByIdAndUpdate(user.userId, { password: hashedPassword });
+    } else if (userType === 'department') {
+      await User.findByIdAndUpdate(user.userId, { password: hashedPassword });
+    }
 
-    // Send OTP email
+    // Send temporary password email
     try {
-      await sendOTPEmail(email, otpCode, user.firstName || user.departmentName || 'User');
+      const userName = user.firstName || user.departmentName || 'User';
+      await sendTemporaryPasswordEmail(email, temporaryPassword, userName);
     } catch (emailError) {
-      console.error('Failed to send OTP email:', emailError);
+      console.error('Failed to send temporary password email:', emailError);
       // Continue even if email fails
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'OTP code sent to your email',
-      expiresIn: '15 minutes',
-      // For development only - remove in production
-      otpCode: process.env.NODE_ENV === 'development' ? otpCode : undefined
-    });
-
-  } catch (error) {
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to send OTP code' 
-      },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT - Verify OTP and reset password
-export async function PUT(request: Request) {
-  try {
-    await connectDB();
-    const body = await request.json();
-    const { email, otpCode, newPassword } = body;
-
-    if (!email || !otpCode || !newPassword) {
-      return NextResponse.json(
-        { success: false, error: 'All fields are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate OTP
-    const storedOTP = otpStore.get(email);
-    if (!storedOTP || storedOTP.code !== otpCode || storedOTP.expires < new Date()) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid or expired OTP code' },
-        { status: 400 }
-      );
-    }
-
-    // Find user and update password
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = await Student.findOne({ email });
-    }
-    if (!user) {
-      user = await Department.findOne({ email });
-    }
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Hash new password
-    const bcrypt = require('bcryptjs');
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    if (user.accountType) {
-      // User model
-      await User.findByIdAndUpdate(user._id, { password: hashedPassword });
-    } else {
-      // Student model
-      await Student.findByIdAndUpdate(user._id, { password: hashedPassword });
-    }
-
-    // Clear OTP
-    otpStore.delete(email);
-
-    // Log system activity
+    // Log the password reset
     try {
       await fetch(`${process.env.NEXTAUTH_URL}/api/system-activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userEmail: email,
-          userType: user.accountType || user.constructor.modelName.toLowerCase(),
+          userType: userType,
           action: 'PASSWORD_RESET',
-          description: `User successfully reset password using OTP verification`,
-          severity: 'info',
+          description: `Temporary password sent to ${email}`,
+          severity: 'medium',
           metadata: {
-            resetTime: new Date(),
-            method: 'OTP'
+            resetMethod: 'temporary_password',
+            timestamp: new Date()
           }
         })
       });
@@ -160,23 +95,28 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Password reset successful'
+      message: 'Temporary password sent to your email address',
+      instructions: 'Please check your email and use the temporary password to log in, then change your password immediately.',
+      // For development only - remove in production
+      temporaryPassword: process.env.NODE_ENV === 'development' ? temporaryPassword : undefined
     });
 
   } catch (error) {
+    console.error('Forgot password error:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to reset password' 
+        error: 'Failed to send temporary password' 
       },
       { status: 500 }
     );
   }
 }
 
-// GET - Check OTP status
+// GET - Check if email exists (for validation)
 export async function GET(request: Request) {
   try {
+    await connectDB();
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
 
@@ -187,30 +127,37 @@ export async function GET(request: Request) {
       );
     }
 
-    const storedOTP = otpStore.get(email);
-    
-    if (!storedOTP) {
-      return NextResponse.json({
-        success: false,
-        message: 'No OTP code found for this email'
-      });
+    // Check if user exists
+    let user = await User.findOne({ email });
+    let userType = 'user';
+    if (!user) {
+      user = await Student.findOne({ email });
+      if (user) userType = 'student';
+    }
+    if (!user) {
+      user = await Department.findOne({ email });
+      if (user) userType = 'department';
     }
 
-    const isValid = storedOTP.code !== undefined && storedOTP.expires > new Date();
-    const timeRemaining = Math.max(0, Math.floor((storedOTP.expires.getTime() - Date.now()) / (1000 * 60)));
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'No account found with this email address' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      isValid,
-      timeRemaining,
-      expiresIn: storedOTP.expires.toISOString()
+      message: 'Account found',
+      userType: userType
     });
 
   } catch (error) {
+    console.error('Email validation error:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to check OTP status' 
+        error: 'Failed to validate email' 
       },
       { status: 500 }
     );
