@@ -27,7 +27,7 @@ export interface IStudent extends Document {
   emergencyContactNumber?: string;
   address?: string;
   ojtAdvisor?: mongoose.Types.ObjectId;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | 'evening' | 'midnight' | '1shift' | '2shift';
   shiftConfig?: ShiftConfig;
   isAccepted: boolean;
   isActive: boolean;
@@ -63,7 +63,7 @@ const StudentSchema: Schema = new Schema({
   ojtAdvisor: { type: Schema.Types.ObjectId, ref: 'Department' },
   shiftType: { 
     type: String, 
-    enum: ['regular', 'regular-split', 'graveyard', 'custom', 'morning', 'afternoon', '1shift', '2shift'],
+    enum: ['regular', 'regular-split', 'graveyard', 'custom', 'morning', 'afternoon', 'evening', 'midnight', '1shift', '2shift'],
     default: 'regular'
   },
   shiftConfig: { type: ShiftConfigSchema },

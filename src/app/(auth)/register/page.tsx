@@ -487,12 +487,14 @@ export default function RegisterPage() {
                         <SelectValue placeholder="Select shift type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="morning">Morning (7:00 AM - 12:00 PM)</SelectItem>
-                        <SelectItem value="afternoon">Afternoon (1:00 PM - 5:00 PM)</SelectItem>
-                        <SelectItem value="regular">Regular (7:00 AM - 12:00 PM / 1:00 PM - 5:00 PM)</SelectItem>
-                        <SelectItem value="1shift">1 Shift Only (7:00 AM - 12:00 PM)</SelectItem>
-                        <SelectItem value="2shift">2 Shift Only (1:00 PM - 5:00 PM)</SelectItem>
-                        <SelectItem value="graveyard">Graveyard (7:00 PM - 7:00 AM)</SelectItem>
+                        <SelectItem value="morning">Morning (6:00 AM - 12:00 PM)</SelectItem>
+                        <SelectItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</SelectItem>
+                        <SelectItem value="evening">Evening (6:00 PM - 12:00 AM)</SelectItem>
+                        <SelectItem value="midnight">Midnight (12:00 AM - 6:00 AM)</SelectItem>
+                        <SelectItem value="regular">Regular (6:00 AM - 6:00 PM)</SelectItem>
+                        <SelectItem value="1shift">Single Shift (6:00 AM - 6:00 PM)</SelectItem>
+                        <SelectItem value="2shift">Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)</SelectItem>
+                        <SelectItem value="graveyard">Graveyard (10:00 PM - 6:00 AM)</SelectItem>
                         <SelectItem value="custom">Custom Time</SelectItem>
                       </SelectContent>
                     </Select>

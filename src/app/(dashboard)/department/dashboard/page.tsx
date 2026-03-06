@@ -267,7 +267,7 @@ export default function DepartmentDashboard() {
 
   // Helper functions to determine which columns to show based on shift type
   const shouldShowMorningColumns = (shiftType: string) => {
-    return ['regular', 'morning', '1shift', '2shift'].includes(shiftType);
+    return ['regular', 'morning', '1shift', '2shift', 'evening', 'midnight'].includes(shiftType);
   };
 
   const shouldShowAfternoonColumns = (shiftType: string) => {
@@ -275,7 +275,7 @@ export default function DepartmentDashboard() {
   };
 
   const shouldShowEveningColumns = (shiftType: string) => {
-    return ['graveyard'].includes(shiftType);
+    return ['graveyard', 'evening', 'midnight'].includes(shiftType);
   };
 
   const getShiftTypeDisplay = (shiftType: string) => {
@@ -284,6 +284,8 @@ export default function DepartmentDashboard() {
       'regular-split': 'Regular Split',
       'morning': 'Morning Only',
       'afternoon': 'Afternoon Only', 
+      'evening': 'Evening Only',
+      'midnight': 'Midnight Only',
       '1shift': 'Single Shift',
       '2shift': 'Two Shifts',
       'graveyard': 'Graveyard',

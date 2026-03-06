@@ -17,7 +17,7 @@ interface DTRTemplateProps {
     course: string;
     department: string;
     hostEstablishment: string;
-    shiftType: 'regular' | 'graveyard' | 'custom';
+    shiftType: 'regular' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | 'evening' | 'midnight' | '1shift' | '2shift';
     location?: string; // Optional
   };
 }

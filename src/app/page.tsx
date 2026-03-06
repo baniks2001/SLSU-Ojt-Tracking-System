@@ -127,6 +127,7 @@ export default function Home() {
         <div className="mt-16 text-center text-sm text-gray-500">
           <p>Southern Leyte State University - OJT Tracking System</p>
           <p>Version 1.0 | © 2026 All Rights Reserved</p>
+          <p>Developed by: Servando S. Tio III</p>
         </div>
       </main>
     </div>

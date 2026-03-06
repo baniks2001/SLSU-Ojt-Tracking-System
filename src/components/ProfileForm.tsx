@@ -22,7 +22,7 @@ interface ProfileFormProps {
     hostEstablishment: string;
     contactNumber?: string;
     address?: string;
-    shiftType: 'regular' | 'graveyard' | 'custom';
+    shiftType: 'regular' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | 'evening' | 'midnight' | '1shift' | '2shift';
     location?: string; // Optional, kept for backward compatibility
   };
   userEmail: string;

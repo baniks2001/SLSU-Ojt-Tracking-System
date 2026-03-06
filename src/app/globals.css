@@ -210,6 +210,10 @@
     @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3;
   }
   
+  .input-responsive {
+    @apply h-8 sm:h-10 text-xs sm:text-sm;
+  }
+  
   /* Table utilities */
   .table-responsive {
     @apply w-full text-xs sm:text-sm;

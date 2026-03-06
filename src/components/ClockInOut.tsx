@@ -172,24 +172,81 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     return () => clearInterval(timer);
   }, [countdown]);
 
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   const startCamera = async () => {
+    // Check if browser supports getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error('Camera not supported in this browser. Please try using Chrome, Firefox, or Safari.');
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Stop any existing stream first
+      stopCamera();
+      
+      // Request camera with better constraints
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        } 
+      });
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          setShowCamera(true);
+        };
+        
+        // Handle video errors
+        videoRef.current.onerror = (e) => {
+          console.error('Video error:', e);
+          toast.error('Camera error occurred. Please try again.');
+          stopCamera();
+        };
       }
-      setShowCamera(true);
-    } catch {
-      toast.error('Could not access camera. Please allow camera permissions.');
+    } catch (error) {
+      console.error('Camera access error:', error);
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          toast.error('Camera permission denied. Please allow camera access and try again.');
+        } else if (error.name === 'NotFoundError') {
+          toast.error('No camera found. Please connect a camera and try again.');
+        } else if (error.name === 'NotReadableError') {
+          toast.error('Camera is already in use by another application.');
+        } else if (error.name === 'OverconstrainedError') {
+          toast.error('Camera constraints cannot be satisfied. Please try a different camera.');
+        } else {
+          toast.error('Could not access camera: ' + error.message);
+        }
+      } else {
+        toast.error('Could not access camera. Please check camera permissions.');
+      }
     }
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+    try {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => {
+          track.stop();
+        });
+        videoRef.current.srcObject = null;
+      }
+    } catch (error) {
+      console.error('Error stopping camera:', error);
+    } finally {
+      setShowCamera(false);
     }
-    setShowCamera(false);
   };
 
   const handleClockAction = async (action: string) => {
@@ -206,20 +263,42 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg');
-        setCapturedImage(imageData);
-        // Close verification modal and open review modal
-        setShowCameraModal(false);
-        setShowReviewModal(true);
-        stopCamera();
+      try {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        
+        // Check if video is ready
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          toast.error('Camera is not ready yet. Please wait a moment and try again.');
+          return;
+        }
+        
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Draw the video frame to canvas
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to JPEG with good quality
+          const imageData = canvas.toDataURL('image/jpeg', 0.9);
+          setCapturedImage(imageData);
+          
+          // Close verification modal and open review modal
+          setShowCameraModal(false);
+          setShowReviewModal(true);
+          stopCamera();
+        } else {
+          toast.error('Could not capture image. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error capturing image:', error);
+        toast.error('Failed to capture photo. Please try again.');
       }
+    } else {
+      toast.error('Camera not available. Please try again.');
     }
   };
 
@@ -1219,8 +1298,16 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                     ref={videoRef}
                     autoPlay
                     playsInline
+                    muted
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Video error:', e);
+                      toast.error('Camera error occurred. Please try again.');
+                    }}
                   />
+                  <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
+                    Camera Active
+                  </div>
                 </div>
                 <div className="flex justify-center space-x-4">
                   <Button onClick={captureImage} className="bg-[#003366] hover:bg-[#002244]">
