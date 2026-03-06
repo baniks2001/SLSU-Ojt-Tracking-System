@@ -2,157 +2,39 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Users, FileText, Bell, LogOut, UserCheck, UserX, CheckCircle, Clock, Shield, Trash2, Building } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Logo from '@/components/Logo';
-
-// Add custom styles for better visibility
-const customStyles = `
-  .btn-visible-outline {
-    border: 2px solid #003366 !important;
-    outline: 2px solid #003366 !important;
-    outline-offset: 2px !important;
-  }
-  
-  .btn-visible-outline:hover {
-    border-color: #002244 !important;
-    outline-color: #002244 !important;
-    background-color: #f0f4f8 !important;
-  }
-  
-  .btn-visible-outline:focus {
-    border-color: #003366 !important;
-    outline-color: #003366 !important;
-    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.3) !important;
-  }
-  
-  .table-visible-outline {
-    border: 2px solid #e2e8f0 !important;
-    outline: 1px solid #cbd5e1 !important;
-  }
-  
-  .table-visible-outline th {
-    border: 1px solid #cbd5e1 !important;
-    background-color: #f8fafc !important;
-    font-weight: 600 !important;
-  }
-  
-  .table-visible-outline td {
-    border: 1px solid #e2e8f0 !important;
-  }
-  
-  .table-visible-outline tr:hover {
-    background-color: #f1f5f9 !important;
-  }
-  
-  .image-btn {
-    border: 2px solid #3b82f6 !important;
-    outline: 1px solid #2563eb !important;
-    color: #1e40af !important;
-    font-weight: 500 !important;
-    padding: 6px 12px !important;
-    font-size: 0.875rem !important;
-  }
-  
-  .image-btn:hover {
-    border-color: #2563eb !important;
-    background-color: #eff6ff !important;
-    color: #1e40af !important;
-  }
-  
-  .image-btn:focus {
-    border-color: #1e40af !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
-  }
-`;
-
-// Inject styles into the document
-if (typeof window !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = customStyles;
-  document.head.appendChild(styleSheet);
-}
+import { Users, FileText, Bell, UserCheck, UserX, CheckCircle, Clock, Shield, Trash2, Building, Calendar, TrendingUp, Target } from 'lucide-react';
+import Header from '@/components/Header';
 
 interface DepartmentData {
   _id: string;
   departmentName: string;
   departmentCode: string;
   location: string;
-  contactEmail: string;
-  contactNumber?: string;
   ojtAdvisorName: string;
   ojtAdvisorPosition: string;
-}
-
-interface UserData {
-  id: string;
   email: string;
-  accountType: string;
-  details: DepartmentData;
 }
 
 interface Student {
   _id: string;
-  userId: string;
   studentId: string;
   firstName: string;
   lastName: string;
   middleName?: string;
   course: string;
   department: string;
-  location: string;
   hostEstablishment: string;
   contactNumber?: string;
   address?: string;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+  shiftType?: string;
   isAccepted: boolean;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface ScheduleRequest {
-  _id: string;
-  studentId: {
-    _id: string;
-    studentId: string;
-    firstName: string;
-    lastName: string;
-  };
-  currentShiftType: string;
-  requestedShiftType: string;
-  requestedShiftConfig: {
-    description?: string;
-    eveningStart?: string;
-    eveningEnd?: string;
-  };
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  requestedAt: string;
-}
-
-interface Announcement {
-  _id: string;
-  title: string;
-  content: string;
-  isForAll: boolean;
-  isActive: boolean;
-  createdAt: string;
+  attendanceRecords: number;
+  totalHours: number;
 }
 
 interface AttendanceRecord {
   _id: string;
-  studentId: string;
   date: string;
   morningIn?: string;
   morningOut?: string;
@@ -160,183 +42,110 @@ interface AttendanceRecord {
   afternoonOut?: string;
   eveningIn?: string;
   eveningOut?: string;
-  morningInImage?: string;
-  morningOutImage?: string;
-  afternoonInImage?: string;
-  afternoonOutImage?: string;
-  eveningInImage?: string;
-  eveningOutImage?: string;
-  totalHours: number;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+  totalHours?: number;
+  shiftType: string;
+  studentId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    studentId: string;
+  };
 }
 
 export default function DepartmentDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('students');
+  const [user, setUser] = useState<any>(null);
+  const [departmentData, setDepartmentData] = useState<DepartmentData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [scheduleRequests, setScheduleRequests] = useState<ScheduleRequest[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'attendance'>('list');
-  const [selectedStudentData, setSelectedStudentData] = useState<Student | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [supervisors, setSupervisors] = useState<any[]>([]);
-  const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
-  const [newSupervisor, setNewSupervisor] = useState({
-    name: '',
-    email: '',
-    department: '',
-    contactNumber: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    const userData = localStorage.getItem('user');
 
-    if (!token || !userStr) {
+    if (!token || !userData) {
       router.push('/login');
       return;
     }
 
-    try {
-      const userData = JSON.parse(userStr);
-      if (userData.accountType !== 'department') {
-        router.push('/login');
-        return;
-      }
-      setUser(userData);
-      fetchStudents(userData.details.departmentName);
-      fetchAnnouncements(userData.id);
-      fetchSupervisors(userData.details._id);
-      fetchScheduleRequests(userData.details._id);
-    } catch (error) {
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+
+    if (parsedUser.accountType !== 'department') {
       router.push('/login');
       return;
     }
 
-    setIsLoading(false);
-
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timeInterval);
+    fetchDepartmentData();
+    fetchStudents();
+    fetchAttendance();
   }, [router]);
 
-  const fetchStudents = async (departmentName: string) => {
+  const fetchDepartmentData = async () => {
     try {
-      const response = await fetch(`/api/users?accountType=student&department=${departmentName}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/departments', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setStudents(data.users.map((u: any) => u.details) || []);
+        setDepartmentData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching department data:', error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/students', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filter students by department
+        const departmentStudents = data.filter((student: Student) => 
+          student.department === user?.details?.departmentCode
+        );
+        setStudents(departmentStudents);
       }
     } catch (error) {
       console.error('Error fetching students:', error);
     }
   };
 
-  const fetchAnnouncements = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/announcements?postedBy=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setAnnouncements(data.announcements || []);
-      }
-    } catch (error) {
-      console.error('Error fetching announcements:', error);
-    }
-  };
-
-  const fetchScheduleRequests = async (departmentId: string) => {
-    try {
-      const response = await fetch(`/api/schedule-requests?departmentId=${departmentId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setScheduleRequests(data.requests || []);
-      }
-    } catch (error) {
-      console.error('Error fetching schedule requests:', error);
-    }
-  };
-
-  // Helper functions to determine which columns to show based on shift type
-  const shouldShowMorningColumns = (shiftType: string) => {
-    return ['regular', 'morning', '1shift', '2shift', 'evening', 'midnight'].includes(shiftType);
-  };
-
-  const shouldShowAfternoonColumns = (shiftType: string) => {
-    return ['regular', 'afternoon', '1shift', '2shift'].includes(shiftType);
-  };
-
-  const shouldShowEveningColumns = (shiftType: string) => {
-    return ['graveyard', 'evening', 'midnight'].includes(shiftType);
-  };
-
-  const getShiftTypeDisplay = (shiftType: string) => {
-    const shiftMap: { [key: string]: string } = {
-      'regular': 'Regular',
-      'regular-split': 'Regular Split',
-      'morning': 'Morning Only',
-      'afternoon': 'Afternoon Only', 
-      'evening': 'Evening Only',
-      'midnight': 'Midnight Only',
-      '1shift': 'Single Shift',
-      '2shift': 'Two Shifts',
-      'graveyard': 'Graveyard',
-      'custom': 'Custom'
-    };
-    return shiftMap[shiftType] || shiftType;
-  };
-
-  const getEffectiveShiftType = (record: any) => {
-    // Try to get shift type from multiple sources
-    return record.studentId?.shiftType || 
-           record.shiftType || 
-           'regular'; // fallback
-  };
-
-  const handleViewStudentAttendance = (student: Student) => {
-    setSelectedStudentData(student);
-    setSelectedStudent(student._id);
-    setViewMode('attendance');
-    fetchAttendance(student._id);
-  };
-
-  const handleBackToList = () => {
-    setViewMode('list');
-    setSelectedStudentData(null);
-    setSelectedStudent('');
-    setAttendanceRecords([]);
-  };
-
-  const filteredStudents = students.filter(student => {
-    const searchLower = searchTerm.toLowerCase();
-    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
-    const studentId = student.studentId.toLowerCase();
-    
-    return fullName.includes(searchLower) || studentId.includes(searchLower);
-  });
-
   const fetchAttendance = async (studentId?: string) => {
     try {
-      let url = '/api/attendance?';
-      if (studentId) {
-        url += `studentId=${studentId}&`;
-      }
-      if (user?.details?.departmentCode) {
-        url += `departmentId=${user.details.departmentCode}`;
-      }
-      
-      const response = await fetch(url);
+      const token = localStorage.getItem('token');
+      const url = studentId ? `/api/attendance?studentId=${studentId}` : '/api/attendance';
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setAttendanceRecords(data.attendance || []);
+        if (studentId) {
+          setAttendance(data);
+        } else {
+          // Filter attendance by department
+          const departmentAttendance = data.filter((record: AttendanceRecord) => 
+            students.some(student => student._id === record.studentId._id)
+          );
+          setAttendance(departmentAttendance);
+        }
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
@@ -361,9 +170,8 @@ export default function DepartmentDashboard() {
 
       if (response.ok) {
         toast.success('Attendance record deleted successfully');
-        // Refresh attendance records
         if (selectedStudent) {
-          fetchAttendance(selectedStudent);
+          fetchAttendance(selectedStudent._id);
         }
       } else {
         const data = await response.json();
@@ -377,903 +185,347 @@ export default function DepartmentDashboard() {
 
   const handleAcceptStudent = async (studentId: string) => {
     try {
-      const response = await fetch('/api/students', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId,
-          action: 'accept',
-          ojtAdvisorId: user?.details._id,
-        }),
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/students/accept', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ studentId }),
       });
 
       if (response.ok) {
         toast.success('Student accepted successfully');
-        if (user) {
-          fetchStudents(user.details.departmentName);
-        }
+        fetchStudents();
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to accept student');
       }
     } catch (error) {
       console.error('Error accepting student:', error);
-      toast.error('An error occurred');
+      toast.error('An error occurred while accepting student');
     }
   };
 
-  const handleReviewScheduleRequest = async (requestId: string, status: 'approved' | 'rejected', comments?: string) => {
-    try {
-      const response = await fetch('/api/schedule-requests', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestId,
-          status,
-          comments,
-          reviewedBy: user?.id,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(`Schedule request ${status}`);
-        if (user) {
-          fetchScheduleRequests(user.details._id);
-        }
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to review request');
-      }
-    } catch (error) {
-      console.error('Error reviewing schedule request:', error);
-      toast.error('An error occurred');
-    }
-  };
-
-  const handleCreateAnnouncement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newAnnouncement.title,
-          content: newAnnouncement.content,
-          department: user.details._id,
-          postedBy: user.id,
-          isForAll: false,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Announcement created successfully');
-        setNewAnnouncement({ title: '', content: '' });
-        fetchAnnouncements(user.id);
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to create announcement');
-      }
-    } catch (error) {
-      console.error('Error creating announcement:', error);
-      toast.error('An error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const fetchSupervisors = async (departmentId: string) => {
-    try {
-      const response = await fetch(`/api/supervisors?departmentId=${departmentId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSupervisors(data.supervisors || []);
-      }
-    } catch (error) {
-      console.error('Error fetching supervisors:', error);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    toast.success('Logged out successfully');
-    router.push('/login');
-  };
-
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg">Loading...</div>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <div className="loading loading-lg"></div>
+          <p style={{ color: '#6b7280' }}>Loading department dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  const handleCreateSupervisor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
+  if (!user || !departmentData) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: '#dc2626', marginBottom: '1rem' }}>Unable to load department data</p>
+          <button
+            onClick={() => router.push('/login')}
+            className="btn btn-primary"
+          >
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/supervisors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newSupervisor,
-          departmentId: user.details._id,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('OJT Supervisor account created successfully');
-        setNewSupervisor({ name: '', email: '', department: '', contactNumber: '' });
-        fetchSupervisors(user.details._id);
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to create supervisor');
-      }
-    } catch (error) {
-      console.error('Error creating supervisor:', error);
-      toast.error('An error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteSupervisor = async (supervisorId: string) => {
-    if (!confirm('Are you sure you want to delete this supervisor account?')) return;
-
-    try {
-      const response = await fetch(`/api/supervisors?id=${supervisorId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success('Supervisor account deleted successfully');
-        if (user) {
-          fetchSupervisors(user.details._id);
-        }
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to delete supervisor');
-      }
-    } catch (error) {
-      console.error('Error deleting supervisor:', error);
-      toast.error('An error occurred');
-    }
-  };
-
-  const pendingStudents = students.filter((s: Student) => !s.isAccepted);
-  const activeStudents = students.filter((s: Student) => s.isAccepted);
-  const pendingRequests = scheduleRequests.filter((r: ScheduleRequest) => r.status === 'pending');
+  const acceptedStudents = students.filter(student => student.isAccepted);
+  const pendingStudents = students.filter(student => !student.isAccepted);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-[#003366] text-white shadow-lg header-responsive">
-        <div className="container-responsive">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-responsive">
-              <Logo size="small" />
-              <div className="hide-mobile">
-                <h1 className="text-responsive-base font-bold">SLSU OJT Tracking</h1>
-                <p className="text-xs text-blue-200">Department Dashboard</p>
+    <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
+      <Header title="Department Dashboard" />
+      
+      <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
+        {/* Department Overview */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>
+            {departmentData.departmentName}
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div className="card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff' }}>
+              <div className="card-content" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Total Students</p>
+                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{students.length}</p>
+                  </div>
+                  <Users style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-responsive">
-              <div className="text-right hide-mobile">
-                <p className="text-responsive-sm font-mono">{currentTime.toLocaleTimeString()}</p>
-                <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
+
+            <div className="card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#ffffff' }}>
+              <div className="card-content" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Accepted</p>
+                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{acceptedStudents.length}</p>
+                  </div>
+                  <UserCheck style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
+                </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="text-white hover:bg-blue-800"
-              >
-                <LogOut className="icon-responsive" />
-              </Button>
+            </div>
+
+            <div className="card" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff' }}>
+              <div className="card-content" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Pending</p>
+                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{pendingStudents.length}</p>
+                  </div>
+                  <UserX style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
+                </div>
+              </div>
+            </div>
+
+            <div className="card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: '#ffffff' }}>
+              <div className="card-content" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Attendance Records</p>
+                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{attendance.length}</p>
+                  </div>
+                  <Calendar style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container-responsive py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="flex-responsive">
-            <Avatar className="avatar-responsive">
-              <AvatarFallback className="bg-[#003366] text-white text-xl">
-                {user.details.departmentCode.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-responsive-lg font-bold text-gray-900">{user.details.departmentName}</h2>
-              <p className="text-responsive-sm text-gray-600">{user.details.ojtAdvisorName} - {user.details.ojtAdvisorPosition}</p>
-              <p className="text-xs text-gray-500">{user.email}</p>
+        {/* Main Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Tabs Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Tab Navigation */}
+            <div style={{ display: 'flex', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '0.5rem' }}>
+              {['overview', 'students', 'attendance', 'reports'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem 1rem',
+                    backgroundColor: activeTab === tab ? '#ffffff' : 'transparent',
+                    color: activeTab === tab ? '#111827' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 200ms',
+                    boxShadow: activeTab === tab ? '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' : 'none'
+                  }}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
             </div>
-          </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid-responsive mb-6">
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-responsive-xs text-gray-600">Total Students</p>
-                  <p className="text-responsive-lg font-bold text-blue-600">{students.length}</p>
-                </div>
-                <Users className="icon-responsive text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-responsive-xs text-gray-600">Active Students</p>
-                  <p className="text-responsive-lg font-bold text-green-600">{activeStudents.length}</p>
-                </div>
-                <UserCheck className="icon-responsive text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-responsive-xs text-gray-600">Pending Approval</p>
-                  <p className="text-responsive-lg font-bold text-yellow-600">{pendingStudents.length}</p>
-                </div>
-                <UserX className="icon-responsive text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-responsive">
-            <CardContent className="p-responsive">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-responsive-xs text-gray-600">Announcements</p>
-                  <p className="text-responsive-lg font-bold text-blue-600">{announcements.length}</p>
-                </div>
-                <Bell className="icon-responsive text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 lg:gap-2">
-            <TabsTrigger value="students" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <Users className="icon-responsive-sm" />
-              <span className="hide-mobile">Students</span>
-            </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <FileText className="icon-responsive-sm" />
-              <span className="hide-mobile">Attendance</span>
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <UserX className="icon-responsive-sm" />
-              <span className="hide-mobile">Pending</span>
-              {pendingStudents.length > 0 && (
-                <Badge variant="destructive" className="ml-1 text-xs badge-responsive">{pendingStudents.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <Clock className="icon-responsive-sm" />
-              <span className="hide-mobile">Schedule</span>
-              {pendingRequests.length > 0 && (
-                <Badge variant="destructive" className="ml-1 text-xs badge-responsive">{pendingRequests.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
-              <Bell className="icon-responsive-sm" />
-              <span className="hide-mobile">Announce</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="students" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Students</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activeStudents.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No active students in your department.
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                {/* Department Info */}
+                <div className="card">
+                  <div className="card-header">
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Department Information</h3>
                   </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Course</TableHead>
-                        <TableHead>Host Establishment</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {activeStudents.map((student) => (
-                        <TableRow key={student._id}>
-                          <TableCell>{student.studentId}</TableCell>
-                          <TableCell>
-                            {student.firstName} {student.middleName} {student.lastName}
-                          </TableCell>
-                          <TableCell>{student.course}</TableCell>
-                          <TableCell>{student.hostEstablishment}</TableCell>
-                          <TableCell>{student.contactNumber || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Badge variant="default">Active</Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="attendance" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Student Attendance Records</span>
-                  {viewMode === 'attendance' && selectedStudentData && (
-                    <Button 
-                      variant="outline" 
-                      onClick={handleBackToList}
-                      className="flex items-center btn-visible-outline"
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Back to Student List
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {viewMode === 'list' ? (
-                  // Student List View
-                  <div className="space-y-4">
-                    <div className="text-sm text-gray-600 mb-4">
-                      Select a student to view their detailed attendance records.
-                    </div>
-                    
-                    {/* Search Bar */}
-                    <div className="mb-4">
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          placeholder="Search students by name or ID..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10"
-                        />
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-7 0 0 0-11 7m11 7v4a7 7 0 0011-7h-4a7 7 0 00-7 7v-4a7 7 0 00-7-7" />
-                          </svg>
-                        </div>
+                  <div className="card-content" style={{ paddingTop: '0' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <Building style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Department Code:</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{departmentData.departmentCode}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <Building style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Location:</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{departmentData.location}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <UserCheck style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>OJT Advisor:</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{departmentData.ojtAdvisorName}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <Shield style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Position:</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{departmentData.ojtAdvisorPosition}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <FileText style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Email:</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{departmentData.email}</span>
                       </div>
                     </div>
-                    
-                    {/* Search Results Count */}
-                    {searchTerm && (
-                      <div className="mb-4 text-sm text-gray-600">
-                        Found {filteredStudents.length} student{filteredStudents.length === 1 ? '' : 's'} matching "{searchTerm}"
-                      </div>
-                    )}
-                    
-                    <div className="grid gap-4">
-                      {filteredStudents.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500 col-span-full">
-                          {searchTerm ? `No students found matching "${searchTerm}"` : 'No active students found.'}
-                        </div>
-                      ) : (
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          {filteredStudents.map((student) => (
-                            <Card key={student._id} className="hover:shadow-md transition-shadow">
-                              <CardContent className="p-4">
-                                <div className="flex items-center space-x-4">
-                                  <Avatar className="h-12 w-12">
-                                    <AvatarFallback>
-                                      {student.firstName?.[0]}{student.lastName?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold">
-                                      {student.firstName} {student.lastName}
-                                    </h3>
-                                    <p className="text-sm text-gray-600">
-                                      {student.studentId}
-                                    </p>
-                                    <div className="flex items-center space-x-2 mt-2">
-                                      <Badge variant="outline">
-                                        {getShiftTypeDisplay(student.shiftType || 'regular')}
-                                      </Badge>
-                                      <Badge 
-                                        variant={(student as any).status === 'active' ? 'default' : 'secondary'}
-                                        className="text-xs"
-                                      >
-                                        {(student as any).status}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="mt-4 pt-4 border-t">
-                                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                                    <div>
-                                      <span className="font-medium">Course:</span> {student.course}
-                                    </div>
-                                    <div>
-                                      <span className="font-medium">Contact:</span> {student.contactNumber || 'N/A'}
-                                    </div>
-                                    <div className="col-span-2">
-                                      <span className="font-medium">Host Establishment:</span> {student.hostEstablishment}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="mt-4 flex justify-end">
-                                  <Button 
-                                    onClick={() => handleViewStudentAttendance(student)}
-                                    className="bg-[#003366] hover:bg-[#002244] btn-visible-outline"
-                                  >
-                                    <FileText className="h-4 w-4 mr-2" />
-                                    View Attendance
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   </div>
-                ) : (
-                  // Individual Student Attendance View
-                  <div className="space-y-4">
-                    {selectedStudentData && (
-                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback>
-                              {selectedStudentData.firstName?.[0]}{selectedStudentData.lastName?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-semibold">
-                              {selectedStudentData.firstName} {selectedStudentData.lastName}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {selectedStudentData.studentId} • {getShiftTypeDisplay(selectedStudentData.shiftType || 'regular')}
+                </div>
+
+                {/* Recent Activity */}
+                <div className="card">
+                  <div className="card-header">
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Recent Activity</h3>
+                  </div>
+                  <div className="card-content" style={{ paddingTop: '0' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {attendance.slice(0, 5).map((record) => (
+                        <div key={record._id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
+                          <Calendar style={{ height: '1rem', width: '1rem', color: '#3b82f6' }} />
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: '0.875rem', color: '#374151' }}>
+                              {record.studentId.firstName} {record.studentId.lastName} - {record.date}
+                            </p>
+                            <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                              {record.totalHours ? `${record.totalHours} hours` : 'In progress'}
                             </p>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    {attendanceRecords.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        No attendance records found for this student.
-                      </div>
-                    ) : (
-                      <Table className="table-visible-outline">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            {shouldShowMorningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Morning In</TableHead>}
-                            {shouldShowMorningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Morning Out</TableHead>}
-                            {shouldShowAfternoonColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Afternoon In</TableHead>}
-                            {shouldShowAfternoonColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Afternoon Out</TableHead>}
-                            {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening In</TableHead>}
-                            {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening Out</TableHead>}
-                            <TableHead>Total Hours</TableHead>
-                            <TableHead>Images</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {attendanceRecords.map((record) => {
-                            const studentShiftType = getEffectiveShiftType(record);
-                            return (
-                            <TableRow key={record._id}>
-                              <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                              {shouldShowMorningColumns(studentShiftType) && (
-                                <TableCell>
-                                  {record.morningIn ? new Date(record.morningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                                </TableCell>
-                              )}
-                              {shouldShowMorningColumns(studentShiftType) && (
-                                <TableCell>
-                                  {record.morningOut ? new Date(record.morningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                                </TableCell>
-                              )}
-                              {shouldShowAfternoonColumns(studentShiftType) && (
-                                <TableCell>
-                                  {record.afternoonIn ? new Date(record.afternoonIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                                </TableCell>
-                              )}
-                              {shouldShowAfternoonColumns(studentShiftType) && (
-                                <TableCell>
-                                  {record.afternoonOut ? new Date(record.afternoonOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                                </TableCell>
-                              )}
-                              {shouldShowEveningColumns(studentShiftType) && (
-                                <TableCell>
-                                  {record.eveningIn ? new Date(record.eveningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                                </TableCell>
-                              )}
-                              {shouldShowEveningColumns(studentShiftType) && (
-                                <TableCell>
-                                  {record.eveningOut ? new Date(record.eveningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
-                                </TableCell>
-                              )}
-                              <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
-                              <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>MORNING IN
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Morning Clock In Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningIn ? new Date(record.morningIn).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.morningInImage} 
-                                            alt="Morning In" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowMorningColumns(studentShiftType) && record.morningOutImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>MORNING OUT
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Morning Clock Out Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningOut ? new Date(record.morningOut).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.morningOutImage} 
-                                            alt="Morning Out" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonInImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>AFTERNOON IN
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Afternoon Clock In Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonIn ? new Date(record.afternoonIn).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.afternoonInImage} 
-                                            alt="Afternoon In" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonOutImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>AFTERNOON OUT
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Afternoon Clock Out Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonOut ? new Date(record.afternoonOut).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.afternoonOutImage} 
-                                            alt="Afternoon Out" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowEveningColumns(studentShiftType) && record.eveningInImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>EVENING IN
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Evening Clock In Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningIn ? new Date(record.eveningIn).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.eveningInImage} 
-                                            alt="Evening In" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowEveningColumns(studentShiftType) && record.eveningOutImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>EVENING OUT
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Evening Clock Out Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningOut ? new Date(record.eveningOut).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.eveningOutImage} 
-                                            alt="Evening Out" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleDeleteAttendance(record._id)}
-                                  className="text-xs"
+            {activeTab === 'students' && (
+              <div className="card">
+                <div className="card-header">
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Student Management</h3>
+                </div>
+                <div className="card-content" style={{ paddingTop: '0' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="table">
+                      <thead className="table-header">
+                        <tr>
+                          <th className="table-header-cell">Student ID</th>
+                          <th className="table-header-cell">Name</th>
+                          <th className="table-header-cell">Course</th>
+                          <th className="table-header-cell">Status</th>
+                          <th className="table-header-cell">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {students.map((student) => (
+                          <tr key={student._id} className="table-row">
+                            <td className="table-cell">{student.studentId}</td>
+                            <td className="table-cell">{`${student.firstName} ${student.lastName}`}</td>
+                            <td className="table-cell">{student.course}</td>
+                            <td className="table-cell">
+                              <span className={`badge ${student.isAccepted ? 'badge-success' : 'badge-warning'}`}>
+                                {student.isAccepted ? 'Accepted' : 'Pending'}
+                              </span>
+                            </td>
+                            <td className="table-cell">
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {!student.isAccepted && (
+                                  <button
+                                    onClick={() => handleAcceptStudent(student._id)}
+                                    className="btn btn-sm btn-primary"
+                                  >
+                                    <UserCheck style={{ height: '0.875rem', width: '0.875rem' }} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setSelectedStudent(student);
+                                    fetchAttendance(student._id);
+                                    setActiveTab('attendance');
+                                  }}
+                                  className="btn btn-sm btn-outline"
                                 >
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Delete
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pending" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Student Approvals</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {pendingStudents.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No pending student registrations.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingStudents.map((student) => (
-                      <Card key={student._id} className="border-l-4 border-l-yellow-500">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold">
-                                {student.firstName} {student.middleName} {student.lastName}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                ID: {student.studentId} | Course: {student.course}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Host: {student.hostEstablishment} | Location: {student.location}
-                              </p>
-                            </div>
-                            <Button
-                              onClick={() => handleAcceptStudent(student._id)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Accept
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="schedule-requests" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Schedule Change Requests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {scheduleRequests.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No schedule change requests.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {scheduleRequests.map((request) => (
-                      <Card key={request._id} className={`border-l-4 ${request.status === 'pending' ? 'border-l-yellow-500' : request.status === 'approved' ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                        <CardContent className="p-4">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <div>
-                              <h3 className="font-semibold">
-                                {request.studentId.firstName} {request.studentId.lastName}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                ID: {request.studentId.studentId}
-                              </p>
-                              <p className="text-sm text-gray-500 mt-1">
-                                From: <Badge variant="outline">{request.currentShiftType}</Badge>
-                              </p>
-                              <p className="text-sm text-gray-500 mt-1">
-                                To: <Badge variant="outline">{request.requestedShiftConfig?.description || request.requestedShiftType}</Badge>
-                              </p>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Reason: {request.reason}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-2">
-                                Requested: {new Date(request.requestedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            {request.status === 'pending' ? (
-                              <div className="flex space-x-2 mt-4 md:mt-0">
-                                <Button
-                                  onClick={() => handleReviewScheduleRequest(request._id, 'approved')}
-                                  className="bg-green-600 hover:bg-green-700"
-                                  size="sm"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  onClick={() => handleReviewScheduleRequest(request._id, 'rejected')}
-                                  variant="destructive"
-                                  size="sm"
-                                >
-                                  <UserX className="h-4 w-4 mr-1" />
-                                  Reject
-                                </Button>
+                                  <Calendar style={{ height: '0.875rem', width: '0.875rem' }} />
+                                </button>
                               </div>
-                            ) : (
-                              <Badge className={request.status === 'approved' ? 'bg-green-600' : 'bg-red-600'}>
-                                {request.status === 'approved' ? 'Approved' : 'Rejected'}
-                              </Badge>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </div>
+              </div>
+            )}
 
-          <TabsContent value="announcements" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Announcement</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateAnnouncement} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      value={newAnnouncement.title}
-                      onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
-                      placeholder="Enter announcement title"
-                      required
-                    />
+            {activeTab === 'attendance' && (
+              <div className="card">
+                <div className="card-header">
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>
+                    Attendance Records {selectedStudent && `- ${selectedStudent.firstName} ${selectedStudent.lastName}`}
+                  </h3>
+                  {selectedStudent && (
+                    <button
+                      onClick={() => {
+                        setSelectedStudent(null);
+                        fetchAttendance();
+                      }}
+                      className="btn btn-sm btn-outline"
+                    >
+                      View All
+                    </button>
+                  )}
+                </div>
+                <div className="card-content" style={{ paddingTop: '0' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="table">
+                      <thead className="table-header">
+                        <tr>
+                          <th className="table-header-cell">Date</th>
+                          <th className="table-header-cell">Student</th>
+                          <th className="table-header-cell">Morning In</th>
+                          <th className="table-header-cell">Morning Out</th>
+                          <th className="table-header-cell">Afternoon In</th>
+                          <th className="table-header-cell">Afternoon Out</th>
+                          <th className="table-header-cell">Total Hours</th>
+                          <th className="table-header-cell">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attendance.map((record) => (
+                          <tr key={record._id} className="table-row">
+                            <td className="table-cell">{record.date}</td>
+                            <td className="table-cell">{`${record.studentId.firstName} ${record.studentId.lastName}`}</td>
+                            <td className="table-cell">{record.morningIn || '-'}</td>
+                            <td className="table-cell">{record.morningOut || '-'}</td>
+                            <td className="table-cell">{record.afternoonIn || '-'}</td>
+                            <td className="table-cell">{record.afternoonOut || '-'}</td>
+                            <td className="table-cell">{record.totalHours ? `${record.totalHours}h` : '-'}</td>
+                            <td className="table-cell">
+                              <button
+                                onClick={() => handleDeleteAttendance(record._id)}
+                                className="btn btn-sm btn-destructive"
+                              >
+                                <Trash2 style={{ height: '0.875rem', width: '0.875rem' }} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="content">Content</Label>
-                    <Textarea
-                      id="content"
-                      value={newAnnouncement.content}
-                      onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
-                      placeholder="Enter announcement content"
-                      rows={4}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-[#003366] hover:bg-[#002244]"
-                  >
-                    {isSubmitting ? 'Posting...' : 'Post Announcement'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                </div>
+              </div>
+            )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Announcements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {announcements.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No announcements posted yet.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {announcements.map((announcement) => (
-                      <Card key={announcement._id}>
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold">{announcement.title}</h3>
-                          <p className="text-gray-700 mt-2">{announcement.content}</p>
-                          <p className="text-sm text-gray-500 mt-2">
-                            Posted: {new Date(announcement.createdAt).toLocaleDateString()}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
+            {activeTab === 'reports' && (
+              <div className="card">
+                <div className="card-header">
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Reports & Analytics</h3>
+                </div>
+                <div className="card-content" style={{ paddingTop: '0' }}>
+                  <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
+                    Reports and analytics interface coming soon...
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

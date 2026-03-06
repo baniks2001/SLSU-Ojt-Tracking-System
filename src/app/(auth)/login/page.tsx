@@ -3,10 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Logo from '@/components/Logo';
@@ -70,99 +66,132 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: '28rem' }}>
         {/* Logo and Title Section */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="mb-6">
-            <Logo size="large" className="mx-auto" />
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }} className="animate-fade-in">
+          <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+            <Logo size="large" />
           </div>
-          <h1 className="text-3xl font-bold text-primary-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600 text-lg">Sign in to your SLSU OJT Tracking account</p>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '0.5rem' }}>Welcome Back</h1>
+          <p style={{ color: '#6b7280', fontSize: '1.125rem' }}>Sign in to your SLSU OJT Tracking account</p>
         </div>
 
         {/* Login Card */}
-        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm animate-slide-up">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold text-center text-primary-900">
+        <div className="card animate-slide-up" style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+          <div className="card-header" style={{ paddingBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', color: '#1e3a8a' }}>
               Sign In
-            </CardTitle>
-            <CardDescription className="text-center text-gray-600">
+            </h2>
+            <p style={{ textAlign: 'center', color: '#6b7280' }}>
               Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </div>
           
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="card-content" style={{ paddingTop: '0' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Email Field */}
               <div className="form-group">
-                <Label htmlFor="email" className="form-label">
+                <label htmlFor="email" className="form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
                   Email Address
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', height: '1rem', width: '1rem', color: '#9ca3af' }} />
+                  <input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="pl-10 h-11 bg-white border-gray-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200"
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem', height: '2.75rem', backgroundColor: '#ffffff', borderColor: '#d1d5db', transition: 'all 200ms' }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#2563eb';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
               </div>
               
               {/* Password Field */}
               <div className="form-group">
-                <Label htmlFor="password" className="form-label">
+                <label htmlFor="password" className="form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
                   Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Lock style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', height: '1rem', width: '1rem', color: '#9ca3af' }} />
+                  <input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
-                    className="pl-10 pr-10 h-11 bg-white border-gray-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200"
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', height: '2.75rem', backgroundColor: '#ffffff', borderColor: '#d1d5db', transition: 'all 200ms' }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#2563eb';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 200ms' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#4b5563'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff style={{ height: '1rem', width: '1rem' }} /> : <Eye style={{ height: '1rem', width: '1rem' }} />}
                   </button>
                 </div>
               </div>
               
               {/* Submit Button */}
-              <Button 
+              <button 
                 type="submit" 
-                className="w-full h-11 btn-primary text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary hover-lift"
+                style={{ width: '100%', height: '2.75rem', fontWeight: '500', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', transition: 'all 200ms' }}
                 disabled={isLoading}
+                onMouseEnter={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  }
+                }}
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <Loader2 className="loading" style={{ height: '1rem', width: '1rem' }} />
                     <span>Signing in...</span>
                   </div>
                 ) : (
                   'Sign In'
                 )}
-              </Button>
+              </button>
             </form>
             
             {/* Register Link */}
-            <div className="pt-6 border-t border-gray-200">
-              <div className="text-center text-sm text-gray-600">
+            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb', marginTop: '1.5rem' }}>
+              <div style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
                 Don't have an account?{' '}
                 <Link 
                   href="/register" 
-                  className="text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200 hover:underline"
+                  style={{ color: '#2563eb', fontWeight: '500', textDecoration: 'none', transition: 'color 200ms' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#1d4ed8'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#2563eb'}
                 >
                   Register here
                 </Link>
@@ -170,23 +199,25 @@ export default function LoginPage() {
             </div>
 
             {/* Forgot Password Link */}
-            <div className="text-center">
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
               <Link 
                 href="/forgot-password" 
-                className="text-sm text-gray-500 hover:text-primary-600 transition-colors duration-200 hover:underline"
+                style={{ fontSize: '0.875rem', color: '#9ca3af', textDecoration: 'none', transition: 'color 200ms' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
               >
                 Forgot your password?
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center animate-fade-in">
-          <p className="text-xs text-gray-500">
+        <div style={{ marginTop: '2rem', textAlign: 'center' }} className="animate-fade-in">
+          <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
             © 2026 Southern Leyte State University - OJT Tracking System
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p style={{ fontSize: '0.75rem', color: '#d1d5db', marginTop: '0.25rem' }}>
             Built with modern web technologies
           </p>
         </div>
