@@ -1,131 +1,547 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  Building, 
-  Calendar, 
-  TrendingUp, 
-  Settings,
-  LogOut,
-  Home,
-  Shield,
-  Activity,
-  BarChart3,
-  Clock,
-  Bell,
-  User,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  Target,
-  Award
-} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { toast } from 'sonner';
+import { Users, FileText, Bell, LogOut, UserCheck, UserX, CheckCircle, Clock, Shield, Trash2, Building } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Logo from '@/components/Logo';
+
+// Add custom styles for better visibility
+const customStyles = `
+  .btn-visible-outline {
+    border: 2px solid #003366 !important;
+    outline: 2px solid #003366 !important;
+    outline-offset: 2px !important;
+  }
+  
+  .btn-visible-outline:hover {
+    border-color: #002244 !important;
+    outline-color: #002244 !important;
+    background-color: #f0f4f8 !important;
+  }
+  
+  .btn-visible-outline:focus {
+    border-color: #003366 !important;
+    outline-color: #003366 !important;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.3) !important;
+  }
+  
+  .table-visible-outline {
+    border: 2px solid #e2e8f0 !important;
+    outline: 1px solid #cbd5e1 !important;
+  }
+  
+  .table-visible-outline th {
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    font-weight: 600 !important;
+  }
+  
+  .table-visible-outline td {
+    border: 1px solid #e2e8f0 !important;
+  }
+  
+  .table-visible-outline tr:hover {
+    background-color: #f1f5f9 !important;
+  }
+  
+  .image-btn {
+    border: 2px solid #3b82f6 !important;
+    outline: 1px solid #2563eb !important;
+    color: #1e40af !important;
+    font-weight: 500 !important;
+    padding: 6px 12px !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .image-btn:hover {
+    border-color: #2563eb !important;
+    background-color: #eff6ff !important;
+    color: #1e40af !important;
+  }
+  
+  .image-btn:focus {
+    border-color: #1e40af !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+  }
+`;
+
+// Inject styles into the document
+if (typeof window !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = customStyles;
+  document.head.appendChild(styleSheet);
+}
+
+interface DepartmentData {
+  _id: string;
+  departmentName: string;
+  departmentCode: string;
+  location: string;
+  contactEmail: string;
+  contactNumber?: string;
+  ojtAdvisorName: string;
+  ojtAdvisorPosition: string;
+}
+
+interface UserData {
+  id: string;
+  email: string;
+  accountType: string;
+  details: DepartmentData;
+}
+
+interface Student {
+  _id: string;
+  userId: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  course: string;
+  department: string;
+  location: string;
+  hostEstablishment: string;
+  contactNumber?: string;
+  address?: string;
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+  isAccepted: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface ScheduleRequest {
+  _id: string;
+  studentId: {
+    _id: string;
+    studentId: string;
+    firstName: string;
+    lastName: string;
+  };
+  currentShiftType: string;
+  requestedShiftType: string;
+  requestedShiftConfig: {
+    description?: string;
+    eveningStart?: string;
+    eveningEnd?: string;
+  };
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+}
+
+interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  isForAll: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface AttendanceRecord {
+  _id: string;
+  studentId: string;
+  date: string;
+  morningIn?: string;
+  morningOut?: string;
+  afternoonIn?: string;
+  afternoonOut?: string;
+  eveningIn?: string;
+  eveningOut?: string;
+  morningInImage?: string;
+  morningOutImage?: string;
+  afternoonInImage?: string;
+  afternoonOutImage?: string;
+  eveningInImage?: string;
+  eveningOutImage?: string;
+  totalHours: number;
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+}
 
 export default function DepartmentDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('students');
+  const [students, setStudents] = useState<Student[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [scheduleRequests, setScheduleRequests] = useState<ScheduleRequest[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'list' | 'attendance'>('list');
+  const [selectedStudentData, setSelectedStudentData] = useState<Student | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [supervisors, setSupervisors] = useState<any[]>([]);
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
+  const [newSupervisor, setNewSupervisor] = useState({
+    name: '',
+    email: '',
+    department: '',
+    contactNumber: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        
-        if (!userData || !token) {
-          router.push('/login');
-          return;
-        }
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
 
-        const parsedUser = JSON.parse(userData);
-        if (parsedUser.accountType !== 'department') {
-          router.push('/login');
-          return;
-        }
+    if (!token || !userStr) {
+      router.push('/login');
+      return;
+    }
 
-        setUser(parsedUser);
-      } catch (error) {
-        console.error('Auth check error:', error);
+    try {
+      const userData = JSON.parse(userStr);
+      if (userData.accountType !== 'department') {
         router.push('/login');
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
+      setUser(userData);
+      fetchStudents(userData.details.departmentName);
+      fetchAnnouncements(userData.id);
+      fetchSupervisors(userData.details._id);
+      fetchScheduleRequests(userData.details._id);
+    } catch (error) {
+      router.push('/login');
+      return;
+    }
 
-    checkAuth();
+    setIsLoading(false);
+
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
   }, [router]);
 
+  const fetchStudents = async (departmentName: string) => {
+    try {
+      const response = await fetch(`/api/users?accountType=student&department=${departmentName}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(data.users.map((u: any) => u.details) || []);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    }
+  };
+
+  const fetchAnnouncements = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/announcements?postedBy=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnnouncements(data.announcements || []);
+      }
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+    }
+  };
+
+  const fetchScheduleRequests = async (departmentId: string) => {
+    try {
+      const response = await fetch(`/api/schedule-requests?departmentId=${departmentId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setScheduleRequests(data.requests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching schedule requests:', error);
+    }
+  };
+
+  // Helper functions to determine which columns to show based on shift type
+  const shouldShowMorningColumns = (shiftType: string) => {
+    return ['regular', 'morning', '1shift', '2shift', 'evening', 'midnight'].includes(shiftType);
+  };
+
+  const shouldShowAfternoonColumns = (shiftType: string) => {
+    return ['regular', 'afternoon', '1shift', '2shift'].includes(shiftType);
+  };
+
+  const shouldShowEveningColumns = (shiftType: string) => {
+    return ['graveyard', 'evening', 'midnight'].includes(shiftType);
+  };
+
+  const getShiftTypeDisplay = (shiftType: string) => {
+    const shiftMap: { [key: string]: string } = {
+      'regular': 'Regular',
+      'regular-split': 'Regular Split',
+      'morning': 'Morning Only',
+      'afternoon': 'Afternoon Only', 
+      'evening': 'Evening Only',
+      'midnight': 'Midnight Only',
+      '1shift': 'Single Shift',
+      '2shift': 'Two Shifts',
+      'graveyard': 'Graveyard',
+      'custom': 'Custom'
+    };
+    return shiftMap[shiftType] || shiftType;
+  };
+
+  const getEffectiveShiftType = (record: any) => {
+    // Try to get shift type from multiple sources
+    return record.studentId?.shiftType || 
+           record.shiftType || 
+           'regular'; // fallback
+  };
+
+  const handleViewStudentAttendance = (student: Student) => {
+    setSelectedStudentData(student);
+    setSelectedStudent(student._id);
+    setViewMode('attendance');
+    fetchAttendance(student._id);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedStudentData(null);
+    setSelectedStudent('');
+    setAttendanceRecords([]);
+  };
+
+  const filteredStudents = students.filter(student => {
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+    const studentId = student.studentId.toLowerCase();
+    
+    return fullName.includes(searchLower) || studentId.includes(searchLower);
+  });
+
+  const fetchAttendance = async (studentId?: string) => {
+    try {
+      let url = '/api/attendance?';
+      if (studentId) {
+        url += `studentId=${studentId}&`;
+      }
+      // Get current month
+      const now = new Date();
+      url += `month=${now.getMonth() + 1}&year=${now.getFullYear()}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setAttendanceRecords(data.attendance || []);
+      }
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+    }
+  };
+
+  const handleAcceptStudent = async (studentId: string) => {
+    try {
+      const response = await fetch('/api/students', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          action: 'accept',
+          ojtAdvisorId: user?.details._id,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student accepted successfully');
+        if (user) {
+          fetchStudents(user.details.departmentName);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to accept student');
+      }
+    } catch (error) {
+      console.error('Error accepting student:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleReviewScheduleRequest = async (requestId: string, status: 'approved' | 'rejected', comments?: string) => {
+    try {
+      const response = await fetch('/api/schedule-requests', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId,
+          status,
+          comments,
+          reviewedBy: user?.id,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`Schedule request ${status}`);
+        if (user) {
+          fetchScheduleRequests(user.details._id);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to review request');
+      }
+    } catch (error) {
+      console.error('Error reviewing schedule request:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newAnnouncement.title,
+          content: newAnnouncement.content,
+          department: user.details._id,
+          postedBy: user.id,
+          isForAll: false,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Announcement created successfully');
+        setNewAnnouncement({ title: '', content: '' });
+        fetchAnnouncements(user.id);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create announcement');
+      }
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const fetchSupervisors = async (departmentId: string) => {
+    try {
+      const response = await fetch(`/api/supervisors?departmentId=${departmentId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSupervisors(data.supervisors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching supervisors:', error);
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    toast.success('Logged out successfully');
     router.push('/login');
   };
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent animate-spin rounded-full mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-lg">Loading...</div>
       </div>
     );
   }
 
-  if (!user) {
-    return null; // Will redirect
-  }
+  const handleCreateSupervisor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/supervisors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newSupervisor,
+          departmentId: user.details._id,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('OJT Supervisor account created successfully');
+        setNewSupervisor({ name: '', email: '', department: '', contactNumber: '' });
+        fetchSupervisors(user.details._id);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to create supervisor');
+      }
+    } catch (error) {
+      console.error('Error creating supervisor:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSupervisor = async (supervisorId: string) => {
+    if (!confirm('Are you sure you want to delete this supervisor account?')) return;
+
+    try {
+      const response = await fetch(`/api/supervisors?id=${supervisorId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Supervisor account deleted successfully');
+        if (user) {
+          fetchSupervisors(user.details._id);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete supervisor');
+      }
+    } catch (error) {
+      console.error('Error deleting supervisor:', error);
+      toast.error('An error occurred');
+    }
+  };
+
+  const pendingStudents = students.filter((s: Student) => !s.isAccepted);
+  const activeStudents = students.filter((s: Student) => s.isAccepted);
+  const pendingRequests = scheduleRequests.filter((r: ScheduleRequest) => r.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-blue-900 text-white shadow-md border-b border-blue-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-[#003366] text-white shadow-lg header-responsive">
+        <div className="container-responsive">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                  <Building className="w-5 h-5 text-blue-900" />
-                </div>
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold text-white">SLSU OJT Tracking</h1>
-                  <p className="text-xs text-blue-200">Department Dashboard</p>
-                </div>
-              </Link>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-4">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-white">
-                    {user.details?.firstName} {user.details?.lastName}
-                  </p>
-                  <p className="text-xs text-blue-200">Department Head</p>
-                </div>
+            <div className="flex items-center space-x-responsive">
+              <Logo size="small" />
+              <div className="hide-mobile">
+                <h1 className="text-responsive-base font-bold">SLSU OJT Tracking</h1>
+                <p className="text-xs text-blue-200">Department Dashboard</p>
               </div>
-              
-              <Button variant="ghost" className="text-white hover:bg-blue-800 p-2">
-                <Bell className="w-5 h-5" />
-              </Button>
-              
-              <Button variant="ghost" className="text-white hover:bg-blue-800 p-2">
-                <Settings className="w-5 h-5" />
-              </Button>
-              
-              <Button 
+            </div>
+            <div className="flex items-center space-x-responsive">
+              <div className="text-right hide-mobile">
+                <p className="text-responsive-sm font-mono">{currentTime.toLocaleTimeString()}</p>
+                <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="text-white hover:bg-blue-800"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Logout</span>
+                <LogOut className="icon-responsive" />
               </Button>
             </div>
           </div>
@@ -133,319 +549,682 @@ export default function DepartmentDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="container-responsive py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Department Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Manage your department's OJT students and activities
-          </p>
+          <div className="flex-responsive">
+            <Avatar className="avatar-responsive">
+              <AvatarFallback className="bg-[#003366] text-white text-xl">
+                {user.details.departmentCode.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="text-responsive-lg font-bold text-gray-900">{user.details.departmentName}</h2>
+              <p className="text-responsive-sm text-gray-600">{user.details.ojtAdvisorName} - {user.details.ojtAdvisorPosition}</p>
+              <p className="text-xs text-gray-500">{user.email}</p>
+            </div>
+          </div>
         </div>
 
-        {/* Department Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-gray-200 shadow-sm">
-            <CardContent className="p-6">
+        {/* Stats Cards */}
+        <div className="grid-responsive mb-6">
+          <Card className="card-responsive">
+            <CardContent className="p-responsive">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Students</p>
-                  <p className="text-2xl font-bold text-gray-900">48</p>
-                  <p className="text-xs text-green-600 mt-1">+3 this month</p>
+                  <p className="text-responsive-xs text-gray-600">Total Students</p>
+                  <p className="text-responsive-lg font-bold text-blue-600">{students.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
+                <Users className="icon-responsive text-blue-600" />
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-gray-200 shadow-sm">
-            <CardContent className="p-6">
+          <Card className="card-responsive">
+            <CardContent className="p-responsive">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active OJT</p>
-                  <p className="text-2xl font-bold text-gray-900">42</p>
-                  <p className="text-xs text-green-600 mt-1">88% active</p>
+                  <p className="text-responsive-xs text-gray-600">Active Students</p>
+                  <p className="text-responsive-lg font-bold text-green-600">{activeStudents.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Target className="w-6 h-6 text-green-600" />
-                </div>
+                <UserCheck className="icon-responsive text-green-600" />
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-gray-200 shadow-sm">
-            <CardContent className="p-6">
+          <Card className="card-responsive">
+            <CardContent className="p-responsive">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Avg. Performance</p>
-                  <p className="text-2xl font-bold text-gray-900">A-</p>
-                  <p className="text-xs text-green-600 mt-1">Good</p>
+                  <p className="text-responsive-xs text-gray-600">Pending Approval</p>
+                  <p className="text-responsive-lg font-bold text-yellow-600">{pendingStudents.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Award className="w-6 h-6 text-orange-600" />
-                </div>
+                <UserX className="icon-responsive text-yellow-600" />
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-gray-200 shadow-sm">
-            <CardContent className="p-6">
+          <Card className="card-responsive">
+            <CardContent className="p-responsive">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
-                  <p className="text-2xl font-bold text-gray-900">94%</p>
-                  <p className="text-xs text-green-600 mt-1">Excellent</p>
+                  <p className="text-responsive-xs text-gray-600">Announcements</p>
+                  <p className="text-responsive-lg font-bold text-blue-600">{announcements.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-purple-600" />
-                </div>
+                <Bell className="icon-responsive text-blue-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Department Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger 
-              value="overview" 
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
-            >
-              Overview
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 lg:gap-2">
+            <TabsTrigger value="students" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Users className="icon-responsive-sm" />
+              <span className="hide-mobile">Students</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="students" 
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
-            >
-              Students
+            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <FileText className="icon-responsive-sm" />
+              <span className="hide-mobile">Attendance</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="attendance" 
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
-            >
-              Attendance
+            <TabsTrigger value="pending" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <UserX className="icon-responsive-sm" />
+              <span className="hide-mobile">Pending</span>
+              {pendingStudents.length > 0 && (
+                <Badge variant="destructive" className="ml-1 text-xs badge-responsive">{pendingStudents.length}</Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger 
-              value="reports" 
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
-            >
-              Reports
+            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Clock className="icon-responsive-sm" />
+              <span className="hide-mobile">Schedule</span>
+              {pendingRequests.length > 0 && (
+                <Badge variant="destructive" className="ml-1 text-xs badge-responsive">{pendingRequests.length}</Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger 
-              value="schedule" 
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
-            >
-              Schedule
+            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-1 sm:space-x-2 text-responsive-xs">
+              <Bell className="icon-responsive-sm" />
+              <span className="hide-mobile">Announce</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Department Activity */}
-              <Card className="border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Activity className="w-5 h-5" />
-                    <span>Recent Activity</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Latest department activities and updates
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">Student Clock-In</p>
-                        <p className="text-xs text-gray-500">John Doe - 2 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">Report Submitted</p>
-                        <p className="text-xs text-gray-500">Jane Smith - 4 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">Schedule Request</p>
-                        <p className="text-xs text-gray-500">Mike Johnson - 6 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">Performance Review</p>
-                        <p className="text-xs text-gray-500">Sarah Wilson - 1 day ago</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Target className="w-5 h-5" />
-                    <span>Quick Actions</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Common department tasks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button className="h-20 flex-col bg-blue-600 hover:bg-blue-700 text-white">
-                      <Users className="w-6 h-6 mb-2" />
-                      <span className="text-sm">View Students</span>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex-col border-blue-600 text-blue-600 hover:bg-blue-50">
-                      <Clock className="w-6 h-6 mb-2" />
-                      <span className="text-sm">Attendance</span>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex-col border-blue-600 text-blue-600 hover:bg-blue-50">
-                      <FileText className="w-6 h-6 mb-2" />
-                      <span className="text-sm">Reports</span>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex-col border-blue-600 text-blue-600 hover:bg-blue-50">
-                      <Calendar className="w-6 h-6 mb-2" />
-                      <span className="text-sm">Schedule</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Department Alerts */}
-            <Card className="border-gray-200 shadow-sm">
+          <TabsContent value="students" className="space-y-4">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>Department Alerts</span>
+                <CardTitle>Active Students</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activeStudents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No active students in your department.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Host Establishment</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeStudents.map((student) => (
+                        <TableRow key={student._id}>
+                          <TableCell>{student.studentId}</TableCell>
+                          <TableCell>
+                            {student.firstName} {student.middleName} {student.lastName}
+                          </TableCell>
+                          <TableCell>{student.course}</TableCell>
+                          <TableCell>{student.hostEstablishment}</TableCell>
+                          <TableCell>{student.contactNumber || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant="default">Active</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="attendance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Student Attendance Records</span>
+                  {viewMode === 'attendance' && selectedStudentData && (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleBackToList}
+                      className="flex items-center btn-visible-outline"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Back to Student List
+                    </Button>
+                  )}
                 </CardTitle>
-                <CardDescription>
-                  Important notifications and alerts for your department
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <AlertCircle className="w-4 h-4 text-orange-600" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-orange-900">Pending Approvals</h4>
-                        <p className="text-sm text-orange-700 mt-1">
-                          You have 3 schedule requests awaiting approval.
-                        </p>
-                        <p className="text-xs text-orange-600 mt-2">2 hours ago</p>
+                {viewMode === 'list' ? (
+                  // Student List View
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600 mb-4">
+                      Select a student to view their detailed attendance records.
+                    </div>
+                    
+                    {/* Search Bar */}
+                    <div className="mb-4">
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          placeholder="Search students by name or ID..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-7 0 0 0-11 7m11 7v4a7 7 0 0011-7h-4a7 7 0 00-7 7v-4a7 7 0 00-7-7" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Bell className="w-4 h-4 text-blue-600" />
+                    
+                    {/* Search Results Count */}
+                    {searchTerm && (
+                      <div className="mb-4 text-sm text-gray-600">
+                        Found {filteredStudents.length} student{filteredStudents.length === 1 ? '' : 's'} matching "{searchTerm}"
                       </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-blue-900">Monthly Report Due</h4>
-                        <p className="text-sm text-blue-700 mt-1">
-                          Department monthly report is due next week.
-                        </p>
-                        <p className="text-xs text-blue-600 mt-2">3 days ago</p>
-                      </div>
+                    )}
+                    
+                    <div className="grid gap-4">
+                      {filteredStudents.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500 col-span-full">
+                          {searchTerm ? `No students found matching "${searchTerm}"` : 'No active students found.'}
+                        </div>
+                      ) : (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {filteredStudents.map((student) => (
+                            <Card key={student._id} className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-4">
+                                  <Avatar className="h-12 w-12">
+                                    <AvatarFallback>
+                                      {student.firstName?.[0]}{student.lastName?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold">
+                                      {student.firstName} {student.lastName}
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                      {student.studentId}
+                                    </p>
+                                    <div className="flex items-center space-x-2 mt-2">
+                                      <Badge variant="outline">
+                                        {getShiftTypeDisplay(student.shiftType || 'regular')}
+                                      </Badge>
+                                      <Badge 
+                                        variant={(student as any).status === 'active' ? 'default' : 'secondary'}
+                                        className="text-xs"
+                                      >
+                                        {(student as any).status}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t">
+                                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                                    <div>
+                                      <span className="font-medium">Course:</span> {student.course}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Contact:</span> {student.contactNumber || 'N/A'}
+                                    </div>
+                                    <div className="col-span-2">
+                                      <span className="font-medium">Host Establishment:</span> {student.hostEstablishment}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                  <Button 
+                                    onClick={() => handleViewStudentAttendance(student)}
+                                    className="bg-[#003366] hover:bg-[#002244] btn-visible-outline"
+                                  >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    View Attendance
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                ) : (
+                  // Individual Student Attendance View
+                  <div className="space-y-4">
+                    {selectedStudentData && (
+                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback>
+                              {selectedStudentData.firstName?.[0]}{selectedStudentData.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold">
+                              {selectedStudentData.firstName} {selectedStudentData.lastName}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {selectedStudentData.studentId} • {getShiftTypeDisplay(selectedStudentData.shiftType || 'regular')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {attendanceRecords.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No attendance records found for this student.
+                      </div>
+                    ) : (
+                      <Table className="table-visible-outline">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            {shouldShowMorningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Morning In</TableHead>}
+                            {shouldShowMorningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Morning Out</TableHead>}
+                            {shouldShowAfternoonColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Afternoon In</TableHead>}
+                            {shouldShowAfternoonColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Afternoon Out</TableHead>}
+                            {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening In</TableHead>}
+                            {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening Out</TableHead>}
+                            <TableHead>Total Hours</TableHead>
+                            <TableHead>Images</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {attendanceRecords.map((record) => {
+                            const studentShiftType = getEffectiveShiftType(record);
+                            return (
+                            <TableRow key={record._id}>
+                              <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                              {shouldShowMorningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.morningIn ? new Date(record.morningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              {shouldShowMorningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.morningOut ? new Date(record.morningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              {shouldShowAfternoonColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.afternoonIn ? new Date(record.afternoonIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              {shouldShowAfternoonColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.afternoonOut ? new Date(record.afternoonOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              {shouldShowEveningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.eveningIn ? new Date(record.eveningIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              {shouldShowEveningColumns(studentShiftType) && (
+                                <TableCell>
+                                  {record.eveningOut ? new Date(record.eveningOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </TableCell>
+                              )}
+                              <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>MORNING IN
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Morning Clock In Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningIn ? new Date(record.morningIn).toLocaleString() : 'N/A'}
+                                          </p>
+                                          <img 
+                                            src={record.morningInImage} 
+                                            alt="Morning In" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowMorningColumns(studentShiftType) && record.morningOutImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>MORNING OUT
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Morning Clock Out Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningOut ? new Date(record.morningOut).toLocaleString() : 'N/A'}
+                                          </p>
+                                          <img 
+                                            src={record.morningOutImage} 
+                                            alt="Morning Out" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonInImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>AFTERNOON IN
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Afternoon Clock In Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonIn ? new Date(record.afternoonIn).toLocaleString() : 'N/A'}
+                                          </p>
+                                          <img 
+                                            src={record.afternoonInImage} 
+                                            alt="Afternoon In" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonOutImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>AFTERNOON OUT
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Afternoon Clock Out Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonOut ? new Date(record.afternoonOut).toLocaleString() : 'N/A'}
+                                          </p>
+                                          <img 
+                                            src={record.afternoonOutImage} 
+                                            alt="Afternoon Out" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowEveningColumns(studentShiftType) && record.eveningInImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>EVENING IN
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Evening Clock In Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningIn ? new Date(record.eveningIn).toLocaleString() : 'N/A'}
+                                          </p>
+                                          <img 
+                                            src={record.eveningInImage} 
+                                            alt="Evening In" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                  {shouldShowEveningColumns(studentShiftType) && record.eveningOutImage && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="image-btn">
+                                          VIEW IMAGE<br/>EVENING OUT
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-3xl">
+                                        <DialogTitle>Evening Clock Out Image</DialogTitle>
+                                        <div className="space-y-2">
+                                          <p className="text-sm text-gray-600">
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningOut ? new Date(record.eveningOut).toLocaleString() : 'N/A'}
+                                          </p>
+                                          <img 
+                                            src={record.eveningOutImage} 
+                                            alt="Evening Out" 
+                                            className="w-full rounded-lg border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="students" className="space-y-6">
-            <Card className="border-gray-200 shadow-sm">
+          <TabsContent value="pending" className="space-y-4">
+            <Card>
               <CardHeader>
-                <CardTitle>Student Management</CardTitle>
-                <CardDescription>
-                  View and manage all students in your department
-                </CardDescription>
+                <CardTitle>Pending Student Approvals</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Student management interface</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    View student profiles, attendance, and performance
-                  </p>
-                </div>
+                {pendingStudents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No pending student registrations.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingStudents.map((student) => (
+                      <Card key={student._id} className="border-l-4 border-l-yellow-500">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold">
+                                {student.firstName} {student.middleName} {student.lastName}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                ID: {student.studentId} | Course: {student.course}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Host: {student.hostEstablishment} | Location: {student.location}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => handleAcceptStudent(student._id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Accept
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="attendance" className="space-y-6">
-            <Card className="border-gray-200 shadow-sm">
+          <TabsContent value="schedule-requests" className="space-y-4">
+            <Card>
               <CardHeader>
-                <CardTitle>Attendance Overview</CardTitle>
-                <CardDescription>
-                  Monitor attendance for all department students
-                </CardDescription>
+                <CardTitle>Schedule Change Requests</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Attendance tracking interface</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    View and manage student attendance records
-                  </p>
-                </div>
+                {scheduleRequests.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No schedule change requests.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {scheduleRequests.map((request) => (
+                      <Card key={request._id} className={`border-l-4 ${request.status === 'pending' ? 'border-l-yellow-500' : request.status === 'approved' ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <h3 className="font-semibold">
+                                {request.studentId.firstName} {request.studentId.lastName}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                ID: {request.studentId.studentId}
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                From: <Badge variant="outline">{request.currentShiftType}</Badge>
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                To: <Badge variant="outline">{request.requestedShiftConfig?.description || request.requestedShiftType}</Badge>
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Reason: {request.reason}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                Requested: {new Date(request.requestedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {request.status === 'pending' ? (
+                              <div className="flex space-x-2 mt-4 md:mt-0">
+                                <Button
+                                  onClick={() => handleReviewScheduleRequest(request._id, 'approved')}
+                                  className="bg-green-600 hover:bg-green-700"
+                                  size="sm"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  onClick={() => handleReviewScheduleRequest(request._id, 'rejected')}
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  <UserX className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            ) : (
+                              <Badge className={request.status === 'approved' ? 'bg-green-600' : 'bg-red-600'}>
+                                {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="reports" className="space-y-6">
-            <Card className="border-gray-200 shadow-sm">
+          <TabsContent value="announcements" className="space-y-4">
+            <Card>
               <CardHeader>
-                <CardTitle>Department Reports</CardTitle>
-                <CardDescription>
-                  Generate and view department-level reports
-                </CardDescription>
+                <CardTitle>Create Announcement</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Report generation interface</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Generate comprehensive department reports
-                  </p>
-                </div>
+                <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={newAnnouncement.title}
+                      onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                      placeholder="Enter announcement title"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea
+                      id="content"
+                      value={newAnnouncement.content}
+                      onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
+                      placeholder="Enter announcement content"
+                      rows={4}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-[#003366] hover:bg-[#002244]"
+                  >
+                    {isSubmitting ? 'Posting...' : 'Post Announcement'}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="schedule" className="space-y-6">
-            <Card className="border-gray-200 shadow-sm">
+            <Card>
               <CardHeader>
-                <CardTitle>Schedule Management</CardTitle>
-                <CardDescription>
-                  Manage student work schedules and requests
-                </CardDescription>
+                <CardTitle>Your Announcements</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Schedule management interface</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Approve schedule requests and manage work schedules
-                  </p>
-                </div>
+                {announcements.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No announcements posted yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {announcements.map((announcement) => (
+                      <Card key={announcement._id}>
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold">{announcement.title}</h3>
+                          <p className="text-gray-700 mt-2">{announcement.content}</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Posted: {new Date(announcement.createdAt).toLocaleDateString()}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

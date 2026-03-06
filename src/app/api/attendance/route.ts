@@ -202,48 +202,6 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE - Delete attendance record
-export async function DELETE(request: Request) {
-  try {
-    await connectDB();
-    const { searchParams } = new URL(request.url);
-    const attendanceId = searchParams.get('id');
-    const body = await request.json();
-    const { departmentId } = body;
-
-    if (!attendanceId) {
-      return NextResponse.json({ error: 'Attendance ID is required' }, { status: 400 });
-    }
-
-    // Find the attendance record
-    const attendance = await Attendance.findById(attendanceId).populate('studentId');
-    
-    if (!attendance) {
-      return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 });
-    }
-
-    // Check if the department has permission to delete this attendance
-    // Only department accounts can delete attendance of their students
-    if (departmentId && attendance.studentId && 
-        (attendance.studentId as any).department !== departmentId) {
-      return NextResponse.json({ 
-        error: 'You can only delete attendance records of students from your department' 
-      }, { status: 403 });
-    }
-
-    // Delete the attendance record
-    await Attendance.findByIdAndDelete(attendanceId);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Attendance record deleted successfully'
-    });
-  } catch (error) {
-    console.error('Delete attendance error:', error);
-    return NextResponse.json({ error: 'Failed to delete attendance record' }, { status: 500 });
-  }
-}
-
 function calculateTotalHours(attendance: {
   morningIn?: Date;
   morningOut?: Date;
