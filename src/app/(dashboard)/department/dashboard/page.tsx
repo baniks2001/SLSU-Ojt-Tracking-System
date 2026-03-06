@@ -329,9 +329,9 @@ export default function DepartmentDashboard() {
       if (studentId) {
         url += `studentId=${studentId}&`;
       }
-      // Get current month
-      const now = new Date();
-      url += `month=${now.getMonth() + 1}&year=${now.getFullYear()}`;
+      if (user?.details?.departmentCode) {
+        url += `departmentId=${user.details.departmentCode}`;
+      }
       
       const response = await fetch(url);
       if (response.ok) {
@@ -340,6 +340,38 @@ export default function DepartmentDashboard() {
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
+    }
+  };
+
+  const handleDeleteAttendance = async (attendanceId: string) => {
+    if (!confirm('Are you sure you want to delete this attendance record? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/attendance/${attendanceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          departmentId: user?.details?.departmentCode,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Attendance record deleted successfully');
+        // Refresh attendance records
+        if (selectedStudent) {
+          fetchAttendance(selectedStudent);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete attendance record');
+      }
+    } catch (error) {
+      console.error('Error deleting attendance:', error);
+      toast.error('An error occurred while deleting attendance record');
     }
   };
 
@@ -843,6 +875,7 @@ export default function DepartmentDashboard() {
                             {shouldShowEveningColumns(selectedStudentData?.shiftType || 'regular') && <TableHead>Evening Out</TableHead>}
                             <TableHead>Total Hours</TableHead>
                             <TableHead>Images</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1035,6 +1068,17 @@ export default function DepartmentDashboard() {
                                     </Dialog>
                                   )}
                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteAttendance(record._id)}
+                                  className="text-xs"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Delete
+                                </Button>
                               </TableCell>
                             </TableRow>
                             );

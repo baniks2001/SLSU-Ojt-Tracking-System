@@ -116,6 +116,8 @@ export default function AdminDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStudentEditDialogOpen, setIsStudentEditDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<UserData | null>(null);
+  const [editStudentPassword, setEditStudentPassword] = useState('');
+  const [editStudentConfirmPassword, setEditStudentConfirmPassword] = useState('');
   const [isAdminEditDialogOpen, setIsAdminEditDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<UserData | null>(null);
   const [isCampusEditDialogOpen, setIsCampusEditDialogOpen] = useState(false);
@@ -685,6 +687,71 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error creating student:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+
+    // Validate password if provided
+    if (editStudentPassword && editStudentPassword !== editStudentConfirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (editStudentPassword && editStudentPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const updates: any = {
+        studentData: {
+          studentId: editingStudent.details?.studentId,
+          firstName: editingStudent.details?.firstName,
+          lastName: editingStudent.details?.lastName,
+          middleName: editingStudent.details?.middleName,
+          course: editingStudent.details?.course,
+          department: editingStudent.details?.department,
+          hostEstablishment: editingStudent.details?.hostEstablishment,
+          contactNumber: editingStudent.details?.contactNumber,
+          address: editingStudent.details?.address,
+        }
+      };
+
+      // Add password to updates only if it's provided (super admin only)
+      if (isSuperAdmin && editStudentPassword) {
+        updates.password = editStudentPassword;
+      }
+
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editingStudent._id,
+          updates,
+          requesterAccountType: user?.accountType,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student updated successfully');
+        setIsStudentEditDialogOpen(false);
+        setEditingStudent(null);
+        setEditStudentPassword('');
+        setEditStudentConfirmPassword('');
+        fetchAllUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update student');
+      }
+    } catch (error) {
+      console.error('Error updating student:', error);
       toast.error('An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -1389,12 +1456,40 @@ export default function AdminDashboard() {
                           })}
                         />
                       </div>
+                      {isSuperAdmin && (
+                        <>
+                          <div className="space-y-2 md:col-span-3">
+                            <Label htmlFor="edit-student-password">New Password (Optional)</Label>
+                            <Input
+                              id="edit-student-password"
+                              type="password"
+                              value={editStudentPassword}
+                              onChange={(e) => setEditStudentPassword(e.target.value)}
+                              placeholder="Leave empty to keep current password"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-3">
+                            <Label htmlFor="edit-student-confirm-password">Confirm New Password</Label>
+                            <Input
+                              id="edit-student-confirm-password"
+                              type="password"
+                              value={editStudentConfirmPassword}
+                              onChange={(e) => setEditStudentConfirmPassword(e.target.value)}
+                              placeholder="Confirm new password"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                     <DialogFooter>
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setIsStudentEditDialogOpen(false)}
+                        onClick={() => {
+                          setIsStudentEditDialogOpen(false);
+                          setEditStudentPassword('');
+                          setEditStudentConfirmPassword('');
+                        }}
                       >
                         Cancel
                       </Button>
