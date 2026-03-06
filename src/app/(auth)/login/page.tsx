@@ -3,222 +3,204 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
-import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
-import Logo from '@/components/Logo';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff,
+  GraduationCap,
+  AlertCircle
+} from 'lucide-react';
 
-export default function LoginPage() {
+export default function Login() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
     try {
-      const response = await fetch('/api/auth', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'login',
-          email: formData.email,
-          password: formData.password,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        toast.success('Login successful!');
-
-        switch (data.user.accountType) {
-          case 'student':
-            router.push('/student/dashboard');
-            break;
-          case 'department':
-            router.push('/department/dashboard');
-            break;
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          case 'superadmin':
-            router.push('/admin/dashboard');
-            break;
-          default:
-            router.push('/login');
+        localStorage.setItem('token', data.token);
+        
+        // Redirect based on user type
+        if (data.user.accountType === 'student') {
+          router.push('/student/dashboard');
+        } else if (data.user.accountType === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (data.user.accountType === 'department') {
+          router.push('/department/dashboard');
         }
       } else {
-        toast.error(data.error || 'Login failed');
+        setError(data.error || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('An error occurred during login');
+      setError('An error occurred during login');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ width: '100%', maxWidth: '28rem' }}>
-        {/* Logo and Title Section */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }} className="animate-fade-in">
-          <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-            <Logo size="large" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo and Title */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <GraduationCap className="w-10 h-10 text-white" />
           </div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '0.5rem' }}>Welcome Back</h1>
-          <p style={{ color: '#6b7280', fontSize: '1.125rem' }}>Sign in to your SLSU OJT Tracking account</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <p className="text-gray-600">Sign in to your SLSU OJT Tracking account</p>
         </div>
 
-        {/* Login Card */}
-        <div className="card animate-slide-up" style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-          <div className="card-header" style={{ paddingBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', color: '#1e3a8a' }}>
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-2xl font-bold text-center text-gray-900">
               Sign In
-            </h2>
-            <p style={{ textAlign: 'center', color: '#6b7280' }}>
+            </CardTitle>
+            <CardDescription className="text-center text-gray-600">
               Enter your credentials to access your account
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
           
-          <div className="card-content" style={{ paddingTop: '0' }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Email Field */}
-              <div className="form-group">
-                <label htmlFor="email" className="form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
+          <CardContent className="space-y-6">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                   Email Address
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Mail style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', height: '1rem', width: '1rem', color: '#9ca3af' }} />
-                  <input
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="form-input"
-                    style={{ paddingLeft: '2.5rem', height: '2.75rem', backgroundColor: '#ffffff', borderColor: '#d1d5db', transition: 'all 200ms' }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#2563eb';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="pl-10 bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
-              
-              {/* Password Field */}
-              <div className="form-group">
-                <label htmlFor="password" className="form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                   Password
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Lock style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', height: '1rem', width: '1rem', color: '#9ca3af' }} />
-                  <input
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
                     id="password"
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
-                    className="form-input"
-                    style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', height: '2.75rem', backgroundColor: '#ffffff', borderColor: '#d1d5db', transition: 'all 200ms' }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#2563eb';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="pl-10 pr-10 bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 200ms' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#4b5563'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff style={{ height: '1rem', width: '1rem' }} /> : <Eye style={{ height: '1rem', width: '1rem' }} />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-              
-              {/* Submit Button */}
-              <button 
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember"
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+                <Link 
+                  href="/forgot-password" 
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              <Button 
                 type="submit" 
-                className="btn btn-primary hover-lift"
-                style={{ width: '100%', height: '2.75rem', fontWeight: '500', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', transition: 'all 200ms' }}
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md"
                 disabled={isLoading}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  }
-                }}
               >
                 {isLoading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                    <Loader2 className="loading" style={{ height: '1rem', width: '1rem' }} />
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-transparent animate-spin rounded-full"></div>
                     <span>Signing in...</span>
                   </div>
                 ) : (
                   'Sign In'
                 )}
-              </button>
+              </Button>
             </form>
-            
-            {/* Register Link */}
-            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb', marginTop: '1.5rem' }}>
-              <div style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
-                Don't have an account?{' '}
-                <Link 
-                  href="/register" 
-                  style={{ color: '#2563eb', fontWeight: '500', textDecoration: 'none', transition: 'color 200ms' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#1d4ed8'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#2563eb'}
-                >
-                  Register here
-                </Link>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or</span>
               </div>
             </div>
 
-            {/* Forgot Password Link */}
-            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-              <Link 
-                href="/forgot-password" 
-                style={{ fontSize: '0.875rem', color: '#9ca3af', textDecoration: 'none', transition: 'color 200ms' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
-              >
-                Forgot your password?
-              </Link>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link 
+                  href="/register" 
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Create account
+                </Link>
+              </p>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Footer */}
-        <div style={{ marginTop: '2rem', textAlign: 'center' }} className="animate-fade-in">
-          <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-500">
             © 2026 Southern Leyte State University - OJT Tracking System
-          </p>
-          <p style={{ fontSize: '0.75rem', color: '#d1d5db', marginTop: '0.25rem' }}>
-            Built with modern web technologies
           </p>
         </div>
       </div>

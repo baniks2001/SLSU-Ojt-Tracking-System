@@ -1,418 +1,455 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { Users, Building, Calendar, FileText, TrendingUp, Settings, Bell, Award, Target, Clock } from 'lucide-react';
-import Header from '@/components/Header';
-
-interface AdminStats {
-  totalStudents: number;
-  totalDepartments: number;
-  totalAttendance: number;
-  activeUsers: number;
-  pendingRequests: number;
-  systemHealth: 'good' | 'warning' | 'error';
-}
-
-interface RecentActivity {
-  id: string;
-  type: 'student_registered' | 'attendance_submitted' | 'request_made' | 'system_update';
-  description: string;
-  timestamp: string;
-  user?: string;
-}
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Users, 
+  Building, 
+  Calendar, 
+  TrendingUp, 
+  Settings,
+  LogOut,
+  Home,
+  Shield,
+  Activity,
+  BarChart3,
+  Database,
+  Bell,
+  User,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Clock
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState<AdminStats>({
-    totalStudents: 0,
-    totalDepartments: 0,
-    totalAttendance: 0,
-    activeUsers: 0,
-    pendingRequests: 0,
-    systemHealth: 'good'
-  });
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
+    const checkAuth = async () => {
+      try {
+        const userData = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+        
+        if (!userData || !token) {
+          router.push('/login');
+          return;
+        }
 
-    if (!token || !userData) {
-      router.push('/login');
-      return;
-    }
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser.accountType !== 'admin') {
+          router.push('/login');
+          return;
+        }
 
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    if (parsedUser.accountType !== 'admin' && parsedUser.accountType !== 'superadmin') {
-      router.push('/login');
-      return;
-    }
-
-    fetchAdminData();
+    checkAuth();
   }, [router]);
 
-  const fetchAdminData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      // Fetch stats
-      const statsResponse = await fetch('/api/admin/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        setStats(statsData);
-      }
-
-      // Fetch recent activities
-      const activitiesResponse = await fetch('/api/system-activities', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (activitiesResponse.ok) {
-        const activitiesData = await activitiesResponse.json();
-        setRecentActivities(activitiesData.slice(0, 10)); // Get last 10 activities
-      }
-
-    } catch (error) {
-      console.error('Error fetching admin data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    router.push('/login');
   };
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-          <div className="loading loading-lg"></div>
-          <p style={{ color: '#6b7280' }}>Loading admin dashboard...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent animate-spin rounded-full mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ color: '#dc2626', marginBottom: '1rem' }}>Unable to load admin data</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="btn btn-primary"
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
-    );
+    return null; // Will redirect
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
-      <Header title="Admin Dashboard" />
-      
-      <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-        {/* Stats Overview */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>System Overview</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff' }}>
-              <div className="card-content" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Total Students</p>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalStudents}</p>
-                  </div>
-                  <Users style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-blue-900 text-white shadow-md border-b border-blue-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-blue-900" />
                 </div>
-              </div>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg font-bold text-white">SLSU OJT Tracking</h1>
+                  <p className="text-xs text-blue-200">Admin Dashboard</p>
+                </div>
+              </Link>
             </div>
-
-            <div className="card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#ffffff' }}>
-              <div className="card-content" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Departments</p>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalDepartments}</p>
-                  </div>
-                  <Building style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
-                </div>
-              </div>
-            </div>
-
-            <div className="card" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff' }}>
-              <div className="card-content" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Attendance Records</p>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalAttendance}</p>
-                  </div>
-                  <Calendar style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
-                </div>
-              </div>
-            </div>
-
-            <div className="card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: '#ffffff' }}>
-              <div className="card-content" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>Active Users</p>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.activeUsers}</p>
-                  </div>
-                  <TrendingUp style={{ height: '3rem', width: '3rem', opacity: 0.8 }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem' }}>
-          {/* Left Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Tabs Section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Tab Navigation */}
-              <div style={{ display: 'flex', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '0.5rem' }}>
-                {['overview', 'users', 'departments', 'reports'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem 1rem',
-                      backgroundColor: activeTab === tab ? '#ffffff' : 'transparent',
-                      color: activeTab === tab ? '#111827' : '#6b7280',
-                      border: 'none',
-                      borderRadius: '0.375rem',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 200ms',
-                      boxShadow: activeTab === tab ? '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' : 'none'
-                    }}
-                  >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              {/* Tab Content */}
-              {activeTab === 'overview' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  <div className="card">
-                    <div className="card-header">
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Recent Activities</h3>
-                    </div>
-                    <div className="card-content" style={{ paddingTop: '0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {recentActivities.slice(0, 5).map((activity) => (
-                          <div key={activity.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
-                            <div style={{ 
-                              width: '2rem', 
-                              height: '2rem', 
-                              borderRadius: '50%', 
-                              backgroundColor: activity.type === 'student_registered' ? '#dcfce7' : 
-                                               activity.type === 'attendance_submitted' ? '#eff6ff' :
-                                               activity.type === 'request_made' ? '#fef3c7' : '#f3f4f6',
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center' 
-                            }}>
-                              {activity.type === 'student_registered' && <Users style={{ height: '1rem', width: '1rem', color: '#22c55e' }} />}
-                              {activity.type === 'attendance_submitted' && <Calendar style={{ height: '1rem', width: '1rem', color: '#3b82f6' }} />}
-                              {activity.type === 'request_made' && <FileText style={{ height: '1rem', width: '1rem', color: '#f59e0b' }} />}
-                              {activity.type === 'system_update' && <Settings style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontSize: '0.875rem', color: '#374151' }}>{activity.description}</p>
-                              <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{new Date(activity.timestamp).toLocaleString()}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="card">
-                    <div className="card-header">
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>System Health</h3>
-                    </div>
-                    <div className="card-content" style={{ paddingTop: '0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Database Status</span>
-                          <span className={`status-${stats.systemHealth === 'good' ? 'online' : stats.systemHealth === 'warning' ? 'busy' : 'offline'}`}>
-                            {stats.systemHealth === 'good' ? 'Healthy' : stats.systemHealth === 'warning' ? 'Warning' : 'Error'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>API Response</span>
-                          <span className="status-online">Normal</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Storage Usage</span>
-                          <span className="status-online">45%</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Pending Requests</span>
-                          <span className={`status-${stats.pendingRequests > 0 ? 'busy' : 'online'}`}>{stats.pendingRequests}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'users' && (
-                <div className="card">
-                  <div className="card-header">
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>User Management</h3>
-                  </div>
-                  <div className="card-content" style={{ paddingTop: '0' }}>
-                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
-                      User management interface coming soon...
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'departments' && (
-                <div className="card">
-                  <div className="card-header">
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Department Management</h3>
-                  </div>
-                  <div className="card-content" style={{ paddingTop: '0' }}>
-                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
-                      Department management interface coming soon...
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'reports' && (
-                <div className="card">
-                  <div className="card-header">
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Reports & Analytics</h3>
-                  </div>
-                  <div className="card-content" style={{ paddingTop: '0' }}>
-                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
-                      Reports and analytics interface coming soon...
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Quick Actions */}
-            <div className="card">
-              <div className="card-header">
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Quick Actions</h3>
-              </div>
-              <div className="card-content" style={{ paddingTop: '0' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <button className="btn btn-outline" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-                    <Users style={{ height: '1rem', width: '1rem', marginRight: '0.75rem' }} />
-                    Add New Student
-                  </button>
-                  <button className="btn btn-outline" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-                    <Building style={{ height: '1rem', width: '1rem', marginRight: '0.75rem' }} />
-                    Add Department
-                  </button>
-                  <button className="btn btn-outline" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-                    <FileText style={{ height: '1rem', width: '1rem', marginRight: '0.75rem' }} />
-                    Generate Report
-                  </button>
-                  <button className="btn btn-outline" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-                    <Settings style={{ height: '1rem', width: '1rem', marginRight: '0.75rem' }} />
-                    System Settings
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Notifications */}
-            <div className="card">
-              <div className="card-header">
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Notifications</h3>
-              </div>
-              <div className="card-content" style={{ paddingTop: '0' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#fef3c7', borderRadius: '0.5rem' }}>
-                    <Bell style={{ height: '1rem', width: '1rem', color: '#d97706' }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '0.875rem', color: '#92400e' }}>{stats.pendingRequests} pending requests</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.5rem' }}>
-                    <Calendar style={{ height: '1rem', width: '1rem', color: '#3b82f6' }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '0.875rem', color: '#1e40af' }}>System backup completed</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#dcfce7', borderRadius: '0.5rem' }}>
-                    <Award style={{ height: '1rem', width: '1rem', color: '#22c55e' }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '0.875rem', color: '#166534' }}>New student registrations</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Profile */}
-            <div className="card">
-              <div className="card-header">
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Admin Profile</h3>
-              </div>
-              <div className="card-content" style={{ paddingTop: '0' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ 
-                    width: '4rem', 
-                    height: '4rem', 
-                    borderRadius: '50%', 
-                    backgroundColor: '#1e3a8a', 
-                    color: '#ffffff', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    margin: '0 auto 1rem', 
-                    fontSize: '1.5rem', 
-                    fontWeight: 'bold' 
-                  }}>
-                    {user.details?.firstName?.charAt(0) || user.email?.charAt(0) || 'A'}
-                  </div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', marginBottom: '0.25rem' }}>
+            
+            <div className="flex items-center space-x-4">
+              <div className="hidden sm:flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-white">
                     {user.details?.firstName} {user.details?.lastName}
-                  </h4>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
-                    {user.accountType === 'superadmin' ? 'Super Administrator' : 'Administrator'}
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.75rem', color: '#9ca3af' }}>
-                    <p>{user.email}</p>
-                    <p>Last login: {new Date().toLocaleDateString()}</p>
-                  </div>
+                  <p className="text-xs text-blue-200">System Administrator</p>
                 </div>
               </div>
+              
+              <Button variant="ghost" className="text-white hover:bg-blue-800 p-2">
+                <Bell className="w-5 h-5" />
+              </Button>
+              
+              <Button variant="ghost" className="text-white hover:bg-blue-800 p-2">
+                <Settings className="w-5 h-5" />
+              </Button>
+              
+              <Button 
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-600">
+            System overview and administrative controls
+          </p>
+        </div>
+
+        {/* System Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900">1,247</p>
+                  <p className="text-xs text-green-600 mt-1">+12% this month</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Departments</p>
+                  <p className="text-2xl font-bold text-gray-900">18</p>
+                  <p className="text-xs text-green-600 mt-1">All active</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Building className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Students</p>
+                  <p className="text-2xl font-bold text-gray-900">892</p>
+                  <p className="text-xs text-orange-600 mt-1">85% attendance</p>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">System Health</p>
+                  <p className="text-2xl font-bold text-gray-900">98%</p>
+                  <p className="text-xs text-green-600 mt-1">Optimal</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Admin Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger 
+              value="overview" 
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="users" 
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
+            >
+              Users
+            </TabsTrigger>
+            <TabsTrigger 
+              value="departments" 
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
+            >
+              Departments
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reports" 
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
+            >
+              Reports
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-gray-700 font-medium transition-all duration-200"
+            >
+              Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* System Activity */}
+              <Card className="border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Activity className="w-5 h-5" />
+                    <span>System Activity</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Recent system activities and events
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Database Backup Completed</p>
+                        <p className="text-xs text-gray-500">2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">New User Registration</p>
+                        <p className="text-xs text-gray-500">4 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">System Update Applied</p>
+                        <p className="text-xs text-gray-500">6 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Report Generated</p>
+                        <p className="text-xs text-gray-500">1 day ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card className="border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Settings className="w-5 h-5" />
+                    <span>Quick Actions</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Common administrative tasks
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button className="h-20 flex-col bg-blue-600 hover:bg-blue-700 text-white">
+                      <Users className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Manage Users</span>
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-col border-blue-600 text-blue-600 hover:bg-blue-50">
+                      <Building className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Departments</span>
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-col border-blue-600 text-blue-600 hover:bg-blue-50">
+                      <FileText className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Reports</span>
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-col border-blue-600 text-blue-600 hover:bg-blue-50">
+                      <Database className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Database</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* System Alerts */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>System Alerts</span>
+                </CardTitle>
+                <CardDescription>
+                  Important system notifications and alerts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-green-900">System Running Optimally</h4>
+                        <p className="text-sm text-green-700 mt-1">
+                          All systems are functioning normally. No issues detected.
+                        </p>
+                        <p className="text-xs text-green-600 mt-2">Just now</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Bell className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900">Scheduled Maintenance</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          System maintenance scheduled for this weekend.
+                        </p>
+                        <p className="text-xs text-blue-600 mt-2">2 days ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>
+                  Manage all system users and their permissions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">User management interface</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Add, edit, and manage user accounts and permissions
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="departments" className="space-y-6">
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle>Department Management</CardTitle>
+                <CardDescription>
+                  Manage departments and their settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Department management interface</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Manage department settings and assignments
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-6">
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle>System Reports</CardTitle>
+                <CardDescription>
+                  Generate and view system-wide reports
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Report generation interface</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Generate comprehensive system reports
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle>System Settings</CardTitle>
+                <CardDescription>
+                  Configure system-wide settings and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">System configuration interface</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Configure system settings and preferences
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 }
