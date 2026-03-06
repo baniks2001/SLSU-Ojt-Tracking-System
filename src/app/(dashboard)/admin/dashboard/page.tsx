@@ -487,6 +487,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           userId,
           updates: { isActive: !currentStatus },
+          requesterAccountType: user?.accountType,
         }),
       });
 
@@ -709,7 +710,8 @@ export default function AdminDashboard() {
               contactNumber: editingStudent.details?.contactNumber,
               address: editingStudent.details?.address,
             }
-          }
+          },
+          requesterAccountType: user?.accountType,
         }),
       });
 
@@ -748,7 +750,8 @@ export default function AdminDashboard() {
           userId: editingAdmin._id,
           updates: {
             email: editingAdmin.email,
-          }
+          },
+          requesterAccountType: user?.accountType,
         }),
       });
 

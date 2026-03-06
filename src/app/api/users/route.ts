@@ -13,39 +13,97 @@ export async function GET(request: Request) {
     const department = searchParams.get('department');
     const isAccepted = searchParams.get('isAccepted');
 
-    const query: Record<string, unknown> = {};
-
-    if (accountType) {
-      query.accountType = accountType;
-    }
-
-    if (isActive !== null) {
-      query.isActive = isActive === 'true';
-    }
-
-    const users = await User.find(query).select('-password -__v');
-
     const enrichedUsers = [];
 
-    for (const user of users) {
-      const userObj = user.toObject();
-      let details = null;
+    // If no accountType specified, get all users from all collections
+    if (!accountType) {
+      // Get users from User collection (admin, department, superadmin)
+      const userQuery: Record<string, unknown> = {};
+      if (isActive !== null) userQuery.isActive = isActive === 'true';
 
-      if (user.accountType === 'student') {
-        const studentQuery: Record<string, unknown> = { userId: user._id };
+      const users = await User.find(userQuery).select('-password -__v');
+
+      for (const user of users) {
+        const userObj = user.toObject();
+        let details = null;
+
+        if (user.accountType === 'student') {
+          const studentQuery: Record<string, unknown> = { userId: user._id };
+          if (department) studentQuery.department = department;
+          if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
+          
+          details = await Student.findOne(studentQuery).select('-__v');
+          if (!details && (department || isAccepted !== null)) continue;
+        } else if (user.accountType === 'department') {
+          details = await Department.findOne({ userId: user._id }).select('-__v');
+        }
+
+        enrichedUsers.push({
+          ...userObj,
+          details,
+        });
+      }
+
+      // Also get students directly from Student collection for those without User records
+      const studentQuery: Record<string, unknown> = {};
+      if (department) studentQuery.department = department;
+      if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
+      if (isActive !== null) {
+        const studentUsers = await Student.find(studentQuery).select('-__v');
+        for (const student of studentUsers) {
+          const studentObj = student.toObject();
+          const user = await User.findById(student.userId).select('-password -__v');
+          
+          if (user) {
+            enrichedUsers.push({
+              ...user.toObject(),
+              details: studentObj,
+            });
+          }
+        }
+      }
+    } else {
+      // Specific account type query
+      if (accountType === 'student') {
+        // For students, query Student collection
+        const studentQuery: Record<string, unknown> = {};
         if (department) studentQuery.department = department;
         if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
         
-        details = await Student.findOne(studentQuery).select('-__v');
-        if (!details && (department || isAccepted !== null)) continue;
-      } else if (user.accountType === 'department') {
-        details = await Department.findOne({ userId: user._id }).select('-__v');
-      }
+        const students = await Student.find(studentQuery).select('-__v');
+        
+        for (const student of students) {
+          const studentObj = student.toObject();
+          const user = await User.findById(student.userId).select('-password -__v');
+          
+          if (user) {
+            enrichedUsers.push({
+              ...user.toObject(),
+              details: studentObj,
+            });
+          }
+        }
+      } else {
+        // For other account types, query User collection
+        const query: Record<string, unknown> = { accountType };
+        if (isActive !== null) query.isActive = isActive === 'true';
 
-      enrichedUsers.push({
-        ...userObj,
-        details,
-      });
+        const users = await User.find(query).select('-password -__v');
+
+        for (const user of users) {
+          const userObj = user.toObject();
+          let details = null;
+
+          if (user.accountType === 'department') {
+            details = await Department.findOne({ userId: user._id }).select('-__v');
+          }
+
+          enrichedUsers.push({
+            ...userObj,
+            details,
+          });
+        }
+      }
     }
 
     return NextResponse.json(
@@ -67,17 +125,43 @@ export async function PUT(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { userId, updates, accountType, profileData } = body;
+    const { userId, updates, accountType, profileData, requesterAccountType } = body;
+
+    // Check if password update is being attempted
+    if (updates.password && requesterAccountType !== 'superadmin') {
+      return NextResponse.json(
+        { error: 'Only super administrators can update passwords' },
+        { status: 403 }
+      );
+    }
 
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Prevent regular admin from updating super admin
+    if (requesterAccountType === 'admin' && user.accountType === 'superadmin') {
+      return NextResponse.json(
+        { error: 'Regular administrators cannot modify super administrator accounts' },
+        { status: 403 }
+      );
+    }
+
+    // Prevent regular admin from updating other admin accounts
+    if (requesterAccountType === 'admin' && user.accountType === 'admin' && userId !== user._id.toString()) {
+      return NextResponse.json(
+        { error: 'Regular administrators can only update their own accounts' },
+        { status: 403 }
+      );
+    }
+
     // Update user fields
     if (updates.email) user.email = updates.email;
     if (updates.isActive !== undefined) user.isActive = updates.isActive;
-    if (updates.password) user.password = await hashPassword(updates.password);
+    if (updates.password && requesterAccountType === 'superadmin') {
+      user.password = await hashPassword(updates.password);
+    }
 
     await user.save();
 
@@ -94,6 +178,28 @@ export async function PUT(request: Request) {
         { $set: profileData },
         { new: true }
       );
+    }
+
+    // Log the update
+    try {
+      await fetch(`${process.env.NEXTAUTH_URL}/api/system-activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: user.email,
+          userType: user.accountType,
+          action: updates.password ? 'PASSWORD_UPDATED' : 'USER_UPDATED',
+          description: `User ${user.email} was updated by ${requesterAccountType}`,
+          severity: user.accountType === 'superadmin' ? 'high' : 'medium',
+          metadata: {
+            updatedBy: requesterAccountType,
+            updatedFields: Object.keys(updates),
+            updateTime: new Date()
+          }
+        })
+      });
+    } catch (logError) {
+      // Silent error handling
     }
 
     return NextResponse.json({
