@@ -155,7 +155,7 @@
   }
   
   .flex-responsive-reverse {
-    @apply flex flex-col-reverse space-y-reverse-4 sm:flex-row sm:space-y-reverse-0 sm:space-x-4;
+    @apply flex flex-col-reverse space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4;
   }
   
   /* Text utilities */
