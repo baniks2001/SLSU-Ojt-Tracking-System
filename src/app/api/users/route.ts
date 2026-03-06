@@ -32,8 +32,24 @@ export async function GET(request: Request) {
           if (department) studentQuery.department = department;
           if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
           
-          details = await Student.findOne(studentQuery).select('-__v');
+          details = await Student.findOne(studentQuery)
+            .populate('courseId', 'courseName courseCode departmentName campusId')
+            .populate('campusId', 'campusName campusCode')
+            .select('-__v');
+          
           if (!details && (department || isAccepted !== null)) continue;
+          
+          // Add course information to the student details
+          if (details) {
+            const detailsObj = details.toObject();
+            details = {
+              ...detailsObj,
+              course: detailsObj.courseId?.courseName || detailsObj.course || 'Not Assigned',
+              courseCode: detailsObj.courseId?.courseCode || '',
+              campus: detailsObj.campusId?.campusName || 'Not Assigned',
+              campusCode: detailsObj.campusId?.campusCode || '',
+            };
+          }
         } else if (user.accountType === 'department') {
           details = await Department.findOne({ userId: user._id }).select('-__v');
         }
@@ -49,15 +65,28 @@ export async function GET(request: Request) {
       if (department) studentQuery.department = department;
       if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
       if (isActive !== null) {
-        const studentUsers = await Student.find(studentQuery).select('-__v');
+        const studentUsers = await Student.find(studentQuery)
+          .populate('courseId', 'courseName courseCode departmentName campusId')
+          .populate('campusId', 'campusName campusCode')
+          .select('-__v');
+        
         for (const student of studentUsers) {
           const studentObj = student.toObject();
           const user = await User.findById(student.userId).select('-password -__v');
           
           if (user) {
+            // Add course information to the student details
+            const enrichedStudentObj = {
+              ...studentObj,
+              course: studentObj.courseId?.courseName || studentObj.course || 'Not Assigned',
+              courseCode: studentObj.courseId?.courseCode || '',
+              campus: studentObj.campusId?.campusName || 'Not Assigned',
+              campusCode: studentObj.campusId?.campusCode || '',
+            };
+            
             enrichedUsers.push({
               ...user.toObject(),
-              details: studentObj,
+              details: enrichedStudentObj,
             });
           }
         }
@@ -70,16 +99,28 @@ export async function GET(request: Request) {
         if (department) studentQuery.department = department;
         if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
         
-        const students = await Student.find(studentQuery).select('-__v');
+        const students = await Student.find(studentQuery)
+          .populate('courseId', 'courseName courseCode departmentName campusId')
+          .populate('campusId', 'campusName campusCode')
+          .select('-__v');
         
         for (const student of students) {
           const studentObj = student.toObject();
           const user = await User.findById(student.userId).select('-password -__v');
           
           if (user) {
+            // Add course information to the student details
+            const enrichedStudentObj = {
+              ...studentObj,
+              course: studentObj.courseId?.courseName || studentObj.course || 'Not Assigned',
+              courseCode: studentObj.courseId?.courseCode || '',
+              campus: studentObj.campusId?.campusName || 'Not Assigned',
+              campusCode: studentObj.campusId?.campusCode || '',
+            };
+            
             enrichedUsers.push({
               ...user.toObject(),
-              details: studentObj,
+              details: enrichedStudentObj,
             });
           }
         }

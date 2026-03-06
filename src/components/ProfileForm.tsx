@@ -18,6 +18,7 @@ interface ProfileFormProps {
     middleName?: string;
     course: string;
     department: string;
+    campus?: string;
     hostEstablishment: string;
     contactNumber?: string;
     address?: string;
@@ -163,7 +164,7 @@ export default function ProfileForm({ student, userEmail }: ProfileFormProps) {
 
           <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="text-gray-600">Course</Label>
               <p className="font-medium">{student.course}</p>
@@ -171,6 +172,10 @@ export default function ProfileForm({ student, userEmail }: ProfileFormProps) {
             <div>
               <Label className="text-gray-600">Department</Label>
               <p className="font-medium">{student.department}</p>
+            </div>
+            <div>
+              <Label className="text-gray-600">Campus</Label>
+              <p className="font-medium">{student.campus || 'Not Assigned'}</p>
             </div>
           </div>
         </CardContent>

@@ -136,6 +136,10 @@ export default function AdminDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [passwordUser, setPasswordUser] = useState<UserData | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const fetchDepartments = async () => {
     try {
@@ -772,6 +776,57 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordUser) return;
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: passwordUser._id,
+          updates: { password: newPassword },
+          requesterAccountType: user?.accountType,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Password updated successfully');
+        setIsPasswordDialogOpen(false);
+        setPasswordUser(null);
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update password');
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openPasswordDialog = (userData: UserData) => {
+    setPasswordUser(userData);
+    setIsPasswordDialogOpen(true);
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
   const handleCreateCampus = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -1151,6 +1206,7 @@ export default function AdminDashboard() {
                         <TableHead>Name</TableHead>
                         <TableHead>Course</TableHead>
                         <TableHead>Department</TableHead>
+                        <TableHead>Campus</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -1164,6 +1220,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>{studentUser.details?.course}</TableCell>
                           <TableCell>{studentUser.details?.department}</TableCell>
+                          <TableCell>{studentUser.details?.campus}</TableCell>
                           <TableCell>
                             <Badge variant={studentUser.isActive ? "default" : "secondary"}>
                               {studentUser.isActive ? 'Active' : 'Inactive'}
@@ -1181,6 +1238,16 @@ export default function AdminDashboard() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              {isSuperAdmin && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openPasswordDialog(studentUser)}
+                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Key className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1337,6 +1404,83 @@ export default function AdminDashboard() {
                         className="bg-[#003366] hover:bg-[#002244]"
                       >
                         {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* Password Update Dialog */}
+            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Update Password</DialogTitle>
+                  <DialogDescription>
+                    Update password for {passwordUser?.details?.firstName || passwordUser?.details?.departmentName || 'User'}
+                  </DialogDescription>
+                </DialogHeader>
+                {passwordUser && (
+                  <form onSubmit={handleUpdatePassword} className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <strong>User:</strong> {passwordUser.details?.firstName || passwordUser.details?.departmentName || 'N/A'} {passwordUser.details?.lastName || ''}
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        <strong>Email:</strong> {passwordUser.email}
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        <strong>Role:</strong> {passwordUser.accountType}
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        placeholder="Enter new password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="confirm-password">Confirm Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        placeholder="Confirm new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-sm text-red-800">Passwords do not match</p>
+                      </div>
+                    )}
+                    {newPassword && newPassword.length < 6 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-sm text-yellow-800">Password must be at least 6 characters long</p>
+                      </div>
+                    )}
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsPasswordDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting || newPassword !== confirmPassword || newPassword.length < 6}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {isSubmitting ? 'Updating...' : 'Update Password'}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -2104,6 +2248,14 @@ export default function AdminDashboard() {
                                     onClick={() => openAdminEditDialog(adminUser)}
                                   >
                                     <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openPasswordDialog(adminUser)}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  >
+                                    <Key className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="outline"
