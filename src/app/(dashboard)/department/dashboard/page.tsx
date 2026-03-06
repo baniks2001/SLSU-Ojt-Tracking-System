@@ -214,6 +214,7 @@ export default function DepartmentDashboard() {
       fetchStudents(userData.details.departmentName);
       fetchAnnouncements(userData.id);
       fetchSupervisors(userData.details._id);
+      fetchScheduleRequests(userData.details._id);
     } catch (error) {
       router.push('/login');
       return;
@@ -252,9 +253,9 @@ export default function DepartmentDashboard() {
     }
   };
 
-  const fetchScheduleRequests = async (departmentName: string) => {
+  const fetchScheduleRequests = async (departmentId: string) => {
     try {
-      const response = await fetch(`/api/schedule-requests?departmentId=${departmentName}`);
+      const response = await fetch(`/api/schedule-requests?departmentId=${departmentId}`);
       if (response.ok) {
         const data = await response.json();
         setScheduleRequests(data.requests || []);
@@ -383,7 +384,7 @@ export default function DepartmentDashboard() {
       if (response.ok) {
         toast.success(`Schedule request ${status}`);
         if (user) {
-          fetchScheduleRequests(user.details.departmentName);
+          fetchScheduleRequests(user.details._id);
         }
       } else {
         const data = await response.json();
