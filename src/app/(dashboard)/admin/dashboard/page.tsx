@@ -34,6 +34,12 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState<UserData[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [newAdminData, setNewAdminData] = useState({
+    email: '',
+    password: '',
+    accountType: 'admin'
+  });
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -77,6 +83,39 @@ export default function AdminDashboard() {
     localStorage.removeItem('user');
     toast.success('Logged out successfully');
     router.push('/login');
+  };
+
+  const handleCreateAdmin = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'register',
+          email: newAdminData.email,
+          password: newAdminData.password,
+          accountType: newAdminData.accountType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Admin account created successfully!');
+        setShowCreateAdmin(false);
+        setNewAdminData({ email: '', password: '', accountType: 'admin' });
+        fetchAllUsers(); // Refresh users list
+      } else {
+        toast.error(data.error || 'Failed to create admin account');
+      }
+    } catch (error) {
+      toast.error('An error occurred while creating admin account');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading || !user) {
@@ -274,6 +313,60 @@ export default function AdminDashboard() {
                     </TableBody>
                   </Table>
                 </div>
+
+                <div className="space-y-4 mt-8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">Admin Users ({adminUsers.length})</h3>
+                    <Button 
+                      onClick={() => setShowCreateAdmin(true)}
+                      className="bg-sky-600 hover:bg-sky-700 text-white"
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      Create Admin
+                    </Button>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-gray-700 font-medium">Name</TableHead>
+                        <TableHead className="text-gray-700 font-medium">Email</TableHead>
+                        <TableHead className="text-gray-700 font-medium">Role</TableHead>
+                        <TableHead className="text-gray-700 font-medium">Status</TableHead>
+                        <TableHead className="text-gray-700 font-medium">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {adminUsers.map((admin) => (
+                        <TableRow key={admin._id}>
+                          <TableCell className="text-gray-900">
+                            {admin.details?.departmentName || 'System Admin'}
+                          </TableCell>
+                          <TableCell className="text-gray-600">{admin.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={admin.accountType === 'superadmin' ? 'destructive' : 'default'}>
+                              {admin.accountType === 'superadmin' ? 'Super Admin' : 'Admin'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={admin.isActive ? 'default' : 'secondary'}>
+                              {admin.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -281,7 +374,7 @@ export default function AdminDashboard() {
           <TabsContent value="settings" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-blue-900">System Settings</CardTitle>
+                <CardTitle className="text-gray-900">System Settings</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-gray-600">
@@ -291,6 +384,60 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Create Admin Dialog */}
+        <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New Admin Account</DialogTitle>
+              <DialogDescription>
+                Create a new administrator or super admin account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  value={newAdminData.email}
+                  onChange={(e) => setNewAdminData({ ...newAdminData, email: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={newAdminData.password}
+                  onChange={(e) => setNewAdminData({ ...newAdminData, password: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Role</Label>
+                <Select value={newAdminData.accountType} onValueChange={(value) => setNewAdminData({ ...newAdminData, accountType: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="superadmin">Super Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateAdmin(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateAdmin}>
+                Create Admin
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

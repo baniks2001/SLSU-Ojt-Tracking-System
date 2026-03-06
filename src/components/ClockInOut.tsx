@@ -52,6 +52,11 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const fetchTodayRecord = useCallback(async () => {
+    if (!studentId) {
+      console.warn('Student ID is undefined, skipping attendance fetch');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/attendance?studentId=${studentId}&date=${new Date().toISOString().split('T')[0]}`);
       if (response.ok) {
@@ -1263,37 +1268,42 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
       {/* Camera Modal - Verify Your Identity */}
       <Dialog open={showCameraModal} onOpenChange={setShowCameraModal}>
-        <DialogContent className="sm:max-w-2xl max-w-[calc(100vw-1rem)]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-              <Camera className="h-5 w-5" />
-              <span className="text-center sm:text-left">Verify Your Identity</span>
+        <DialogContent className="sm:max-w-2xl max-w-[calc(100vw-1rem)] bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-2xl">
+          <DialogHeader className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-t-2xl border-b border-gray-200 pb-4">
+            <DialogTitle className="flex items-center space-x-3 text-xl font-semibold text-gray-900">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center">
+                <Camera className="h-5 w-5 text-white" />
+              </div>
+              <span>Verify Your Identity</span>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6 p-6">
             {/* Date and Time Display */}
-            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-              <div className="flex items-center justify-center space-x-2 text-gray-600 text-sm sm:text-base">
-                <Calendar className="h-4 w-4" />
-                <span className="font-medium">{currentDateTime}</span>
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-xl p-4 text-center border border-sky-200">
+              <div className="flex items-center justify-center space-x-3 text-gray-700">
+                <Calendar className="h-5 w-5 text-sky-600" />
+                <span className="font-medium text-lg">{currentDateTime}</span>
               </div>
             </div>
 
             {/* Camera Section */}
             {!showCamera && !capturedImage && (
-              <div className="text-center py-6 sm:py-8">
-                <p className="text-gray-600 mb-4 text-sm sm:text-base">Please capture your photo to verify identity</p>
-                <Button onClick={startCamera} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white">
-                  <Camera className="h-4 w-4 mr-2" />
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-6 text-base">Please capture your photo to verify identity</p>
+                <Button 
+                  onClick={startCamera} 
+                  className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200"
+                >
+                  <Camera className="h-5 w-5 mr-3" />
                   Open Camera
                 </Button>
               </div>
             )}
 
             {showCamera && (
-              <div className="space-y-4">
-                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <div className="space-y-6">
+                <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-inner">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -1305,16 +1315,26 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                       toast.error('Camera error occurred. Please try again.');
                     }}
                   />
-                  <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
-                    Camera Active
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm px-3 py-2 rounded-lg shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      Camera Active
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
-                  <Button onClick={captureImage} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white">
-                    <Camera className="h-4 w-4 mr-2" />
+                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-6">
+                  <Button 
+                    onClick={captureImage} 
+                    className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200"
+                  >
+                    <Camera className="h-5 w-5 mr-3" />
                     Capture Photo
                   </Button>
-                  <Button variant="outline" onClick={() => { setShowCameraModal(false); stopCamera(); }}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => { setShowCameraModal(false); stopCamera(); }}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -1328,20 +1348,22 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
       {/* Review Image Modal */}
       <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-        <DialogContent className="sm:max-w-2xl max-w-[calc(100vw-1rem)]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-center sm:text-left">Review Your Photo</span>
+        <DialogContent className="sm:max-w-2xl max-w-[calc(100vw-1rem)] bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-2xl">
+          <DialogHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-2xl border-b border-gray-200 pb-4">
+            <DialogTitle className="flex items-center space-x-3 text-xl font-semibold text-gray-900">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-white" />
+              </div>
+              <span>Review Your Photo</span>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6 p-6">
             {/* Date and Time Display */}
-            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-              <div className="flex items-center justify-center space-x-2 text-gray-600 text-sm sm:text-base">
-                <Calendar className="h-4 w-4" />
-                <span className="font-medium">{currentDateTime}</span>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 text-center border border-green-200">
+              <div className="flex items-center justify-center space-x-3 text-gray-700">
+                <Calendar className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-lg">{currentDateTime}</span>
               </div>
             </div>
 

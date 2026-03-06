@@ -56,20 +56,25 @@ export function getActiveShift(currentTime: Date = new Date()): string | null {
   return null; // No active shift
 }
 
-// Check if shift has expired
+// Check if shift has expired - updated to handle grace periods properly
 export function isShiftExpired(clockInTime: Date, currentTime: Date = new Date()): boolean {
   const shiftType = getActiveShift(new Date(clockInTime));
   if (!shiftType) return true;
 
   const shift = SHIFTS[shiftType];
+  const shiftStartMinutes = parseTime(shift.startTime);
   const shiftEndMinutes = parseTime(shift.endTime);
   const graceEndMinutes = shiftEndMinutes + shift.gracePeriod;
   
   const clockInMinutes = clockInTime.getHours() * 60 + clockInTime.getMinutes();
   const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
   
-  // Check if current time is beyond the shift's grace period
-  return currentMinutes > graceEndMinutes && currentMinutes > clockInMinutes;
+  // Shift expires if:
+  // 1. Current time is beyond shift end + grace period
+  // 2. AND it's been at least 1 minute since clock in (to prevent immediate expiration)
+  const timeSinceClockIn = currentMinutes - clockInMinutes;
+  
+  return currentMinutes > graceEndMinutes && timeSinceClockIn > 0;
 }
 
 // Parse time string to minutes

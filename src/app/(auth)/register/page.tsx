@@ -65,6 +65,7 @@ export default function RegisterPage() {
     hostEstablishment: '',
     contactNumber: '',
     address: '',
+    campusName: '',
   });
 
   const [departmentData, setDepartmentData] = useState({
@@ -355,14 +356,14 @@ export default function RegisterPage() {
                           <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                             <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select course"} />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg">
                             {isLoadingCourses ? (
                               <div className="p-2 text-center text-sm text-gray-500">Loading courses...</div>
                             ) : courses.length === 0 ? (
                               <div className="p-2 text-center text-sm text-gray-500">No courses available</div>
                             ) : (
                               courses.map((course) => (
-                                <SelectItem key={course._id} value={course.courseName}>
+                                <SelectItem key={course._id} value={course.courseName} className="text-gray-900 hover:bg-sky-50">
                                   {course.courseName}
                                 </SelectItem>
                               ))
@@ -377,15 +378,35 @@ export default function RegisterPage() {
                           <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                             <SelectValue placeholder={isLoadingDepartments ? "Loading departments..." : "Select department"} />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg">
                             {isLoadingDepartments ? (
                               <div className="p-2 text-center text-sm text-gray-500">Loading departments...</div>
                             ) : departments.length === 0 ? (
                               <div className="p-2 text-center text-sm text-gray-500">No departments available</div>
                             ) : (
                               departments.map((dept) => (
-                                <SelectItem key={dept._id} value={dept.departmentName}>
+                                <SelectItem key={dept._id} value={dept.departmentName} className="text-gray-900 hover:bg-sky-50">
                                   {dept.departmentName}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="campus" className="text-sm font-medium text-gray-700">Campus</Label>
+                        <Select value={studentData.campusName} onValueChange={(value) => setStudentData({ ...studentData, campusName: value })}>
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <SelectValue placeholder="Select campus" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg">
+                            {campuses.length === 0 ? (
+                              <div className="p-2 text-center text-sm text-gray-500">No campuses available</div>
+                            ) : (
+                              campuses.map((campus) => (
+                                <SelectItem key={campus._id} value={campus.campusName} className="text-gray-900 hover:bg-sky-50">
+                                  {campus.campusName}
                                 </SelectItem>
                               ))
                             )}
@@ -553,14 +574,14 @@ export default function RegisterPage() {
                           <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                             <SelectValue placeholder={isLoadingDepartments ? "Loading departments..." : "Select department"} />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg">
                             {isLoadingDepartments ? (
                               <div className="p-2 text-center text-sm text-gray-500">Loading departments...</div>
                             ) : departments.length === 0 ? (
                               <div className="p-2 text-center text-sm text-gray-500">No departments available</div>
                             ) : (
                               departments.map((dept) => (
-                                <SelectItem key={dept._id} value={dept.departmentName}>
+                                <SelectItem key={dept._id} value={dept.departmentName} className="text-gray-900 hover:bg-sky-50">
                                   {dept.departmentName}
                                 </SelectItem>
                               ))

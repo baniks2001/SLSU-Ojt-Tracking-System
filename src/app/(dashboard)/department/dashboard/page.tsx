@@ -58,23 +58,27 @@ const customStyles = `
   }
   
   .image-btn {
-    border: 2px solid #3b82f6 !important;
-    outline: 1px solid #2563eb !important;
-    color: #1e40af !important;
-    font-weight: 500 !important;
-    padding: 6px 12px !important;
+    border: 2px solid #0ea5e9 !important;
+    outline: 2px solid #0284c7 !important;
+    color: #0284c7 !important;
+    background-color: #ffffff !important;
     font-size: 0.875rem !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.2s ease !important;
   }
   
   .image-btn:hover {
-    border-color: #2563eb !important;
-    background-color: #eff6ff !important;
-    color: #1e40af !important;
+    border-color: #0284c7 !important;
+    background-color: #f0f9ff !important;
+    color: #0284c7 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15) !important;
   }
   
   .image-btn:focus {
-    border-color: #1e40af !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.3) !important;
+    outline: none !important;
   }
 `;
 
