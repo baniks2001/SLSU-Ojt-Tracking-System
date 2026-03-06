@@ -99,7 +99,7 @@ export function calculateShiftDuration(clockIn: Date, clockOut: Date | null = nu
   const clockInTime = clockIn.getTime();
   const endTimeMs = endTime.getTime();
   
-  let durationMs = endTimeMs - clockInTime;
+  const durationMs = endTimeMs - clockInTime;
   let isOvertime = false;
   
   // Check if clock out is beyond grace period

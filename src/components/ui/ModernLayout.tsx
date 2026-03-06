@@ -3,6 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
+  Shield, 
+  LogOut, 
+  Trash2, 
+  Edit, 
+  Key, 
+  Check, 
+  School, 
   Users, 
   GraduationCap, 
   Building, 
@@ -11,18 +18,24 @@ import {
   TrendingUp,
   Activity,
   Settings,
-  LogOut,
   Bell,
   Search,
-  Menu,
-  X
+  Menu
 } from 'lucide-react';
 
 interface ModernLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
-  user?: any;
+  user?: {
+    _id: string;
+    email: string;
+    accountType: string;
+    details?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  };
   onLogout?: () => void;
   stats?: Array<{
     title: string;
@@ -68,7 +81,7 @@ export default function ModernLayout({
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden"
               >
-                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {sidebarOpen ? <Menu className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
               
               <div>
@@ -102,15 +115,15 @@ export default function ModernLayout({
 
               <div className="flex items-center space-x-2">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-slate-900">
-                    {user?.firstName} {user?.lastName}
+                  <p className="text-sm font-medium text-white">
+                    {user?.details?.firstName || 'Admin'} {user?.details?.lastName || 'User'}
                   </p>
-                  <p className="text-xs text-slate-500 capitalize">
-                    {user?.accountType}
+                  <p className="text-xs text-blue-200">
+                    {user?.accountType?.charAt(0).toUpperCase() + (user?.accountType?.slice(1) || '')}
                   </p>
                 </div>
-                <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {user?.firstName?.[0] || user?.email?.[0]}
+                <div className="h-8 w-8 bg-blue-900 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  {(user?.details?.firstName || user?.email)?.[0]?.toUpperCase() || 'U'}
                 </div>
               </div>
 
