@@ -45,6 +45,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [shiftExpired, setShiftExpired] = useState(false);
+  const [expiredShiftInfo, setExpiredShiftInfo] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -64,6 +66,42 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
   }, [studentId]);
 
+  // Check for shift expiration
+  const checkShiftExpiration = useCallback(async () => {
+    if (!todayRecord) return;
+
+    // Check if any shift is active and has expired
+    const shifts = ['morning', 'afternoon', 'evening'];
+    
+    for (const shift of shifts) {
+      const clockInTime = todayRecord[`${shift}In` as keyof AttendanceRecord];
+      const clockOutTime = todayRecord[`${shift}Out` as keyof AttendanceRecord];
+      
+      if (clockInTime && !clockOutTime) {
+        try {
+          const response = await fetch('/api/shift-management', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId })
+          });
+          
+          const data = await response.json();
+          
+          if (data.requiresAction) {
+            setShiftExpired(true);
+            setExpiredShiftInfo(data);
+            toast.error(`Shift expired: ${data.message}`);
+            
+            // Refresh attendance record
+            fetchTodayRecord();
+          }
+        } catch (error) {
+          console.error('Error checking shift expiration:', error);
+        }
+      }
+    }
+  }, [studentId, todayRecord, fetchTodayRecord]);
+
   useEffect(() => {
     fetchTodayRecord();
   }, [studentId, fetchTodayRecord]);
@@ -82,6 +120,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       }
       // Also update nextAction when shift status changes
       setNextAction(getNextClockAction());
+      
+      // Check for shift expiration
+      checkShiftExpiration();
     };
 
     // Only update on client side
@@ -92,7 +133,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     // Update every 5 seconds for real-time tracking
     const interval = setInterval(updateShiftStatus, 5000);
     return () => clearInterval(interval);
-  }, [shiftType, todayRecord]); // Add todayRecord as dependency
+  }, [shiftType, todayRecord, checkShiftExpiration]); // Add dependencies
 
   // Update time-based values only on client side to prevent hydration issues
   useEffect(() => {
@@ -685,6 +726,30 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
   return (
     <div className="space-y-6">
+      {/* Shift Expiration Warning */}
+      {shiftExpired && expiredShiftInfo && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Lock className="h-5 w-5 text-orange-600" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-800">Shift Expired</h3>
+                <p className="text-sm text-orange-700 mt-1">
+                  {expiredShiftInfo.message}
+                </p>
+                {expiredShiftInfo.newShift && (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
+                      Current Shift: {expiredShiftInfo.newShift}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Schedule Info */}
       <Card>
         <CardHeader>

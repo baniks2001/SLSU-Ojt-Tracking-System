@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
-import { Attendance } from '@/lib/models';
+import { Attendance, Student } from '@/lib/models';
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { isShiftExpired, getActiveShift } from '@/lib/shift-management';
 
 // GET - Get attendance records
 export async function GET(request: Request) {
@@ -90,6 +91,38 @@ export async function POST(request: Request) {
       // Update shiftType if different
       if (attendance.shiftType !== shiftType) {
         attendance.shiftType = shiftType;
+      }
+    }
+
+    // Check for shift expiration before processing clock out actions
+    if (action.includes('Out')) {
+      // Find the corresponding clock in time to check expiration
+      let clockInTime: Date | null = null;
+      let shiftTypeToCheck: string = '';
+      
+      switch (action) {
+        case 'morningOut':
+          clockInTime = attendance.morningIn;
+          shiftTypeToCheck = 'morning';
+          break;
+        case 'afternoonOut':
+          clockInTime = attendance.afternoonIn;
+          shiftTypeToCheck = 'afternoon';
+          break;
+        case 'eveningOut':
+          clockInTime = attendance.eveningIn;
+          shiftTypeToCheck = 'evening';
+          break;
+      }
+
+      if (clockInTime && isShiftExpired(clockInTime, serverTime)) {
+        return NextResponse.json({
+          error: 'Shift has expired',
+          message: `The ${shiftTypeToCheck} shift has expired. Please clock in to the current active shift.`,
+          expiredShift: shiftTypeToCheck,
+          activeShift: getActiveShift(serverTime),
+          requiresNewClockIn: true
+        }, { status: 400 });
       }
     }
 

@@ -7,9 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { User, Lock } from 'lucide-react';
+import { User, Lock, ArrowLeft, Home } from 'lucide-react';
 import Logo from '@/components/Logo';
 
 export default function LoginPage() {
@@ -67,7 +66,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4 relative">
+      {/* Return to Dashboard Button */}
+      <Button
+        variant="outline"
+        onClick={() => router.push('/')}
+        className="absolute top-6 left-6 flex items-center space-x-2 bg-white/80 backdrop-blur-sm hover:bg-white border-slate-200"
+      >
+        <Home className="w-4 h-4" />
+        <span>Return to Dashboard</span>
+      </Button>
+
       <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm max-w-md w-full">
         <CardHeader className="text-center space-y-6 pb-8">
           <div className="flex flex-col items-center">
@@ -133,11 +142,19 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="pt-0">
+        <CardFooter className="pt-0 space-y-4">
           <div className="text-center text-sm text-slate-600">
             Don't have an account?{' '}
             <Link href="/register" className="text-blue-600 hover:text-blue-800 font-medium">
               Register here
+            </Link>
+          </div>
+          <div className="text-center">
+            <Link 
+              href="/forgot-password" 
+              className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              Forgot your password?
             </Link>
           </div>
         </CardFooter>

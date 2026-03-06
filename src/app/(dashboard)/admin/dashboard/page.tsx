@@ -503,6 +503,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteDepartment = async (departmentId: string) => {
+    if (!confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/departments?departmentId=${departmentId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Department deleted successfully');
+        fetchDepartments();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete department');
+      }
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      toast.error('An error occurred');
+    }
+  };
+
   const handleCreateDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -1010,7 +1033,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-gray-600">Departments</p>
-                  <p className="text-lg sm:text-2xl font-bold text-green-600">{departmentUsers.length}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">{departments.length}</p>
                 </div>
                 <Building className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
               </div>
@@ -1325,7 +1348,7 @@ export default function AdminDashboard() {
                 <CardTitle>All Departments</CardTitle>
               </CardHeader>
               <CardContent>
-                {departmentUsers.length === 0 ? (
+                {departments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No departments registered in the system.
                   </div>
@@ -1342,15 +1365,15 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {departmentUsers.map((deptUser) => (
-                        <TableRow key={deptUser._id}>
-                          <TableCell>{deptUser.details?.departmentCode}</TableCell>
-                          <TableCell>{deptUser.details?.departmentName}</TableCell>
-                          <TableCell>{deptUser.details?.ojtAdvisorName}</TableCell>
-                          <TableCell>{deptUser.details?.location}</TableCell>
+                      {departments.map((dept) => (
+                        <TableRow key={dept._id}>
+                          <TableCell>{dept.departmentCode}</TableCell>
+                          <TableCell>{dept.departmentName}</TableCell>
+                          <TableCell>{dept.ojtAdvisorName}</TableCell>
+                          <TableCell>{dept.location}</TableCell>
                           <TableCell>
-                            <Badge variant={deptUser.isActive ? "default" : "secondary"}>
-                              {deptUser.isActive ? 'Active' : 'Inactive'}
+                            <Badge variant={dept.isActive ? "default" : "secondary"}>
+                              {dept.isActive ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -1358,35 +1381,31 @@ export default function AdminDashboard() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => openEditDialog({
-                                  _id: deptUser._id,
-                                  userId: deptUser._id,
-                                  departmentName: deptUser.details?.departmentName || '',
-                                  departmentCode: deptUser.details?.departmentCode || '',
-                                  location: deptUser.details?.location || '',
-                                  contactEmail: deptUser.details?.contactEmail || '',
-                                  contactNumber: deptUser.details?.contactNumber || '',
-                                  ojtAdvisorName: deptUser.details?.ojtAdvisorName || '',
-                                  ojtAdvisorPosition: deptUser.details?.ojtAdvisorPosition || '',
-                                  isActive: deptUser.isActive,
-                                  isAccepted: deptUser.details?.isAccepted || true,
-                                })}
+                                onClick={() => {
+                                  setEditingDepartment({
+                                    _id: dept._id,
+                                    userId: dept.userId,
+                                    departmentCode: dept.departmentCode,
+                                    departmentName: dept.departmentName,
+                                    ojtAdvisorName: dept.ojtAdvisorName,
+                                    ojtAdvisorPosition: dept.ojtAdvisorPosition,
+                                    contactEmail: dept.contactEmail,
+                                    contactNumber: dept.contactNumber,
+                                    location: dept.location,
+                                    isActive: dept.isActive,
+                                    isAccepted: dept.isAccepted
+                                  });
+                                  setIsEditDialogOpen(true);
+                                }}
                               >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleToggleUserStatus(deptUser._id, deptUser.isActive)}
-                              >
-                                {deptUser.isActive ? 'Deactivate' : 'Activate'}
+                                Edit
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleDeleteUser(deptUser._id, 'department')}
+                                onClick={() => handleDeleteDepartment(dept._id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                Delete
                               </Button>
                             </div>
                           </TableCell>
