@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { User, Lock } from 'lucide-react';
 import Logo from '@/components/Logo';
 
 export default function LoginPage() {
@@ -37,13 +38,10 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store token in localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-
         toast.success('Login successful!');
 
-        // Redirect based on account type
         switch (data.user.accountType) {
           case 'student':
             router.push('/student/dashboard');
@@ -62,7 +60,6 @@ export default function LoginPage() {
         toast.error(data.error || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
       toast.error('An error occurred during login');
     } finally {
       setIsLoading(false);
@@ -70,62 +67,79 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mb-4 flex flex-col items-center">
-            <Logo size="medium" className="mb-2" />
-            <h1 className="text-2xl font-bold text-[#003366]">Southern Leyte State University</h1>
-            <p className="text-sm text-gray-600">OJT Tracking System</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm max-w-md w-full">
+        <CardHeader className="text-center space-y-6 pb-8">
+          <div className="flex flex-col items-center">
+            <Logo size="large" className="mb-4" />
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Southern Leyte State University
+              </h1>
+              <p className="text-slate-600 font-medium">OJT Tracking System</p>
+              <p className="text-xs text-slate-500 mt-1">Developed with ❤️ by SLSU Tech Team</p>
+            </div>
           </div>
-          <CardTitle className="text-xl">Welcome Back</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
+          <CardTitle className="text-2xl text-slate-800">Welcome Back</CardTitle>
+          <CardDescription className="text-slate-600">
+            Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
+        <CardContent className="pb-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-3">
+              <Label htmlFor="email" className="text-slate-700 font-medium">Email Address</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  className="pl-10 h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  className="pl-10 h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-[#003366] hover:bg-[#002244]"
+            <Button 
+              type="submit" 
+              className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-transparent animate-spin rounded-full mr-2"></div>
+                  Signing in...
+                </div>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <Link href="/forgot-password" className="text-sm text-[#003366] hover:underline">
-            Forgot your password?
-          </Link>
-          <p className="text-sm text-gray-600">
+        <CardFooter className="pt-0">
+          <div className="text-center text-sm text-slate-600">
             Don't have an account?{' '}
-            <Link href="/register" className="text-[#003366] hover:underline font-medium">
+            <Link href="/register" className="text-blue-600 hover:text-blue-800 font-medium">
               Register here
             </Link>
-          </p>
+          </div>
         </CardFooter>
       </Card>
     </div>

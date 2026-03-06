@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db/mongoose';
 import { User, Student, Department } from '@/lib/models';
 import { hashPassword, comparePasswords } from '@/lib/auth/password';
 import { sendPasswordResetEmail } from '@/lib/auth/email';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { connectDB, closeDBConnection } from '@/lib/db/connection-manager';
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  
   try {
     await connectDB();
     const body = await request.json();
@@ -14,17 +16,26 @@ export async function POST(request: Request) {
 
     switch (action) {
       case 'login':
-        return handleLogin(body);
+        return await handleLogin(body);
       case 'register':
-        return handleRegister(body);
+        return await handleRegister(body);
       case 'forgotPassword':
-        return handleForgotPassword(body);
+        return await handleForgotPassword(body);
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('Auth error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Silent error handling - no console logs
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  } finally {
+    const duration = Date.now() - startTime;
+    if (duration > 1000) { 
+      // Performance monitoring without console logs
+      // Could send to monitoring service instead
+    }
   }
 }
 
@@ -55,18 +66,18 @@ async function handleLogin({ email, password }: { email: string; password: strin
         user.password = hashedPassword;
         await user.save();
       }
-
-      // Update last login
+      
+      // Update last login time
       user.lastLogin = new Date();
       await user.save();
-
+      
       // Generate JWT token
       const token = jwt.sign(
         { userId: user._id, email: user.email, accountType: user.accountType },
         process.env.NEXTAUTH_SECRET!,
         { expiresIn: '24h' }
       );
-
+      
       return NextResponse.json({
         success: true,
         token,
@@ -80,52 +91,46 @@ async function handleLogin({ email, password }: { email: string; password: strin
     }
 
     // Regular user login flow
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-
+    
     if (!user.isActive) {
       return NextResponse.json({ error: 'Account is deactivated' }, { status: 401 });
     }
-
+    
     const isValidPassword = await comparePasswords(password, user.password);
-
+    
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
+    
+    // Get user details based on account type
+    let userDetails = null;
+    if (user.accountType === 'student') {
+      userDetails = await Student.findOne({ userId: user._id });
+    } else if (user.accountType === 'department') {
+      userDetails = await Department.findOne({ userId: user._id });
+    }
+    
+    // Check if user is accepted
+    if (userDetails && !userDetails.isAccepted) {
+      return NextResponse.json({ error: 'Your registration is pending approval' }, { status: 401 });
+    }
+    
+    // Update last login time
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
+    
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id, email: user.email, accountType: user.accountType },
       process.env.NEXTAUTH_SECRET!,
       { expiresIn: '24h' }
     );
-
-    // Get user details based on account type
-    let userDetails = null;
-    if (user.accountType === 'student') {
-      userDetails = await Student.findOne({ userId: user._id }).select('-__v');
-      
-      // Check if student is accepted
-      if (userDetails && !userDetails.isAccepted) {
-        return NextResponse.json({ error: 'Your registration is pending approval from your department' }, { status: 401 });
-      }
-    } else if (user.accountType === 'department') {
-      userDetails = await Department.findOne({ userId: user._id }).select('-__v');
-      
-      // Check if department is accepted
-      if (userDetails && !userDetails.isAccepted) {
-        return NextResponse.json({ error: 'Your department registration is pending admin approval' }, { status: 401 });
-      }
-    }
-
-    return NextResponse.json({
+    
+    const response = {
       success: true,
       token,
       user: {
@@ -134,10 +139,14 @@ async function handleLogin({ email, password }: { email: string; password: strin
         accountType: user.accountType,
         details: userDetails,
       },
-    });
+    };
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Login failed' 
+    }, { status: 500 });
   }
 }
 

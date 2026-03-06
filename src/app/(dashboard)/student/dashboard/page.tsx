@@ -2,22 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Clock, User, FileText, Bell, LogOut, Camera } from 'lucide-react';
+import { Clock, User, FileText, Bell, Camera, Code, Users } from 'lucide-react';
 import ClockInOut from '@/components/ClockInOut';
 import ProfileForm from '@/components/ProfileForm';
 import AttendanceLogs from '@/components/AttendanceLogs';
 import DTRTemplate from '@/components/DTRTemplate';
 import Announcements from '@/components/Announcements';
 import ScheduleChangeRequest from '@/components/ScheduleChangeRequest';
-import Logo from '@/components/Logo';
+import Header from '@/components/Header';
 
 interface StudentData {
   _id: string;
@@ -118,60 +116,47 @@ export default function StudentDashboard() {
   const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-[#003366] text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Logo size="small" />
-              <div className="hidden sm:block">
-                <h1 className="text-lg sm:text-xl font-bold">SLSU OJT Tracking</h1>
-                <p className="text-xs text-blue-200">Southern Leyte State University</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm sm:text-lg font-mono">{currentTime.toLocaleTimeString()}</p>
-                <p className="text-xs text-blue-200">{currentTime.toLocaleDateString()}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="text-white hover:bg-blue-800"
-              >
-                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Header 
+        user={user} 
+        title="Student Dashboard"
+        showBackButton={false}
+      />
+      
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
-              <AvatarFallback className="bg-[#003366] text-white text-lg sm:text-xl">
-                {student.firstName.charAt(0)}{student.lastName.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome, {fullName}</h2>
-              <p className="text-sm sm:text-base text-gray-600">Student ID: {student.studentId}</p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1 sm:gap-2 mt-1">
-                <Badge variant={student.isAccepted ? "default" : "secondary"} className="text-xs">
-                  {student.isAccepted ? "Active" : "Pending Approval"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">{student.course}</Badge>
-                <Badge variant="outline" className="text-xs">{student.shiftType === 'graveyard' ? 'Graveyard Shift' : 'Regular Shift'}</Badge>
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
+              <Avatar className="h-16 w-16 ring-4 ring-white shadow-lg">
+                <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xl font-bold">
+                  {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 text-center sm:text-left">
+                <h2 className="text-2xl font-bold text-slate-800 mb-1">
+                  Welcome back, <span className="text-blue-600">{student.firstName}</span>!
+                </h2>
+                <p className="text-slate-600 mb-2">{student.course} • {student.department}</p>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <Users className="w-3 h-3 mr-1" />
+                    {student.studentId}
+                  </Badge>
+                  <Badge variant="outline" className="border-blue-200 text-blue-700">
+                    {student.shiftType}
+                  </Badge>
+                  {student.isAccepted && (
+                    <Badge className="bg-green-500 text-white">
+                      Active
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
+          </CardContent>
+        </Card>
         {!student.isAccepted && (
           <Card className="mb-6 border-yellow-400 bg-yellow-50">
             <CardContent className="py-4">
@@ -181,7 +166,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
         )}
-
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 lg:gap-2">
             <TabsTrigger value="clock" className="flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm">

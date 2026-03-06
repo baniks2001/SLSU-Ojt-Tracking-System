@@ -76,15 +76,21 @@ interface SystemLog {
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState<UserData[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [pendingDepartments, setPendingDepartments] = useState<Department[]>([]);
-  const [pendingStudents, setPendingStudents] = useState<UserData[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
-  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
+  const [systemActivities, setSystemActivities] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeStudents: 0,
+    pendingApprovals: 0,
+    totalDepartments: 0,
+    totalCourses: 0,
+    totalCampuses: 0,
+  });
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', accountType: 'admin' });
   const [newCourse, setNewCourse] = useState({ courseCode: '', courseName: '', departmentName: '', campusId: '', totalHours: 500 });
   const [newCampus, setNewCampus] = useState({
@@ -148,10 +154,11 @@ export default function AdminDashboard() {
       const response = await fetch('/api/departments?status=pending');
       if (response.ok) {
         const data = await response.json();
-        setPendingDepartments(data.departments || []);
+        // Filter departments to show only pending ones
+        setDepartments(data.departments?.filter((dept: any) => !dept.isAccepted) || []);
       }
     } catch (error) {
-      console.error('Error fetching pending departments:', error);
+      // Silent error handling
     }
   };
 
@@ -160,10 +167,11 @@ export default function AdminDashboard() {
       const response = await fetch('/api/users?accountType=student&isAccepted=false');
       if (response.ok) {
         const data = await response.json();
-        setPendingStudents(data.users || []);
+        // Filter users to show only pending students
+        setUsers(data.users?.filter((user: any) => !user.details?.isAccepted) || []);
       }
     } catch (error) {
-      console.error('Error fetching pending students:', error);
+      // Silent error handling
     }
   };
 
@@ -201,18 +209,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchSystemLogs = async () => {
-    try {
-      const response = await fetch('/api/system-logs?limit=100');
-      if (response.ok) {
-        const data = await response.json();
-        setSystemLogs(data.logs || []);
-      }
-    } catch (error) {
-      console.error('Error fetching system logs:', error);
-    }
-  };
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
@@ -236,7 +232,7 @@ export default function AdminDashboard() {
       fetchPendingStudents();
       fetchCampuses();
       fetchCourses();
-      fetchSystemLogs();
+      fetchSystemActivities();
     } catch (error) {
       router.push('/login');
       return;
@@ -250,6 +246,18 @@ export default function AdminDashboard() {
 
     return () => clearInterval(timeInterval);
   }, [router]);
+
+  const fetchSystemActivities = async () => {
+    try {
+      const response = await fetch('/api/system-activities?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        setSystemActivities(data.activities || []);
+      }
+    } catch (error) {
+      // Silent error handling
+    }
+  };
 
   const fetchAllUsers = async () => {
     try {
@@ -446,30 +454,6 @@ export default function AdminDashboard() {
       console.error('Error deleting course:', error);
       toast.error('An error occurred');
     }
-  };
-
-  const exportSystemLogs = () => {
-    const csvContent = [
-      ['Date', 'User', 'Type', 'Action', 'Description', 'Severity'].join(','),
-      ...systemLogs.map(log => [
-        new Date(log.createdAt).toLocaleString(),
-        log.userEmail || 'System',
-        log.userType,
-        log.action,
-        `"${log.description.replace(/"/g, '""')}"`,
-        log.severity
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `system-logs-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
   };
 
   const handleDeleteUser = async (userId: string, accountType: string) => {
@@ -918,6 +902,9 @@ export default function AdminDashboard() {
     if (activeTab === 'campuses') {
       fetchCampuses();
     }
+    if (activeTab === 'system-logs') {
+      fetchSystemActivities();
+    }
     if (activeTab === 'pending') {
       fetchPendingDepartments();
       fetchPendingStudents();
@@ -1084,13 +1071,13 @@ export default function AdminDashboard() {
             <TabsTrigger value="campuses" className="text-xs sm:text-sm">Campuses</TabsTrigger>
             <TabsTrigger value="pending" className="text-xs sm:text-sm">
               Pending
-              {(pendingDepartments.length + pendingStudents.length) > 0 && (
+              {(departments.filter(d => !d.isAccepted).length + users.filter(u => !u.details?.isAccepted).length) > 0 && (
                 <Badge variant="destructive" className="ml-1 text-xs">
-                  {pendingDepartments.length + pendingStudents.length}
+                  {departments.filter(d => !d.isAccepted).length + users.filter(u => !u.details?.isAccepted).length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
+            <TabsTrigger value="system-logs" className="text-xs sm:text-sm">System Logs</TabsTrigger>
             <TabsTrigger value="admins" className="text-xs sm:text-sm">Admins</TabsTrigger>
           </TabsList>
 
@@ -1877,7 +1864,7 @@ export default function AdminDashboard() {
                 <CardTitle>Pending Student Approvals</CardTitle>
               </CardHeader>
               <CardContent>
-                {pendingStudents.length === 0 ? (
+                {users.filter(u => !u.details?.isAccepted).length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No pending student registrations.
                   </div>
@@ -1894,7 +1881,7 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pendingStudents.map((student) => (
+                      {users.filter(u => !u.details?.isAccepted).map((student) => (
                         <TableRow key={student._id}>
                           <TableCell>{student.details?.studentId}</TableCell>
                           <TableCell>
@@ -1936,7 +1923,7 @@ export default function AdminDashboard() {
                 <CardTitle>Pending Department Approvals</CardTitle>
               </CardHeader>
               <CardContent>
-                {pendingDepartments.length === 0 ? (
+                {departments.filter(d => !d.isAccepted).length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No pending department registrations.
                   </div>
@@ -1953,7 +1940,7 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pendingDepartments.map((dept) => (
+                      {departments.filter(d => !d.isAccepted).map((dept) => (
                         <TableRow key={dept._id}>
                           <TableCell>{dept.departmentCode}</TableCell>
                           <TableCell>{dept.departmentName}</TableCell>
@@ -1986,69 +1973,6 @@ export default function AdminDashboard() {
                       ))}
                     </TableBody>
                   </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="logs" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>System Activity Logs</CardTitle>
-                <Button
-                  onClick={exportSystemLogs}
-                  variant="outline"
-                  className="bg-green-600 text-white hover:bg-green-700"
-                >
-                  Export CSV
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {systemLogs.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No system logs available.
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Severity</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {systemLogs.slice(0, 50).map((log) => (
-                        <TableRow key={log._id}>
-                          <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
-                          <TableCell>{log.userEmail || 'System'}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{log.userType}</Badge>
-                          </TableCell>
-                          <TableCell>{log.action}</TableCell>
-                          <TableCell className="max-w-xs truncate">{log.description}</TableCell>
-                          <TableCell>
-                            <Badge className={
-                              log.severity === 'critical' ? 'bg-red-600' :
-                              log.severity === 'error' ? 'bg-orange-600' :
-                              log.severity === 'warning' ? 'bg-yellow-600' :
-                              'bg-blue-600'
-                            }>
-                              {log.severity}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-                {systemLogs.length > 50 && (
-                  <p className="text-center text-gray-500 mt-4">
-                    Showing last 50 of {systemLogs.length} logs
-                  </p>
                 )}
               </CardContent>
             </Card>
@@ -2226,6 +2150,91 @@ export default function AdminDashboard() {
                 )}
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          <TabsContent value="system-logs" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>System Activity Logs</CardTitle>
+                <Button
+                  onClick={() => {
+                    const csvContent = [
+                      ['Date', 'User', 'Type', 'Action', 'Description', 'Severity'].join(','),
+                      ...systemActivities.map(log => [
+                        new Date(log.timestamp).toLocaleString(),
+                        log.userEmail || 'System',
+                        log.userType,
+                        log.action,
+                        `"${log.description.replace(/"/g, '""')}"`,
+                        log.severity
+                      ].join(','))
+                    ].join('\n');
+
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `system-activities-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  }}
+                  variant="outline"
+                  className="bg-green-600 text-white hover:bg-green-700"
+                >
+                  Export CSV
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {systemActivities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No system activities available.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Severity</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {systemActivities.slice(0, 50).map((log, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                          <TableCell>{log.userEmail || 'System'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{log.userType}</Badge>
+                          </TableCell>
+                          <TableCell>{log.action}</TableCell>
+                          <TableCell className="max-w-xs truncate">{log.description}</TableCell>
+                          <TableCell>
+                            <Badge className={
+                              log.severity === 'critical' ? 'bg-red-600' :
+                              log.severity === 'error' ? 'bg-orange-600' :
+                              log.severity === 'warning' ? 'bg-yellow-600' :
+                              'bg-blue-600'
+                            }>
+                              {log.severity}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                {systemActivities.length > 50 && (
+                  <p className="text-center text-gray-500 mt-4">
+                    Showing last 50 of {systemActivities.length} activities
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>
