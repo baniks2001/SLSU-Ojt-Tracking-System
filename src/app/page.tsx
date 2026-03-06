@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
   BookOpen, 
@@ -54,10 +51,10 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent animate-spin rounded-full mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ display: 'inline-block', width: '2rem', height: '2rem', border: '2px solid #2563eb', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '1rem' }}></div>
+          <p style={{ color: '#6b7280' }}>Loading...</p>
         </div>
       </div>
     );
@@ -68,30 +65,32 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #dbeafe, #e0e7ff)' }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">SLSU OJT Tracking</h1>
-                <p className="text-sm text-gray-500">Southern Leyte State University</p>
-              </div>
+      <header className="header">
+        <div className="header-container">
+          <div className="header-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+                <div style={{ width: '2.5rem', height: '2.5rem', backgroundColor: '#2563eb', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GraduationCap style={{ width: '1.5rem', height: '1.5rem', color: '#ffffff' }} />
+                </div>
+                <div style={{ display: 'none' }}>
+                  <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>SLSU OJT Tracking</h1>
+                  <p style={{ fontSize: '0.75rem', color: '#dbeafe', margin: 0 }}>Southern Leyte State University</p>
+                </div>
+              </Link>
             </div>
-            <div className="flex items-center space-x-4">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <Link href="/login">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <button className="btn btn-primary">
                   Sign In
-                </Button>
+                </button>
               </Link>
               <Link href="/register">
-                <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                <button className="btn btn-outline">
                   Register
-                </Button>
+                </button>
               </Link>
             </div>
           </div>
@@ -99,238 +98,226 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <Badge className="bg-blue-100 text-blue-800 mb-4">v2.0</Badge>
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+      <section style={{ padding: '5rem 1rem', textAlign: 'center' }}>
+        <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+          <span style={{ backgroundColor: '#dbeafe', color: '#1e40af', padding: '0.125rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 500, marginBottom: '1rem', display: 'inline-block' }}>v2.0</span>
+          <h1 style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#111827', marginBottom: '1.5rem', lineHeight: '1.2' }}>
             OJT Tracking System
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p style={{ fontSize: '1.25rem', color: '#6b7280', marginBottom: '2rem', maxWidth: '48rem', margin: '0 auto 2rem' }}>
             Comprehensive monitoring and management system for student On-the-Job Training experiences at Southern Leyte State University
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }}>
             <Link href="/login">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
+              <button className="btn btn-primary" style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>
                 Get Started
-              </Button>
+              </button>
             </Link>
             <Link href="/register">
-              <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3">
+              <button className="btn btn-outline" style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>
                 Create Account
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Key Features</h2>
-            <p className="text-xl text-gray-600">Everything you need for effective OJT management</p>
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#ffffff' }}>
+        <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+            <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>Key Features</h2>
+            <p style={{ fontSize: '1.25rem', color: '#6b7280' }}>Everything you need for effective OJT management</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <Clock className="w-6 h-6 text-blue-600" />
+          <div className="responsive-grid">
+            <div className="card">
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ width: '3rem', height: '3rem', backgroundColor: '#dbeafe', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <Clock style={{ width: '1.5rem', height: '1.5rem', color: '#2563eb' }} />
                 </div>
-                <CardTitle className="text-xl">Time Tracking</CardTitle>
-                <CardDescription>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Time Tracking</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Automated attendance monitoring with shift management and real-time tracking
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                </p>
+                <ul style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280', listStyle: 'none', padding: 0 }}>
                   <li>• Clock in/out functionality</li>
                   <li>• Shift scheduling</li>
                   <li>• Attendance reports</li>
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-green-600" />
+            <div className="card">
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ width: '3rem', height: '3rem', backgroundColor: '#dcfce7', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <Users style={{ width: '1.5rem', height: '1.5rem', color: '#16a34a' }} />
                 </div>
-                <CardTitle className="text-xl">Student Management</CardTitle>
-                <CardDescription>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Student Management</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Comprehensive student profiles and progress tracking throughout OJT
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                </p>
+                <ul style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280', listStyle: 'none', padding: 0 }}>
                   <li>• Student profiles</li>
                   <li>• Progress monitoring</li>
                   <li>• Performance analytics</li>
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                  <Building className="w-6 h-6 text-purple-600" />
+            <div className="card">
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ width: '3rem', height: '3rem', backgroundColor: '#f3e8ff', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <Building style={{ width: '1.5rem', height: '1.5rem', color: '#9333ea' }} />
                 </div>
-                <CardTitle className="text-xl">Department Portal</CardTitle>
-                <CardDescription>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Department Portal</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Department-level oversight and coordination of OJT programs
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                </p>
+                <ul style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280', listStyle: 'none', padding: 0 }}>
                   <li>• Department analytics</li>
                   <li>• Student supervision</li>
                   <li>• Report generation</li>
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                  <Calendar className="w-6 h-6 text-orange-600" />
+            <div className="card">
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ width: '3rem', height: '3rem', backgroundColor: '#fed7aa', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <Calendar style={{ width: '1.5rem', height: '1.5rem', color: '#ea580c' }} />
                 </div>
-                <CardTitle className="text-xl">Schedule Management</CardTitle>
-                <CardDescription>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Schedule Management</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Flexible scheduling system for different shift types and work arrangements
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                </p>
+                <ul style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280', listStyle: 'none', padding: 0 }}>
                   <li>• Multiple shift types</li>
                   <li>• Schedule requests</li>
                   <li>• Approval workflows</li>
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                  <Award className="w-6 h-6 text-red-600" />
+            <div className="card">
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ width: '3rem', height: '3rem', backgroundColor: '#fecaca', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <Award style={{ width: '1.5rem', height: '1.5rem', color: '#dc2626' }} />
                 </div>
-                <CardTitle className="text-xl">Performance Tracking</CardTitle>
-                <CardDescription>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Performance Tracking</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Detailed performance metrics and evaluation tools for students
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                </p>
+                <ul style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280', listStyle: 'none', padding: 0 }}>
                   <li>• Performance metrics</li>
                   <li>• Evaluation tools</li>
                   <li>• Achievement tracking</li>
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="w-6 h-6 text-indigo-600" />
+            <div className="card">
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ width: '3rem', height: '3rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <Shield style={{ width: '1.5rem', height: '1.5rem', color: '#4f46e5' }} />
                 </div>
-                <CardTitle className="text-xl">Admin Controls</CardTitle>
-                <CardDescription>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Admin Controls</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Comprehensive administrative tools for system management
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                </p>
+                <ul style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280', listStyle: 'none', padding: 0 }}>
                   <li>• User management</li>
                   <li>• System configuration</li>
                   <li>• Security controls</li>
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+      <section style={{ padding: '5rem 1rem', backgroundColor: '#f9fafb' }}>
+        <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2rem', textAlign: 'center' }}>
             <div>
-              <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-gray-600">Active Students</div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#2563eb', marginBottom: '0.5rem' }}>500+</div>
+              <div style={{ color: '#6b7280' }}>Active Students</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-green-600 mb-2">50+</div>
-              <div className="text-gray-600">Partner Companies</div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#16a34a', marginBottom: '0.5rem' }}>50+</div>
+              <div style={{ color: '#6b7280' }}>Partner Companies</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-purple-600 mb-2">15+</div>
-              <div className="text-gray-600">Departments</div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#9333ea', marginBottom: '0.5rem' }}>15+</div>
+              <div style={{ color: '#6b7280' }}>Departments</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-orange-600 mb-2">98%</div>
-              <div className="text-gray-600">Completion Rate</div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#ea580c', marginBottom: '0.5rem' }}>98%</div>
+              <div style={{ color: '#6b7280' }}>Completion Rate</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <footer style={{ backgroundColor: '#111827', color: '#ffffff', padding: '3rem 1rem' }}>
+        <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-white" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ width: '2.5rem', height: '2.5rem', backgroundColor: '#2563eb', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GraduationCap style={{ width: '1.5rem', height: '1.5rem', color: '#ffffff' }} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">SLSU OJT Tracking</h3>
-                  <p className="text-gray-400 text-sm">Professional OJT Management</p>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#ffffff', marginBottom: '0.25rem' }}>SLSU OJT Tracking</h3>
+                  <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Professional OJT Management</p>
                 </div>
               </div>
-              <p className="text-gray-400 text-sm">
+              <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
                 Southern Leyte State University - OJT Tracking System v2.0
               </p>
             </div>
             
             <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-              <div className="space-y-2">
-                <Link href="/login" className="block text-gray-400 hover:text-white text-sm">
+              <h4 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Quick Links</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Link href="/login" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Sign In
                 </Link>
-                <Link href="/register" className="block text-gray-400 hover:text-white text-sm">
+                <Link href="/register" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Register
                 </Link>
-                <Link href="/about" className="block text-gray-400 hover:text-white text-sm">
+                <Link href="/about" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   About
                 </Link>
-                <Link href="/contact" className="block text-gray-400 hover:text-white text-sm">
+                <Link href="/contact" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Contact
                 </Link>
               </div>
             </div>
             
             <div>
-              <h4 className="text-lg font-semibold mb-4">Support</h4>
-              <div className="space-y-2">
-                <Link href="/help" className="block text-gray-400 hover:text-white text-sm">
+              <h4 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Support</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Link href="/help" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Help Center
                 </Link>
-                <Link href="/privacy" className="block text-gray-400 hover:text-white text-sm">
+                <Link href="/privacy" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Privacy Policy
                 </Link>
-                <Link href="/terms" className="block text-gray-400 hover:text-white text-sm">
+                <Link href="/terms" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Terms of Service
                 </Link>
-                <Link href="/contact" className="block text-gray-400 hover:text-white text-sm">
+                <Link href="/contact" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.875rem' }}>
                   Contact Support
                 </Link>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-400 text-sm">
+          <div style={{ borderTop: '1px solid #374151', marginTop: '2rem', paddingTop: '2rem', textAlign: 'center' }}>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
               © 2026 Southern Leyte State University. All rights reserved.
             </p>
           </div>

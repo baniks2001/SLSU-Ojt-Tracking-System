@@ -1,6 +1,8 @@
 /* Modern 2026 Professional Design System - Dark Blue & White Theme */
 
-:root {
+@import "tailwindcss";
+
+@theme {
   /* Primary Brand Colors - Dark Blue */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
