@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate');
     
     // Build query
-    let query: any = {};
+    const query: any = {};
     
     if (action) query.action = action;
     if (userType) query.userType = userType;

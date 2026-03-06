@@ -10,6 +10,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { 
+  User, 
+  Building, 
+  Shield, 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Loader2,
+  GraduationCap,
+  MapPin,
+  UserCheck
+} from 'lucide-react';
 import Logo from '@/components/Logo';
 
 interface Department {
@@ -43,6 +56,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('student');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
@@ -235,95 +250,117 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <Logo size="large" className="mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-gray-600">Register for SLSU OJT Tracking System</p>
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl">
+        {/* Logo and Title Section */}
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="mb-6">
+            <Logo size="large" className="mx-auto" />
+          </div>
+          <h1 className="text-3xl font-bold text-primary-900 mb-2">Create Account</h1>
+          <p className="text-gray-600 text-lg">Register for SLSU OJT Tracking System</p>
         </div>
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-gray-900">Register</CardTitle>
+        {/* Registration Card */}
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm animate-slide-up">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-2xl font-bold text-center text-primary-900">
+              Register
+            </CardTitle>
             <CardDescription className="text-center text-gray-600">
               Choose your account type and fill in the required information
             </CardDescription>
           </CardHeader>
+          
           <CardContent className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
                 <TabsTrigger 
                   value="student" 
-                  className="data-[state=active]:bg-blue-900 data-[state=active]:text-white text-gray-700"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary-700 text-gray-700 font-medium transition-all duration-200"
                 >
+                  <User className="h-4 w-4 mr-2" />
                   Student
                 </TabsTrigger>
                 <TabsTrigger 
                   value="department" 
-                  className="data-[state=active]:bg-blue-900 data-[state=active]:text-white text-gray-700"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary-700 text-gray-700 font-medium transition-all duration-200"
                 >
+                  <Building className="h-4 w-4 mr-2" />
                   Department
                 </TabsTrigger>
                 <TabsTrigger 
                   value="admin" 
-                  className="data-[state=active]:bg-blue-900 data-[state=active]:text-white text-gray-700"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary-700 text-gray-700 font-medium transition-all duration-200"
                 >
+                  <Shield className="h-4 w-4 mr-2" />
                   Admin
                 </TabsTrigger>
               </TabsList>
               
               {/* Student Registration */}
-              <TabsContent value="student" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="student-id">Student ID</Label>
-                    <Input
-                      id="student-id"
-                      placeholder="Enter student ID"
-                      value={studentForm.studentId}
-                      onChange={(e) => setStudentForm({ ...studentForm, studentId: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
+              <TabsContent value="student" className="space-y-6 mt-6">
+                <form onSubmit={handleStudentSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="student-id" className="form-label">
+                        <GraduationCap className="h-4 w-4 mr-2 inline" />
+                        Student ID
+                      </Label>
+                      <Input
+                        id="student-id"
+                        placeholder="Enter student ID"
+                        value={studentForm.studentId}
+                        onChange={(e) => setStudentForm({ ...studentForm, studentId: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="first-name" className="form-label">
+                        First Name
+                      </Label>
+                      <Input
+                        id="first-name"
+                        placeholder="Enter first name"
+                        value={studentForm.firstName}
+                        onChange={(e) => setStudentForm({ ...studentForm, firstName: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="last-name" className="form-label">
+                        Last Name
+                      </Label>
+                      <Input
+                        id="last-name"
+                        placeholder="Enter last name"
+                        value={studentForm.lastName}
+                        onChange={(e) => setStudentForm({ ...studentForm, lastName: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="middle-name" className="form-label">
+                        Middle Name (Optional)
+                      </Label>
+                      <Input
+                        id="middle-name"
+                        placeholder="Enter middle name"
+                        value={studentForm.middleName}
+                        onChange={(e) => setStudentForm({ ...studentForm, middleName: e.target.value })}
+                        className="form-input"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input
-                      id="first-name"
-                      placeholder="Enter first name"
-                      value={studentForm.firstName}
-                      onChange={(e) => setStudentForm({ ...studentForm, firstName: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input
-                      id="last-name"
-                      placeholder="Enter last name"
-                      value={studentForm.lastName}
-                      onChange={(e) => setStudentForm({ ...studentForm, lastName: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="middle-name">Middle Name</Label>
-                    <Input
-                      id="middle-name"
-                      placeholder="Enter middle name (optional)"
-                      value={studentForm.middleName}
-                      onChange={(e) => setStudentForm({ ...studentForm, middleName: e.target.value })}
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                  <div className="form-group">
+                    <Label htmlFor="email" className="form-label">
+                      <Mail className="h-4 w-4 mr-2 inline" />
+                      Email Address
+                    </Label>
                     <Input
                       id="email"
                       type="email"
@@ -331,189 +368,252 @@ export default function RegisterPage() {
                       value={studentForm.email}
                       onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
                       required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                      className="form-input"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={studentForm.password}
-                      onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={studentForm.confirmPassword}
-                      onChange={(e) => setStudentForm({ ...studentForm, confirmPassword: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="course">Course</Label>
-                    <Select
-                      value={studentForm.course}
-                      onValueChange={(value) => setStudentForm({ ...studentForm, course: value })}
-                      disabled={isLoadingCourses}
-                    >
-                      <SelectTrigger className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20">
-                        {studentForm.course || 'Select course'}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courses.map((course) => (
-                          <SelectItem key={course._id} value={course.courseCode}>
-                            {course.courseName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="password" className="form-label">
+                        <Lock className="h-4 w-4 mr-2 inline" />
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter password"
+                          value={studentForm.password}
+                          onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                          required
+                          className="form-input pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="confirm-password" className="form-label">
+                        Confirm Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={studentForm.confirmPassword}
+                          onChange={(e) => setStudentForm({ ...studentForm, confirmPassword: e.target.value })}
+                          required
+                          className="form-input pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select
-                      value={studentForm.department}
-                      onValueChange={(value) => setStudentForm({ ...studentForm, department: value })}
-                      disabled={isLoadingDepartments}
-                    >
-                      <SelectTrigger className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20">
-                        {studentForm.department || 'Select department'}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept._id} value={dept.departmentCode}>
-                            {dept.departmentName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="campus">Campus</Label>
-                    <Select
-                      value={studentForm.campus}
-                      onValueChange={(value) => setStudentForm({ ...studentForm, campus: value })}
-                      disabled={isLoadingCampuses}
-                    >
-                      <SelectTrigger className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20">
-                        {studentForm.campus || 'Select campus'}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {campuses.map((campus) => (
-                          <SelectItem key={campus._id} value={campus.campusCode}>
-                            {campus.campusName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="shift-type">Shift Type</Label>
-                  <Select
-                    value={studentForm.shiftType}
-                    onValueChange={(value) => setStudentForm({ ...studentForm, shiftType: value as any })}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="course" className="form-label">
+                        Course
+                      </Label>
+                      <Select
+                        value={studentForm.course}
+                        onValueChange={(value) => setStudentForm({ ...studentForm, course: value })}
+                        disabled={isLoadingCourses}
+                      >
+                        <SelectTrigger className="form-input">
+                          <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select course"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses.map((course) => (
+                            <SelectItem key={course._id} value={course.courseCode}>
+                              {course.courseName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="department" className="form-label">
+                        Department
+                      </Label>
+                      <Select
+                        value={studentForm.department}
+                        onValueChange={(value) => setStudentForm({ ...studentForm, department: value })}
+                        disabled={isLoadingDepartments}
+                      >
+                        <SelectTrigger className="form-input">
+                          <SelectValue placeholder={isLoadingDepartments ? "Loading departments..." : "Select department"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept._id} value={dept.departmentCode}>
+                              {dept.departmentName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="campus" className="form-label">
+                        <MapPin className="h-4 w-4 mr-2 inline" />
+                        Campus
+                      </Label>
+                      <Select
+                        value={studentForm.campus}
+                        onValueChange={(value) => setStudentForm({ ...studentForm, campus: value })}
+                        disabled={isLoadingCampuses}
+                      >
+                        <SelectTrigger className="form-input">
+                          <SelectValue placeholder={isLoadingCampuses ? "Loading campuses..." : "Select campus"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {campuses.map((campus) => (
+                            <SelectItem key={campus._id} value={campus.campusCode}>
+                              {campus.campusName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <Label htmlFor="shift-type" className="form-label">
+                      Shift Type
+                    </Label>
+                    <Select
+                      value={studentForm.shiftType}
+                      onValueChange={(value) => setStudentForm({ ...studentForm, shiftType: value as any })}
+                    >
+                      <SelectTrigger className="form-input">
+                        <SelectValue placeholder="Select shift type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="morning">Morning (6:00 AM - 12:00 PM)</SelectItem>
+                        <SelectItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</SelectItem>
+                        <SelectItem value="evening">Evening (6:00 PM - 12:00 AM)</SelectItem>
+                        <SelectItem value="midnight">Midnight (12:00 AM - 6:00 AM)</SelectItem>
+                        <SelectItem value="graveyard">Graveyard (10:00 PM - 6:00 AM)</SelectItem>
+                        <SelectItem value="1shift">Single Shift (6:00 AM - 6:00 PM)</SelectItem>
+                        <SelectItem value="2shift">Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)</SelectItem>
+                        <SelectItem value="regular">Regular (6:00 AM - 6:00 PM)</SelectItem>
+                        <SelectItem value="custom">Custom Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 btn-primary text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
                   >
-                    <SelectTrigger className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20">
-                      {studentForm.shiftType || 'Select shift type'}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="morning">Morning (6:00 AM - 12:00 PM)</SelectItem>
-                      <SelectItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</SelectItem>
-                      <SelectItem value="evening">Evening (6:00 PM - 12:00 AM)</SelectItem>
-                      <SelectItem value="midnight">Midnight (12:00 AM - 6:00 AM)</SelectItem>
-                      <SelectItem value="graveyard">Graveyard (10:00 PM - 6:00 AM)</SelectItem>
-                      <SelectItem value="1shift">Single Shift (6:00 AM - 6:00 PM)</SelectItem>
-                      <SelectItem value="2shift">Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)</SelectItem>
-                      <SelectItem value="regular">Regular (6:00 AM - 6:00 PM)</SelectItem>
-                      <SelectItem value="custom">Custom Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Registering...' : 'Register as Student'}
-                </Button>
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Registering...</span>
+                      </div>
+                    ) : (
+                      'Register as Student'
+                    )}
+                  </Button>
+                </form>
               </TabsContent>
 
               {/* Department Registration */}
-              <TabsContent value="department" className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dept-name">Department Name</Label>
-                  <Input
-                    id="dept-name"
-                    placeholder="Enter department name"
-                    value={departmentForm.departmentName}
-                    onChange={(e) => setDepartmentForm({ ...departmentForm, departmentName: e.target.value })}
-                    required
-                    className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dept-code">Department Code</Label>
-                  <Input
-                    id="dept-code"
-                    placeholder="Enter department code"
-                    value={departmentForm.departmentCode}
-                    onChange={(e) => setDepartmentForm({ ...departmentForm, departmentCode: e.target.value })}
-                    required
-                    className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    placeholder="Enter location"
-                    value={departmentForm.location}
-                    onChange={(e) => setDepartmentForm({ ...departmentForm, location: e.target.value })}
-                    required
-                    className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="advisor-name">OJT Advisor Name</Label>
+              <TabsContent value="department" className="space-y-6 mt-6">
+                <form onSubmit={handleDepartmentSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="dept-name" className="form-label">
+                        <Building className="h-4 w-4 mr-2 inline" />
+                        Department Name
+                      </Label>
+                      <Input
+                        id="dept-name"
+                        placeholder="Enter department name"
+                        value={departmentForm.departmentName}
+                        onChange={(e) => setDepartmentForm({ ...departmentForm, departmentName: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="dept-code" className="form-label">
+                        Department Code
+                      </Label>
+                      <Input
+                        id="dept-code"
+                        placeholder="Enter department code"
+                        value={departmentForm.departmentCode}
+                        onChange={(e) => setDepartmentForm({ ...departmentForm, departmentCode: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <Label htmlFor="location" className="form-label">
+                      <MapPin className="h-4 w-4 mr-2 inline" />
+                      Location
+                    </Label>
                     <Input
-                      id="advisor-name"
-                      placeholder="Enter advisor name"
-                      value={departmentForm.ojtAdvisorName}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, ojtAdvisorName: e.target.value })}
+                      id="location"
+                      placeholder="Enter location"
+                      value={departmentForm.location}
+                      onChange={(e) => setDepartmentForm({ ...departmentForm, location: e.target.value })}
                       required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                      className="form-input"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="advisor-position">OJT Advisor Position</Label>
-                    <Input
-                      id="advisor-position"
-                      placeholder="Enter advisor position"
-                      value={departmentForm.ojtAdvisorPosition}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, ojtAdvisorPosition: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="advisor-name" className="form-label">
+                        <UserCheck className="h-4 w-4 mr-2 inline" />
+                        OJT Advisor Name
+                      </Label>
+                      <Input
+                        id="advisor-name"
+                        placeholder="Enter advisor name"
+                        value={departmentForm.ojtAdvisorName}
+                        onChange={(e) => setDepartmentForm({ ...departmentForm, ojtAdvisorName: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="advisor-position" className="form-label">
+                        OJT Advisor Position
+                      </Label>
+                      <Input
+                        id="advisor-position"
+                        placeholder="Enter advisor position"
+                        value={departmentForm.ojtAdvisorPosition}
+                        onChange={(e) => setDepartmentForm({ ...departmentForm, ojtAdvisorPosition: e.target.value })}
+                        required
+                        className="form-input"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-email">Email</Label>
+
+                  <div className="form-group">
+                    <Label htmlFor="dept-email" className="form-label">
+                      <Mail className="h-4 w-4 mr-2 inline" />
+                      Email Address
+                    </Label>
                     <Input
                       id="dept-email"
                       type="email"
@@ -521,49 +621,85 @@ export default function RegisterPage() {
                       value={departmentForm.email}
                       onChange={(e) => setDepartmentForm({ ...departmentForm, email: e.target.value })}
                       required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                      className="form-input"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-password">Password</Label>
-                    <Input
-                      id="dept-password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={departmentForm.password}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, password: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-confirm-password">Confirm Password</Label>
-                    <Input
-                      id="dept-confirm-password"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={departmentForm.confirmPassword}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, confirmPassword: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Registering...' : 'Register as Department'}
-                </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="dept-password" className="form-label">
+                        <Lock className="h-4 w-4 mr-2 inline" />
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="dept-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter password"
+                          value={departmentForm.password}
+                          onChange={(e) => setDepartmentForm({ ...departmentForm, password: e.target.value })}
+                          required
+                          className="form-input pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="dept-confirm-password" className="form-label">
+                        Confirm Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="dept-confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={departmentForm.confirmPassword}
+                          onChange={(e) => setDepartmentForm({ ...departmentForm, confirmPassword: e.target.value })}
+                          required
+                          className="form-input pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 btn-primary text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Registering...</span>
+                      </div>
+                    ) : (
+                      'Register as Department'
+                    )}
+                  </Button>
+                </form>
               </TabsContent>
 
               {/* Admin Registration */}
-              <TabsContent value="admin" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Email</Label>
+              <TabsContent value="admin" className="space-y-6 mt-6">
+                <form onSubmit={handleAdminSubmit} className="space-y-5">
+                  <div className="form-group">
+                    <Label htmlFor="admin-email" className="form-label">
+                      <Mail className="h-4 w-4 mr-2 inline" />
+                      Email Address
+                    </Label>
                     <Input
                       id="admin-email"
                       type="email"
@@ -571,52 +707,85 @@ export default function RegisterPage() {
                       value={adminForm.email}
                       onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
                       required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                      className="form-input"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Password</Label>
-                    <Input
-                      id="admin-password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={adminForm.password}
-                      onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-confirm-password">Confirm Password</Label>
-                    <Input
-                      id="admin-confirm-password"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={adminForm.confirmPassword}
-                      onChange={(e) => setAdminForm({ ...adminForm, confirmPassword: e.target.value })}
-                      required
-                      className="bg-white border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Registering...' : 'Register as Admin'}
-                </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <Label htmlFor="admin-password" className="form-label">
+                        <Lock className="h-4 w-4 mr-2 inline" />
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="admin-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter password"
+                          value={adminForm.password}
+                          onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                          required
+                          className="form-input pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <Label htmlFor="admin-confirm-password" className="form-label">
+                        Confirm Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="admin-confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={adminForm.confirmPassword}
+                          onChange={(e) => setAdminForm({ ...adminForm, confirmPassword: e.target.value })}
+                          required
+                          className="form-input pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 btn-primary text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Registering...</span>
+                      </div>
+                    ) : (
+                      'Register as Admin'
+                    )}
+                  </Button>
+                </form>
               </TabsContent>
             </Tabs>
           </CardContent>
           
-          <CardFooter className="flex justify-center">
+          <CardFooter className="flex justify-center pt-6">
             <div className="text-center text-sm text-gray-600">
               Already have an account?{' '}
               <Link 
                 href="/login" 
-                className="text-blue-900 hover:text-blue-800 font-medium"
+                className="text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200 hover:underline"
               >
                 Sign in here
               </Link>
@@ -624,9 +793,13 @@ export default function RegisterPage() {
           </CardFooter>
         </Card>
 
-        <div className="mt-6 text-center">
+        {/* Footer */}
+        <div className="mt-8 text-center animate-fade-in">
           <p className="text-xs text-gray-500">
             © 2026 Southern Leyte State University - OJT Tracking System
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Built with modern web technologies
           </p>
         </div>
       </div>
