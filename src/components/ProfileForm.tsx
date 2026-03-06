@@ -232,7 +232,7 @@ export default function ProfileForm({ student, userEmail }: ProfileFormProps) {
             <Button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white"
+              className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white"
             >
               <Save className="h-4 w-4 mr-2" />
               {isLoading ? 'Saving...' : 'Save Changes'}
@@ -278,7 +278,7 @@ export default function ProfileForm({ student, userEmail }: ProfileFormProps) {
             <Button
               type="submit"
               disabled={isPasswordLoading}
-              className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white"
+              className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white"
             >
               <Lock className="h-4 w-4 mr-2" />
               {isPasswordLoading ? 'Updating...' : 'Update Password'}

@@ -1039,7 +1039,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
               <Button
                 onClick={() => handleClockAction(nextAction.action!)}
                 disabled={isLoading || countdown > 0 || !isAccepted}
-                className={`w-full max-w-xs ${nextAction?.type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                className={`w-full max-w-xs ${nextAction?.type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-900 hover:bg-blue-800'} text-white`}
                 size="lg"
               >
                 {nextAction?.type === 'in' ? <LogIn className="h-5 w-5 mr-2" /> : <LogOut className="h-5 w-5 mr-2" />}
@@ -1263,18 +1263,18 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
       {/* Camera Modal - Verify Your Identity */}
       <Dialog open={showCameraModal} onOpenChange={setShowCameraModal}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-w-[calc(100vw-1rem)]">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
+            <DialogTitle className="flex items-center space-x-2 text-lg sm:text-xl">
               <Camera className="h-5 w-5" />
-              <span>Verify Your Identity</span>
+              <span className="text-center sm:text-left">Verify Your Identity</span>
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             {/* Date and Time Display */}
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center space-x-2 text-gray-600">
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
+              <div className="flex items-center justify-center space-x-2 text-gray-600 text-sm sm:text-base">
                 <Calendar className="h-4 w-4" />
                 <span className="font-medium">{currentDateTime}</span>
               </div>
@@ -1282,9 +1282,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
             {/* Camera Section */}
             {!showCamera && !capturedImage && (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">Please capture your photo to verify identity</p>
-                <Button onClick={startCamera} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white">
+              <div className="text-center py-6 sm:py-8">
+                <p className="text-gray-600 mb-4 text-sm sm:text-base">Please capture your photo to verify identity</p>
+                <Button onClick={startCamera} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white">
                   <Camera className="h-4 w-4 mr-2" />
                   Open Camera
                 </Button>
@@ -1309,8 +1309,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                     Camera Active
                   </div>
                 </div>
-                <div className="flex justify-center space-x-4">
-                  <Button onClick={captureImage} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white">
+                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+                  <Button onClick={captureImage} className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white">
                     <Camera className="h-4 w-4 mr-2" />
                     Capture Photo
                   </Button>
@@ -1328,18 +1328,18 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
       {/* Review Image Modal */}
       <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-w-[calc(100vw-1rem)]">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
+            <DialogTitle className="flex items-center space-x-2 text-lg sm:text-xl">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              <span>Review Your Photo</span>
+              <span className="text-center sm:text-left">Review Your Photo</span>
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             {/* Date and Time Display */}
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center space-x-2 text-gray-600">
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
+              <div className="flex items-center justify-center space-x-2 text-gray-600 text-sm sm:text-base">
                 <Calendar className="h-4 w-4" />
                 <span className="font-medium">{currentDateTime}</span>
               </div>
@@ -1349,7 +1349,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             {capturedImage && (
               <div className="space-y-4">
                 <div className="text-center">
-                  <p className="text-green-600 font-medium mb-2">✓ Photo Captured Successfully</p>
+                  <p className="text-green-600 font-medium mb-2 text-sm sm:text-base">✓ Photo Captured Successfully</p>
                   <div className="relative aspect-video bg-black rounded-lg overflow-hidden border-2 border-green-500">
                     <img
                       src={capturedImage}
@@ -1361,26 +1361,23 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                     Please review your photo and confirm to {nextAction?.label?.toLowerCase()}
                   </p>
                 </div>
-                <div className="flex justify-center space-x-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
                   <Button 
                     variant="outline" 
                     onClick={() => { 
                       setCapturedImage(null); 
                       setShowReviewModal(false);
                       setShowCameraModal(true);
-                      startCamera(); 
                     }}
                   >
-                    <Camera className="h-4 w-4 mr-2" />
                     Retake Photo
                   </Button>
                   <Button 
-                    onClick={() => executeClockAction(currentAction!)}
+                    onClick={() => handleClockAction(nextAction?.action!)}
+                    className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white"
                     disabled={isLoading}
-                    className={nextAction?.type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
                   >
-                    {nextAction?.type === 'in' ? <LogIn className="h-4 w-4 mr-2" /> : <LogOut className="h-4 w-4 mr-2" />}
-                    Confirm {nextAction?.label}
+                    {isLoading ? 'Processing...' : `Confirm ${nextAction?.label}`}
                   </Button>
                 </div>
               </div>

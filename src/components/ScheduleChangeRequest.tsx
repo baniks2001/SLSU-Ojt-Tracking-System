@@ -154,7 +154,7 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
             <div className="space-y-4">
               <Button
                 onClick={() => setShowForm(true)}
-                className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white"
+                className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Request Schedule Change
@@ -250,7 +250,7 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
               <div className="flex space-x-2">
                 <Button
                   type="submit"
-                  className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-[#003366] hover:bg-[#002244] text-white"
+                  className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Submitting...' : 'Submit Request'}

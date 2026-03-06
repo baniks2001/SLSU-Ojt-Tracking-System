@@ -520,7 +520,7 @@ export default function DepartmentDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-[#003366] text-white shadow-lg header-responsive">
+      <header className="bg-blue-900 text-white shadow-lg">
         <div className="container-responsive">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-responsive">
@@ -554,7 +554,7 @@ export default function DepartmentDashboard() {
         <div className="mb-8">
           <div className="flex-responsive">
             <Avatar className="avatar-responsive">
-              <AvatarFallback className="bg-[#003366] text-white text-xl">
+              <AvatarFallback className="bg-blue-900 text-white text-xl">
                 {user.details.departmentCode.charAt(0)}
               </AvatarFallback>
             </Avatar>
@@ -790,7 +790,7 @@ export default function DepartmentDashboard() {
                                 <div className="mt-4 flex justify-end">
                                   <Button 
                                     onClick={() => handleViewStudentAttendance(student)}
-                                    className="bg-[#003366] hover:bg-[#002244] btn-visible-outline"
+                                    className="bg-blue-900 hover:bg-blue-800 btn-visible-outline"
                                   >
                                     <FileText className="h-4 w-4 mr-2" />
                                     View Attendance
@@ -1193,7 +1193,7 @@ export default function DepartmentDashboard() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-[#003366] hover:bg-[#002244]"
+                    className="bg-blue-900 hover:bg-blue-800"
                   >
                     {isSubmitting ? 'Posting...' : 'Post Announcement'}
                   </Button>

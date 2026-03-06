@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import Logo from '@/components/Logo';
+import { Mail, Lock, Eye, EyeOff, User, Building, GraduationCap, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
 interface Department {
   _id: string;
@@ -48,10 +49,10 @@ export default function RegisterPage() {
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
-  const [isLoadingCampuses, setIsLoadingCampuses] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Student form state - department is auto-derived from course
-  const [studentForm, setStudentForm] = useState({
+  const [studentData, setStudentData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
@@ -59,25 +60,17 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     middleName: '',
-    courseId: '',
-    campusId: '',
-    departmentName: '', // Auto-filled from selected course
+    course: '',
+    department: '',
     hostEstablishment: '',
     contactNumber: '',
-    emergencyContact: '',
-    emergencyContactNumber: '',
     address: '',
-    shiftType: 'regular',
-    customStartTime: '',
-    customEndTime: '',
   });
 
-  // Department form state
-  const [departmentForm, setDepartmentForm] = useState({
+  const [departmentData, setDepartmentData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    departmentId: '', // Selected existing department
     departmentName: '',
     departmentCode: '',
     location: '',
@@ -87,125 +80,62 @@ export default function RegisterPage() {
     ojtAdvisorPosition: '',
   });
 
-  // Fetch approved departments and courses for student registration
   useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const response = await fetch('/api/courses?forRegistration=true');
+    fetchDepartments();
+    fetchCourses();
+    fetchCampuses();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch('/api/departments');
+      if (response.ok) {
         const data = await response.json();
-        
-        if (response.ok && data.courses) {
-          // Extract unique departments from courses
-          const uniqueDepartments = data.courses.reduce((acc: any[], course: Course) => {
-            const existingDept = acc.find(dept => dept.departmentName === course.departmentName);
-            if (!existingDept) {
-              acc.push({
-                _id: course._id, // Use course ID as reference
-                departmentName: course.departmentName,
-                departmentCode: course.departmentName.split(' ').map(word => word[0]).join('').toUpperCase(), // Generate code from name
-                location: course.campusId?.campusName || 'Unknown Campus', // Use actual campus from course
-              });
-            }
-            return acc;
-          }, []);
-          setDepartments(uniqueDepartments);
-        } else {
-          toast.error('Failed to load departments');
-        }
-      } catch (error) {
-        console.error('Error fetching departments:', error);
-        toast.error('Failed to load departments');
-      } finally {
-        setIsLoadingDepartments(false);
+        setDepartments(data.departments || []);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    } finally {
+      setIsLoadingDepartments(false);
+    }
+  };
 
-    const fetchCourses = async () => {
-      try {
-        const response = await fetch('/api/courses?forRegistration=true');
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch('/api/courses');
+      if (response.ok) {
         const data = await response.json();
-        
-        if (response.ok && data.courses) {
-          setCourses(data.courses);
-        } else {
-          toast.error('Failed to load courses');
-        }
-      } catch (error) {
-        console.error('Error fetching courses:', error);
-        toast.error('Failed to load courses');
-      } finally {
-        setIsLoadingCourses(false);
+        setCourses(data.courses || []);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
 
-    const fetchCampuses = async () => {
-      try {
-        const response = await fetch('/api/campuses?forRegistration=true');
+  const fetchCampuses = async () => {
+    try {
+      const response = await fetch('/api/campuses');
+      if (response.ok) {
         const data = await response.json();
-        
-        if (response.ok && data.campuses) {
-          setCampuses(data.campuses);
-        } else {
-          toast.error('Failed to load campuses');
-        }
-      } catch (error) {
-        console.error('Error fetching campuses:', error);
-        toast.error('Failed to load campuses');
-      } finally {
-        setIsLoadingCampuses(false);
+        setCampuses(data.campuses || []);
       }
-    };
-
-    if (activeTab === 'student' || activeTab === 'department') {
-      fetchDepartments();
-      fetchCourses();
-      fetchCampuses();
+    } catch (error) {
+      console.error('Error fetching campuses:', error);
     }
-  }, [activeTab]);
+  };
 
-  // Update department form when department is selected
-  useEffect(() => {
-    if (departmentForm.departmentId) {
-      const selectedDept = departments.find(d => d._id === departmentForm.departmentId);
-      if (selectedDept) {
-        setDepartmentForm(prev => ({
-          ...prev,
-          departmentName: selectedDept.departmentName,
-          departmentCode: selectedDept.departmentCode,
-          location: selectedDept.location,
-        }));
-      }
-    }
-  }, [departmentForm.departmentId, departments]);
-
-  // Update when course changes (department is auto-derived from course)
-  useEffect(() => {
-    if (studentForm.courseId) {
-      const selectedCourse = courses.find(c => c._id === studentForm.courseId);
-      if (selectedCourse) {
-        setStudentForm(prev => ({ 
-          ...prev, 
-          departmentName: selectedCourse.departmentName
-        }));
-      }
-    }
-  }, [studentForm.courseId, courses]);
-
-  const handleStudentSubmit = async (e: React.FormEvent) => {
+  const handleStudentRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (studentForm.password !== studentForm.confirmPassword) {
+    
+    if (studentData.password !== studentData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
 
-    if (!studentForm.courseId) {
-      toast.error('Please select a course');
-      return;
-    }
-
-    if (!studentForm.campusId) {
-      toast.error('Please select a campus');
+    if (studentData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
       return;
     }
 
@@ -217,50 +147,48 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'register',
-          email: studentForm.email,
-          password: studentForm.password,
+          email: studentData.email,
+          password: studentData.password,
           accountType: 'student',
           studentData: {
-            studentId: studentForm.studentId,
-            firstName: studentForm.firstName,
-            lastName: studentForm.lastName,
-            middleName: studentForm.middleName,
-            courseId: studentForm.courseId,
-            campusId: studentForm.campusId,
-            department: studentForm.departmentName, // Department derived from course
-            hostEstablishment: studentForm.hostEstablishment,
-            contactNumber: studentForm.contactNumber,
-            emergencyContact: studentForm.emergencyContact,
-            emergencyContactNumber: studentForm.emergencyContactNumber,
-            address: studentForm.address,
-            shiftType: studentForm.shiftType,
-            customStartTime: studentForm.customStartTime,
-            customEndTime: studentForm.customEndTime,
+            studentId: studentData.studentId,
+            firstName: studentData.firstName,
+            lastName: studentData.lastName,
+            middleName: studentData.middleName,
+            course: studentData.course,
+            department: studentData.department,
+            hostEstablishment: studentData.hostEstablishment,
+            contactNumber: studentData.contactNumber,
+            address: studentData.address,
+            shiftType: 'regular',
           },
         }),
       });
-
-      const data = await response.json();
 
       if (response.ok) {
         toast.success('Registration successful! Please wait for approval.');
         router.push('/login');
       } else {
+        const data = await response.json();
         toast.error(data.error || 'Registration failed');
       }
     } catch (error) {
-      console.error('Registration error:', error);
       toast.error('An error occurred during registration');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDepartmentSubmit = async (e: React.FormEvent) => {
+  const handleDepartmentRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (departmentForm.password !== departmentForm.confirmPassword) {
+    
+    if (departmentData.password !== departmentData.confirmPassword) {
       toast.error('Passwords do not match');
+      return;
+    }
+
+    if (departmentData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
       return;
     }
 
@@ -272,31 +200,29 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'register',
-          email: departmentForm.email,
-          password: departmentForm.password,
+          email: departmentData.email,
+          password: departmentData.password,
           accountType: 'department',
           departmentData: {
-            departmentName: departmentForm.departmentName,
-            departmentCode: departmentForm.departmentCode,
-            location: departmentForm.location,
-            contactEmail: departmentForm.contactEmail,
-            contactNumber: departmentForm.contactNumber,
-            ojtAdvisorName: departmentForm.ojtAdvisorName,
-            ojtAdvisorPosition: departmentForm.ojtAdvisorPosition,
+            departmentName: departmentData.departmentName,
+            departmentCode: departmentData.departmentCode,
+            location: departmentData.location,
+            contactEmail: departmentData.contactEmail,
+            contactNumber: departmentData.contactNumber,
+            ojtAdvisorName: departmentData.ojtAdvisorName,
+            ojtAdvisorPosition: departmentData.ojtAdvisorPosition,
           },
         }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        toast.success('Department registration successful! Please wait for admin approval.');
+        toast.success('Registration successful! Please wait for approval.');
         router.push('/login');
       } else {
+        const data = await response.json();
         toast.error(data.error || 'Registration failed');
       }
     } catch (error) {
-      console.error('Registration error:', error);
       toast.error('An error occurred during registration');
     } finally {
       setIsLoading(false);
@@ -304,466 +230,472 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-      <Card className="w-full max-w-2xl bg-white shadow-2xl border-0">
-        <CardHeader className="text-center">
-          <div className="mb-4 flex flex-col items-center">
-            <Logo size="medium" className="mb-2" />
-            <h1 className="text-2xl font-bold text-[#003366]">Southern Leyte State University</h1>
-            <p className="text-sm text-gray-600">OJT Tracking System</p>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-50" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230ea5e9' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
+        
+        <div className="relative w-full max-w-2xl">
+          {/* Logo Section */}
+          <div className="text-center mb-8 animate-fadeIn">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4 border border-gray-100">
+              <Image 
+                src="/logo.png" 
+                alt="SLSU Logo" 
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Create Account</h1>
+            <p className="text-gray-600 text-sm">Join the OJT Tracking System</p>
           </div>
-          <CardTitle className="text-xl">Create Account</CardTitle>
-          <CardDescription>
-            Register as a student or department
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="student">Student</TabsTrigger>
-              <TabsTrigger value="department">Department</TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="student">
-              <form onSubmit={handleStudentSubmit} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="student-email">Email</Label>
-                    <Input
-                      id="student-email"
-                      type="email"
-                      placeholder="your.email@slsu.edu.ph"
-                      value={studentForm.email}
-                      onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="student-id">Student ID</Label>
-                    <Input
-                      id="student-id"
-                      placeholder="Enter student ID"
-                      value={studentForm.studentId}
-                      onChange={(e) => setStudentForm({ ...studentForm, studentId: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
+          {/* Register Card */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl animate-fadeIn">
+            <CardHeader className="space-y-2 pb-6">
+              <CardTitle className="text-xl font-semibold text-gray-900 text-center">Register</CardTitle>
+              <CardDescription className="text-gray-600 text-center">
+                Choose your account type to get started
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-xl">
+                  <TabsTrigger value="student" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    <User className="w-4 h-4 mr-2" />
+                    Student
+                  </TabsTrigger>
+                  <TabsTrigger value="department" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    <Building className="w-4 h-4 mr-2" />
+                    Department
+                  </TabsTrigger>
+                </TabsList>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input
-                      id="first-name"
-                      placeholder="Enter first name"
-                      value={studentForm.firstName}
-                      onChange={(e) => setStudentForm({ ...studentForm, firstName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input
-                      id="last-name"
-                      placeholder="Enter last name"
-                      value={studentForm.lastName}
-                      onChange={(e) => setStudentForm({ ...studentForm, lastName: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
+                <TabsContent value="student" className="space-y-6 mt-6">
+                  <form onSubmit={handleStudentRegister} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="student-email" className="text-sm font-medium text-gray-700">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            id="student-email"
+                            type="email"
+                            placeholder="student@example.com"
+                            value={studentData.email}
+                            onChange={(e) => setStudentData({ ...studentData, email: e.target.value })}
+                            required
+                            className="pl-10 h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="student-id" className="text-sm font-medium text-gray-700">Student ID</Label>
+                        <Input
+                          id="student-id"
+                          type="text"
+                          placeholder="2024-0001"
+                          value={studentData.studentId}
+                          onChange={(e) => setStudentData({ ...studentData, studentId: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="middle-name">Middle Name</Label>
-                    <Input
-                      id="middle-name"
-                      placeholder="Enter middle name"
-                      value={studentForm.middleName}
-                      onChange={(e) => setStudentForm({ ...studentForm, middleName: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact-number">Contact Number</Label>
-                    <Input
-                      id="contact-number"
-                      placeholder="Enter contact number"
-                      value={studentForm.contactNumber}
-                      onChange={(e) => setStudentForm({ ...studentForm, contactNumber: e.target.value })}
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="first-name" className="text-sm font-medium text-gray-700">First Name</Label>
+                        <Input
+                          id="first-name"
+                          type="text"
+                          placeholder="John"
+                          value={studentData.firstName}
+                          onChange={(e) => setStudentData({ ...studentData, firstName: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="last-name" className="text-sm font-medium text-gray-700">Last Name</Label>
+                        <Input
+                          id="last-name"
+                          type="text"
+                          placeholder="Doe"
+                          value={studentData.lastName}
+                          onChange={(e) => setStudentData({ ...studentData, lastName: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="middle-name" className="text-sm font-medium text-gray-700">Middle Name</Label>
+                        <Input
+                          id="middle-name"
+                          type="text"
+                          placeholder="Smith"
+                          value={studentData.middleName}
+                          onChange={(e) => setStudentData({ ...studentData, middleName: e.target.value })}
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="course">Course *</Label>
-                  <Select
-                    value={studentForm.courseId}
-                    onValueChange={(value) => {
-                      const selectedCourse = courses.find(c => c._id === value);
-                      if (selectedCourse) {
-                        setStudentForm(prev => ({ 
-                          ...prev, 
-                          courseId: value,
-                          departmentName: selectedCourse.departmentName,
-                          campusId: selectedCourse.campusId?._id || ''
-                        }));
-                      }
-                    }}
-                    disabled={isLoadingCourses}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={isLoadingCourses ? "Loading..." : "Select course"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.length === 0 ? (
-                        <SelectItem value="_none_" disabled>
-                          No courses available
-                        </SelectItem>
-                      ) : (
-                        courses.map((course) => (
-                          <SelectItem key={course._id} value={course._id}>
-                            {course.courseName} ({course.courseCode}) - {course.departmentName} - {course.campusId?.campusName || 'No Campus'}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="course" className="text-sm font-medium text-gray-700">Course</Label>
+                        <Select value={studentData.course} onValueChange={(value) => setStudentData({ ...studentData, course: value })}>
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <SelectValue placeholder="Select course" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map((course) => (
+                              <SelectItem key={course._id} value={course.courseName}>
+                                {course.courseName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="department" className="text-sm font-medium text-gray-700">Department</Label>
+                        <Select value={studentData.department} onValueChange={(value) => setStudentData({ ...studentData, department: value })}>
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept._id} value={dept.departmentName}>
+                                {dept.departmentName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="campus">Campus *</Label>
-                  <Select
-                    value={studentForm.campusId}
-                    onValueChange={(value) => setStudentForm({ ...studentForm, campusId: value })}
-                    disabled={isLoadingCampuses}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={isLoadingCampuses ? "Loading..." : "Select campus"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {campuses.length === 0 ? (
-                        <SelectItem value="_none_" disabled>
-                          No campuses available
-                        </SelectItem>
-                      ) : (
-                        campuses.map((campus) => (
-                          <SelectItem key={campus._id} value={campus._id}>
-                            {campus.campusName} ({campus.campusCode})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-number" className="text-sm font-medium text-gray-700">Contact Number</Label>
+                        <Input
+                          id="contact-number"
+                          type="tel"
+                          placeholder="+63 912 345 6789"
+                          value={studentData.contactNumber}
+                          onChange={(e) => setStudentData({ ...studentData, contactNumber: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="host-establishment" className="text-sm font-medium text-gray-700">Host Establishment</Label>
+                        <Input
+                          id="host-establishment"
+                          type="text"
+                          placeholder="Company Name"
+                          value={studentData.hostEstablishment}
+                          onChange={(e) => setStudentData({ ...studentData, hostEstablishment: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="host-establishment">Host Establishment</Label>
-                  <Input
-                    id="host-establishment"
-                    placeholder="Enter host establishment where you will be deployed"
-                    value={studentForm.hostEstablishment}
-                    onChange={(e) => setStudentForm({ ...studentForm, hostEstablishment: e.target.value })}
-                    required
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-sm font-medium text-gray-700">Address</Label>
+                      <Input
+                        id="address"
+                        type="text"
+                        placeholder="123 Street, City, Province"
+                        value={studentData.address}
+                        onChange={(e) => setStudentData({ ...studentData, address: e.target.value })}
+                        required
+                        className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact-number">Contact Number</Label>
-                    <Input
-                      id="contact-number"
-                      placeholder="Enter contact number"
-                      value={studentForm.contactNumber}
-                      onChange={(e) => setStudentForm({ ...studentForm, contactNumber: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="shift-type">Shift Type</Label>
-                    <Select
-                      value={studentForm.shiftType}
-                      onValueChange={(value) => setStudentForm({ ...studentForm, shiftType: value })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="student-password" className="text-sm font-medium text-gray-700">Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            id="student-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter password"
+                            value={studentData.password}
+                            onChange={(e) => setStudentData({ ...studentData, password: e.target.value })}
+                            required
+                            className="pl-10 pr-10 h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="student-confirm-password" className="text-sm font-medium text-gray-700">Confirm Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            id="student-confirm-password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm password"
+                            value={studentData.confirmPassword}
+                            onChange={(e) => setStudentData({ ...studentData, confirmPassword: e.target.value })}
+                            required
+                            className="pl-10 pr-10 h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+                      disabled={isLoading}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select shift type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="morning">Morning (6:00 AM - 12:00 PM)</SelectItem>
-                        <SelectItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</SelectItem>
-                        <SelectItem value="evening">Evening (6:00 PM - 12:00 AM)</SelectItem>
-                        <SelectItem value="midnight">Midnight (12:00 AM - 6:00 AM)</SelectItem>
-                        <SelectItem value="regular">Regular (6:00 AM - 6:00 PM)</SelectItem>
-                        <SelectItem value="1shift">Single Shift (6:00 AM - 6:00 PM)</SelectItem>
-                        <SelectItem value="2shift">Two Shifts (6:00 AM-12:00 PM, 12:00 PM-6:00 PM)</SelectItem>
-                        <SelectItem value="graveyard">Graveyard (10:00 PM - 6:00 AM)</SelectItem>
-                        <SelectItem value="custom">Custom Time</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {studentForm.shiftType === 'custom' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-start-time">Custom Start Time</Label>
-                      <Input
-                        id="custom-start-time"
-                        type="time"
-                        value={studentForm.customStartTime}
-                        onChange={(e) => setStudentForm({ ...studentForm, customStartTime: e.target.value })}
-                        required={studentForm.shiftType === 'custom'}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-end-time">Custom End Time</Label>
-                      <Input
-                        id="custom-end-time"
-                        type="time"
-                        value={studentForm.customEndTime}
-                        onChange={(e) => setStudentForm({ ...studentForm, customEndTime: e.target.value })}
-                        required={studentForm.shiftType === 'custom'}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    placeholder="Enter address"
-                    value={studentForm.address}
-                    onChange={(e) => setStudentForm({ ...studentForm, address: e.target.value })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-contact">Emergency Contact Name</Label>
-                    <Input
-                      id="emergency-contact"
-                      placeholder="Enter emergency contact name"
-                      value={studentForm.emergencyContact}
-                      onChange={(e) => setStudentForm({ ...studentForm, emergencyContact: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-contact-number">Emergency Contact Number</Label>
-                    <Input
-                      id="emergency-contact-number"
-                      placeholder="Enter emergency contact number"
-                      value={studentForm.emergencyContactNumber}
-                      onChange={(e) => setStudentForm({ ...studentForm, emergencyContactNumber: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="student-password">Password</Label>
-                    <Input
-                      id="student-password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={studentForm.password}
-                      onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="student-confirm-password">Confirm Password</Label>
-                    <Input
-                      id="student-confirm-password"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={studentForm.confirmPassword}
-                      onChange={(e) => setStudentForm({ ...studentForm, confirmPassword: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-[#003366] hover:bg-[#002244]"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Registering...' : 'Register as Student'}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="department">
-              <form onSubmit={handleDepartmentSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dept-select">Select Department *</Label>
-                  <Select
-                    value={departmentForm.departmentId}
-                    onValueChange={(value) => {
-                      setDepartmentForm(prev => ({ ...prev, departmentId: value }));
-                    }}
-                    disabled={isLoadingDepartments}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={isLoadingDepartments ? "Loading..." : "Select department from available courses"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.length === 0 ? (
-                        <SelectItem value="_none_" disabled>
-                          No departments available (no courses found)
-                        </SelectItem>
+                      {isLoading ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-transparent animate-spin rounded-full"></div>
+                          <span>Creating Account...</span>
+                        </div>
                       ) : (
-                        departments.map((dept) => (
-                          <SelectItem key={dept._id} value={dept._id}>
-                            {dept.departmentName} ({dept.departmentCode}) - {dept.location}
-                          </SelectItem>
-                        ))
+                        <div className="flex items-center justify-center space-x-2">
+                          <span>Create Student Account</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
                       )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500">
-                    Departments are derived from available courses. Contact admin if your department is not listed.
-                  </p>
-                </div>
+                    </Button>
+                  </form>
+                </TabsContent>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-email">Email</Label>
-                    <Input
-                      id="dept-email"
-                      type="email"
-                      placeholder="department@slsu.edu.ph"
-                      value={departmentForm.email}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-code">Department Code</Label>
-                    <Input
-                      id="dept-code"
-                      placeholder="Auto-filled from department"
-                      value={departmentForm.departmentCode}
-                      readOnly
-                      className="bg-gray-100"
-                    />
-                  </div>
-                </div>
+                <TabsContent value="department" className="space-y-6 mt-6">
+                  <form onSubmit={handleDepartmentRegister} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-email" className="text-sm font-medium text-gray-700">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            id="dept-email"
+                            type="email"
+                            placeholder="department@example.com"
+                            value={departmentData.email}
+                            onChange={(e) => setDepartmentData({ ...departmentData, email: e.target.value })}
+                            required
+                            className="pl-10 h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-email" className="text-sm font-medium text-gray-700">Contact Email</Label>
+                        <Input
+                          id="contact-email"
+                          type="email"
+                          placeholder="contact@example.com"
+                          value={departmentData.contactEmail}
+                          onChange={(e) => setDepartmentData({ ...departmentData, contactEmail: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dept-name">Department Name</Label>
-                  <Input
-                    id="dept-name"
-                    placeholder="Auto-filled from department"
-                    value={departmentForm.departmentName}
-                    readOnly
-                    className="bg-gray-100"
-                  />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-name" className="text-sm font-medium text-gray-700">Department Name</Label>
+                        <Input
+                          id="dept-name"
+                          type="text"
+                          placeholder="Computer Science Department"
+                          value={departmentData.departmentName}
+                          onChange={(e) => setDepartmentData({ ...departmentData, departmentName: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-code" className="text-sm font-medium text-gray-700">Department Code</Label>
+                        <Input
+                          id="dept-code"
+                          type="text"
+                          placeholder="CS"
+                          value={departmentData.departmentCode}
+                          onChange={(e) => setDepartmentData({ ...departmentData, departmentCode: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="ojt-advisor-name">OJT Advisor Name</Label>
-                    <Input
-                      id="ojt-advisor-name"
-                      placeholder="Enter OJT advisor name"
-                      value={departmentForm.ojtAdvisorName}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, ojtAdvisorName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ojt-advisor-position">Position</Label>
-                    <Input
-                      id="ojt-advisor-position"
-                      placeholder="Enter position"
-                      value={departmentForm.ojtAdvisorPosition}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, ojtAdvisorPosition: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="advisor-name" className="text-sm font-medium text-gray-700">OJT Advisor Name</Label>
+                        <Input
+                          id="advisor-name"
+                          type="text"
+                          placeholder="Dr. Jane Smith"
+                          value={departmentData.ojtAdvisorName}
+                          onChange={(e) => setDepartmentData({ ...departmentData, ojtAdvisorName: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="advisor-position" className="text-sm font-medium text-gray-700">Advisor Position</Label>
+                        <Input
+                          id="advisor-position"
+                          type="text"
+                          placeholder="Department Head"
+                          value={departmentData.ojtAdvisorPosition}
+                          onChange={(e) => setDepartmentData({ ...departmentData, ojtAdvisorPosition: e.target.value })}
+                          required
+                          className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-location">Campus</Label>
-                    <Input
-                      id="dept-location"
-                      placeholder="Auto-filled from department"
-                      value={departmentForm.location}
-                      readOnly
-                      className="bg-gray-100"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-contact">Contact Number</Label>
-                    <Input
-                      id="dept-contact"
-                      placeholder="Enter contact number"
-                      value={departmentForm.contactNumber}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, contactNumber: e.target.value })}
-                    />
-                  </div>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location" className="text-sm font-medium text-gray-700">Location</Label>
+                      <Input
+                        id="location"
+                        type="text"
+                        placeholder="Building, Room Number"
+                        value={departmentData.location}
+                        onChange={(e) => setDepartmentData({ ...departmentData, location: e.target.value })}
+                        required
+                        className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dept-contact-email">Contact Email</Label>
-                  <Input
-                    id="dept-contact-email"
-                    type="email"
-                    placeholder="Enter contact email"
-                    value={departmentForm.contactEmail}
-                    onChange={(e) => setDepartmentForm({ ...departmentForm, contactEmail: e.target.value })}
-                    required
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-number" className="text-sm font-medium text-gray-700">Contact Number</Label>
+                      <Input
+                        id="contact-number"
+                        type="tel"
+                        placeholder="+63 912 345 6789"
+                        value={departmentData.contactNumber}
+                        onChange={(e) => setDepartmentData({ ...departmentData, contactNumber: e.target.value })}
+                        required
+                        className="h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-password">Password</Label>
-                    <Input
-                      id="dept-password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={departmentForm.password}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, password: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dept-confirm-password">Confirm Password</Label>
-                    <Input
-                      id="dept-confirm-password"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={departmentForm.confirmPassword}
-                      onChange={(e) => setDepartmentForm({ ...departmentForm, confirmPassword: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-password" className="text-sm font-medium text-gray-700">Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            id="dept-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter password"
+                            value={departmentData.password}
+                            onChange={(e) => setDepartmentData({ ...departmentData, password: e.target.value })}
+                            required
+                            className="pl-10 pr-10 h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-confirm-password" className="text-sm font-medium text-gray-700">Confirm Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            id="dept-confirm-password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm password"
+                            value={departmentData.confirmPassword}
+                            onChange={(e) => setDepartmentData({ ...departmentData, confirmPassword: e.target.value })}
+                            required
+                            className="pl-10 pr-10 h-10 bg-white border-gray-200 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-[#003366] hover:bg-[#002244]"
-                  disabled={isLoading || !departmentForm.departmentId}
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-transparent animate-spin rounded-full"></div>
+                          <span>Creating Account...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center space-x-2">
+                          <span>Create Department Account</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+
+            <CardFooter className="pt-6 border-t border-gray-200">
+              <div className="text-center text-sm text-gray-600 w-full">
+                Already have an account?{' '}
+                <Link 
+                  href="/login" 
+                  className="text-sky-600 hover:text-sky-700 font-medium hover:underline transition-colors"
                 >
-                  {isLoading ? 'Registering...' : 'Register Department'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/login" className="text-[#003366] hover:underline font-medium">
-              Sign in here
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+                  Sign in here
+                </Link>
+              </div>
+            </CardFooter>
+          </Card>
+
+          {/* Footer */}
+          <div className="text-center mt-8 text-xs text-gray-500">
+            <p>© 2024 Southern Leyte State University</p>
+            <p className="mt-1">OJT Tracking System</p>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

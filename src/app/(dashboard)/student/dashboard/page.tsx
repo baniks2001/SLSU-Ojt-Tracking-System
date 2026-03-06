@@ -49,114 +49,117 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Simple header without Header component */}
-      <div className="bg-white shadow-md border-b border-slate-200">
+      <div className="bg-white shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900">SLSU OJT Tracking</h1>
+              <h1 className="text-xl font-bold text-blue-900">SLSU OJT Tracking</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <span className="text-sm text-gray-600 hidden sm:block">
                 {user.details?.firstName} {user.details?.lastName}
               </span>
               <Button 
                 onClick={handleLogout}
                 variant="outline" 
                 size="sm"
+                className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
+                <span className="sm:hidden">Out</span>
               </Button>
             </div>
           </div>
         </div>
       </div>
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-blue-900">
             Welcome back, {user.details?.firstName || 'Student'}!
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
             Here's what's happening with your OJT tracking today.
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="border-blue-200 bg-white shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Current Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-900">Current Time</CardTitle>
+              <Clock className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold text-blue-900">
                 {currentTime.toLocaleTimeString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-600">
                 {currentTime.toLocaleDateString()}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-blue-200 bg-white shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Status</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-900">Today's Status</CardTitle>
+              <Calendar className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                <Badge variant="outline">Available</Badge>
+              <div className="text-xl sm:text-2xl font-bold">
+                <Badge variant="outline" className="border-green-600 text-green-600">Available</Badge>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-600">
                 Ready to clock in/out
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-blue-200 bg-white shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Shift Type</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-900">Shift Type</CardTitle>
+              <User className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold text-blue-900">
                 {user.details?.shiftType || 'Regular'}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-600">
                 Your current schedule
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-blue-200 bg-white shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-              <LogOut className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-900">Quick Actions</CardTitle>
+              <LogOut className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <Button 
                 onClick={handleLogout}
                 variant="outline" 
                 size="sm"
-                className="w-full"
+                className="w-full border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
+                <span className="sm:hidden">Out</span>
               </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
+        <div className="border-b border-blue-200 mb-6">
+          <nav className="-mb-px flex space-x-2 sm:space-x-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-blue-900 text-blue-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -164,9 +167,9 @@ export default function StudentDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('dtr')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === 'dtr'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-blue-900 text-blue-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -174,9 +177,9 @@ export default function StudentDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('schedule')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === 'schedule'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-blue-900 text-blue-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
