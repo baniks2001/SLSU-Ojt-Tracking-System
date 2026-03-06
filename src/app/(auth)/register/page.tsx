@@ -304,8 +304,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+      <Card className="w-full max-w-2xl bg-white shadow-2xl border-0">
         <CardHeader className="text-center">
           <div className="mb-4 flex flex-col items-center">
             <Logo size="medium" className="mb-2" />

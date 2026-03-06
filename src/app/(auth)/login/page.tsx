@@ -68,7 +68,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+        <Card className="bg-white shadow-2xl border-0">
           <CardHeader className="text-center space-y-6 pb-8">
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
@@ -78,8 +78,8 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold text-white">Welcome Back</CardTitle>
-                <CardDescription className="text-blue-200">
+                <CardTitle className="text-2xl font-bold text-slate-800">Welcome Back</CardTitle>
+                <CardDescription className="text-slate-600">
                   Sign in to your SLSU OJT Tracking account
                 </CardDescription>
               </div>
@@ -89,9 +89,9 @@ export default function LoginPage() {
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-blue-200 text-sm font-medium">Email Address</Label>
+                <Label htmlFor="email" className="text-slate-700 text-sm font-medium">Email Address</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-300" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
                     id="email"
                     type="email"
@@ -99,15 +99,15 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder-blue-300 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="pl-10 bg-slate-50 border-slate-300 text-slate-700 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-blue-200 text-sm font-medium">Password</Label>
+                <Label htmlFor="password" className="text-slate-700 text-sm font-medium">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-300" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
                     id="password"
                     type="password"
@@ -115,7 +115,7 @@ export default function LoginPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder-blue-300 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="pl-10 bg-slate-50 border-slate-300 text-slate-700 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
@@ -136,12 +136,12 @@ export default function LoginPage() {
               </Button>
             </form>
             
-            <div className="pt-4 border-t border-white/10">
-              <div className="text-center text-sm text-blue-200">
+            <div className="pt-4 border-t border-slate-200">
+              <div className="text-center text-sm text-slate-600">
                 Don't have an account?{' '}
                 <Link 
                   href="/register" 
-                  className="text-white hover:text-blue-200 font-semibold transition-colors"
+                  className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
                 >
                   Register here
                 </Link>
@@ -150,10 +150,10 @@ export default function LoginPage() {
           </CardContent>
         </Card>
         
-        <div className="text-center mt-6 text-blue-300 text-sm">
+        <div className="text-center mt-6 text-slate-400 text-sm">
           <Link 
             href="/" 
-            className="hover:text-white transition-colors flex items-center justify-center space-x-2"
+            className="hover:text-slate-300 transition-colors flex items-center justify-center space-x-2"
           >
             <span>← Back to Home</span>
           </Link>
