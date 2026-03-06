@@ -36,14 +36,9 @@ interface AttendanceRecord {
 
 export default function DTRTemplate({ student }: DTRTemplateProps) {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const printRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetchAttendance();
-  }, [student._id, selectedMonth, selectedYear]);
 
   const fetchAttendance = async () => {
     try {
@@ -54,20 +49,17 @@ export default function DTRTemplate({ student }: DTRTemplateProps) {
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    setTimeout(() => fetchAttendance(), 0);
+  }, [student._id, selectedMonth, selectedYear]);
 
   const formatTime = (timeString?: string) => {
     if (!timeString) return '';
     const date = new Date(timeString);
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.getDate().toString();
   };
 
   const getMonthYearLabel = () => {
@@ -88,7 +80,6 @@ export default function DTRTemplate({ student }: DTRTemplateProps) {
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const originalContents = document.body.innerHTML;
     const printWindow = window.open('', '_blank');
     
     if (printWindow) {

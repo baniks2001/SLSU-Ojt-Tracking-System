@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const forRegistration = searchParams.get('forRegistration');
     const status = searchParams.get('status');
     
-    let query: any = {};
+    let query: Record<string, unknown> = {};
     
     if (forRegistration === 'true') {
       // For registration - only get active campuses

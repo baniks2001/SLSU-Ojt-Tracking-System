@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -39,7 +39,7 @@ export default function AttendanceLogs({ studentId }: AttendanceLogsProps) {
     fetchAttendance();
   }, [studentId, selectedMonth, selectedYear]);
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
     try {
       const response = await fetch(`/api/attendance?studentId=${studentId}&month=${selectedMonth}&year=${selectedYear}`);
       if (response.ok) {
@@ -50,11 +50,11 @@ export default function AttendanceLogs({ studentId }: AttendanceLogsProps) {
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
-      toast.error('An error occurred while fetching attendance');
+      toast.error('Failed to fetch attendance records');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [studentId, selectedMonth, selectedYear]);
 
   const formatTime = (timeString?: string) => {
     if (!timeString) return '--:--';

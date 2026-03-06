@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
-import { Course, Campus } from '@/lib/models';
+import { Course } from '@/lib/models';
 
 // GET - Fetch courses
 export async function GET(request: Request) {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const forRegistration = searchParams.get('forRegistration');
     
-    let query: any = { isActive: true };
+    let query: Record<string, unknown> = { isActive: true };
     
     if (forRegistration === 'true') {
       // For registration - only get active courses

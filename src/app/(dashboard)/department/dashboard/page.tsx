@@ -763,10 +763,10 @@ export default function DepartmentDashboard() {
                                         {getShiftTypeDisplay(student.shiftType || 'regular')}
                                       </Badge>
                                       <Badge 
-                                        variant={student.status === 'active' ? 'default' : 'secondary'}
+                                        variant={(student as any).status === 'active' ? 'default' : 'secondary'}
                                         className="text-xs"
                                       >
-                                        {student.status}
+                                        {(student as any).status}
                                       </Badge>
                                     </div>
                                   </div>
@@ -892,7 +892,7 @@ export default function DepartmentDashboard() {
                                         <DialogTitle>Morning Clock In Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.morningIn).toLocaleString()}
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningIn ? new Date(record.morningIn).toLocaleString() : 'N/A'}
                                           </p>
                                           <img 
                                             src={record.morningInImage} 
@@ -917,7 +917,7 @@ export default function DepartmentDashboard() {
                                         <DialogTitle>Morning Clock Out Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.morningOut).toLocaleString()}
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningOut ? new Date(record.morningOut).toLocaleString() : 'N/A'}
                                           </p>
                                           <img 
                                             src={record.morningOutImage} 
@@ -942,7 +942,7 @@ export default function DepartmentDashboard() {
                                         <DialogTitle>Afternoon Clock In Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.afternoonIn).toLocaleString()}
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonIn ? new Date(record.afternoonIn).toLocaleString() : 'N/A'}
                                           </p>
                                           <img 
                                             src={record.afternoonInImage} 
@@ -967,7 +967,7 @@ export default function DepartmentDashboard() {
                                         <DialogTitle>Afternoon Clock Out Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.afternoonOut).toLocaleString()}
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonOut ? new Date(record.afternoonOut).toLocaleString() : 'N/A'}
                                           </p>
                                           <img 
                                             src={record.afternoonOutImage} 
@@ -992,7 +992,7 @@ export default function DepartmentDashboard() {
                                         <DialogTitle>Evening Clock In Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.eveningIn).toLocaleString()}
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningIn ? new Date(record.eveningIn).toLocaleString() : 'N/A'}
                                           </p>
                                           <img 
                                             src={record.eveningInImage} 
@@ -1017,7 +1017,7 @@ export default function DepartmentDashboard() {
                                         <DialogTitle>Evening Clock Out Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {record.studentId?.firstName} {record.studentId?.lastName} - {new Date(record.eveningOut).toLocaleString()}
+                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningOut ? new Date(record.eveningOut).toLocaleString() : 'N/A'}
                                           </p>
                                           <img 
                                             src={record.eveningOutImage} 

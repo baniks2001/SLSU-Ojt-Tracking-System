@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { email, password, firstName, lastName, contactNumber, departmentId, createdBy } = body;
+    const { email, password, firstName, lastName, contactNumber, departmentId } = body;
 
     if (!email || !password || !firstName || !lastName || !departmentId) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const departmentId = searchParams.get('departmentId');
 
-    let query: any = { accountType: 'supervisor' };
+    const query: Record<string, unknown> = { accountType: 'supervisor' };
     if (departmentId) {
       query['supervisorData.departmentId'] = departmentId;
     }

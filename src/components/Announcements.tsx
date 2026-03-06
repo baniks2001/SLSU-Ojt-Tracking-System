@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -30,11 +30,7 @@ export default function Announcements({ studentId }: AnnouncementsProps) {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAnnouncements();
-  }, [studentId]);
-
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     try {
       const response = await fetch(`/api/announcements?studentId=${studentId}`);
       if (response.ok) {
@@ -45,11 +41,15 @@ export default function Announcements({ studentId }: AnnouncementsProps) {
       }
     } catch (error) {
       console.error('Error fetching announcements:', error);
-      toast.error('An error occurred while fetching announcements');
+      toast.error('Failed to fetch announcements');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [studentId]);
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [studentId, fetchAnnouncements]);
 
   if (isLoading) {
     return (

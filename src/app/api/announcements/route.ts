@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const studentId = searchParams.get('studentId');
     const isActive = searchParams.get('isActive');
 
-    let query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (isActive !== null) {
       query.isActive = isActive === 'true';

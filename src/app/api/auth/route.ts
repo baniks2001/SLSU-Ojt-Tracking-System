@@ -151,8 +151,8 @@ async function handleRegister({
   email: string; 
   password: string; 
   accountType: string;
-  studentData?: any;
-  departmentData?: any;
+  studentData?: Record<string, unknown>;
+  departmentData?: Record<string, unknown>;
 }) {
   try {
     // Check if email already exists

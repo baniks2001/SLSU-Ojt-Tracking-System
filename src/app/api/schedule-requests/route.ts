@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const departmentId = searchParams.get('departmentId');
     const status = searchParams.get('status');
 
-    let query: any = {};
+    const query: Record<string, unknown> = {};
     if (studentId) query.studentId = studentId;
     if (departmentId) query.departmentId = departmentId;
     if (status) query.status = status;

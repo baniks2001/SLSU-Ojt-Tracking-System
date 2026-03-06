@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -9,12 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Clock, Calendar, Send, History } from 'lucide-react';
+import { Clock, Send, History } from 'lucide-react';
 
 interface ScheduleChangeRequestProps {
   studentId: string;
   currentShiftType: string;
-  departmentId: string;
+  departmentId?: string;
 }
 
 interface ScheduleRequest {
@@ -46,7 +46,7 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
     fetchRequests();
   }, [studentId]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       const response = await fetch(`/api/schedule-requests?studentId=${studentId}`);
       if (response.ok) {
@@ -56,7 +56,7 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
     } catch (error) {
       console.error('Error fetching requests:', error);
     }
-  };
+  }, [studentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

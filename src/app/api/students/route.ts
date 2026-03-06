@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const ojtAdvisor = searchParams.get('ojtAdvisor');
     const isActive = searchParams.get('isActive');
 
-    let query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (department) query.department = department;
     if (isAccepted !== null) query.isAccepted = isAccepted === 'true';
@@ -55,7 +55,7 @@ export async function PUT(request: Request) {
       // Send approval email
       try {
         await sendAccountApprovedEmail(
-          (student.userId as any).email,
+          (student.userId as { email: string }).email,
           student.firstName
         );
       } catch (emailError) {

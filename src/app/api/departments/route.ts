@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status'); // 'approved', 'pending', or 'all'
     const forRegistration = searchParams.get('forRegistration'); // 'true' to get only approved for student registration
     
-    let query: any = {};
+    let query: Record<string, unknown> = {};
     
     if (forRegistration === 'true') {
       // For student registration - only get approved and active departments
@@ -90,7 +90,7 @@ export async function PUT(request: Request) {
     }
 
     // Handle accept/reject actions
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (action === 'accept') {
       updateData.isAccepted = true;
     } else if (action === 'reject') {

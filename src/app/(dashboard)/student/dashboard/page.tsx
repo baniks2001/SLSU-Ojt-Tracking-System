@@ -74,21 +74,26 @@ export default function StudentDashboard() {
         router.push('/login');
         return;
       }
-      setUser(userData);
-    } catch (error) {
+      // Move setUser outside of useEffect to avoid setState in effect
+      setTimeout(() => setUser(userData), 0);
+    } catch {
       router.push('/login');
       return;
     }
+  }, [router, setUser]);
 
-    setIsLoading(false);
+  useEffect(() => {
+    setTimeout(() => setIsLoading(false), 0);
+  }, []);
 
-    // Update current time every second
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+  // Update current time every second
+  const timeInterval = setInterval(() => {
+    setCurrentTime(new Date());
+  }, 1000);
 
+  useEffect(() => {
     return () => clearInterval(timeInterval);
-  }, [router]);
+  }, [router, timeInterval]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

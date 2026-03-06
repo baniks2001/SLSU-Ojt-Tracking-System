@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
-import { Attendance, Student } from '@/lib/models';
+import { Attendance } from '@/lib/models';
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 // GET - Get attendance records
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const month = searchParams.get('month');
     const year = searchParams.get('year');
 
-    let query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (studentId) {
       query.studentId = studentId;
@@ -169,7 +169,14 @@ export async function PUT(request: Request) {
   }
 }
 
-function calculateTotalHours(attendance: any): number {
+function calculateTotalHours(attendance: {
+  morningIn?: Date;
+  morningOut?: Date;
+  afternoonIn?: Date;
+  afternoonOut?: Date;
+  eveningIn?: Date;
+  eveningOut?: Date;
+}): number {
   let totalMinutes = 0;
 
   // Morning shift

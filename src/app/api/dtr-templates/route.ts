@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const isActive = searchParams.get('isActive');
     
-    let query: any = {};
+    const query: Record<string, unknown> = {};
     if (isActive !== null) {
       query.isActive = isActive === 'true';
     }

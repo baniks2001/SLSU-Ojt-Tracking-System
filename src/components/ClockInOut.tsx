@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -48,9 +48,25 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const fetchTodayRecord = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/attendance?studentId=${studentId}&date=${new Date().toISOString().split('T')[0]}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.attendance && data.attendance.length > 0) {
+          setTodayRecord(data.attendance[0]);
+        } else {
+          setTodayRecord(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching today record:', error);
+    }
+  }, [studentId]);
+
   useEffect(() => {
     fetchTodayRecord();
-  }, [studentId]);
+  }, [studentId, fetchTodayRecord]);
 
   // Update nextAction when todayRecord changes
   useEffect(() => {
@@ -61,7 +77,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   useEffect(() => {
     const updateShiftStatus = () => {
       const status = getShiftStatus();
-      setCurrentShiftStatus(status);
+      if (status) {
+        setCurrentShiftStatus(status);
+      }
       // Also update nextAction when shift status changes
       setNextAction(getNextClockAction());
     };
@@ -112,22 +130,6 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     return () => clearInterval(timer);
   }, [countdown]);
 
-  const fetchTodayRecord = async () => {
-    try {
-      const response = await fetch(`/api/attendance?studentId=${studentId}&date=${new Date().toISOString().split('T')[0]}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.attendance && data.attendance.length > 0) {
-          setTodayRecord(data.attendance[0]);
-        } else {
-          setTodayRecord(null);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching today record:', error);
-    }
-  };
-
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -135,7 +137,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         videoRef.current.srcObject = stream;
       }
       setShowCamera(true);
-    } catch (error) {
+    } catch {
       toast.error('Could not access camera. Please allow camera permissions.');
     }
   };
@@ -222,10 +224,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
   };
 
-  const getShiftTimes = () => {
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
-    
+  const getShiftTimes = useCallback(() => {
     switch (shiftType) {
       case 'regular':
         return {
@@ -282,9 +281,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         };
     }
     return {};
-  };
+  }, [shiftType]);
 
-  const isShiftTimeWindowPassed = (shift: 'morning' | 'afternoon' | 'evening') => {
+  const isShiftTimeWindowPassed = useCallback((shift: 'morning' | 'afternoon' | 'evening') => {
     // Prevent hydration issues by running only on client
     if (typeof window === 'undefined') return false;
     
@@ -303,7 +302,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       default:
         return false;
     }
-  };
+  }, [getShiftTimes]);
 
   const getCurrentActiveShift = () => {
     // Prevent hydration issues by running only on client
@@ -344,7 +343,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     return null; // No active shift
   };
 
-  const getShiftStatus = () => {
+  const getShiftStatus = useCallback(() => {
     // Prevent hydration issues by running only on client
     if (typeof window === 'undefined') return null;
     
@@ -460,17 +459,19 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       case 'regular':
       case '2shift':
         // Enhanced logic for regular/2shift types
-        if (currentTime >= shiftTimes.morningStart && currentTime <= (shiftTimes.morningEnd + 60)) {
+        if (shiftTimes.morningStart !== undefined && shiftTimes.morningEnd !== undefined &&
+            currentTime >= shiftTimes.morningStart && currentTime <= (shiftTimes.morningEnd + 60)) {
           // Morning shift is active
           currentShift = 'Morning';
           status = 'active';
           timeRemaining = getTimeRemaining(shiftTimes.morningEnd + 60);
-        } else if (currentTime < shiftTimes.morningStart) {
+        } else if (shiftTimes.morningStart !== undefined && currentTime < shiftTimes.morningStart) {
           // Morning shift is upcoming
           status = 'upcoming';
           nextShiftTime = formatMinutes(shiftTimes.morningStart);
           timeRemaining = getTimeRemaining(shiftTimes.morningStart);
-        } else if (currentTime >= shiftTimes.morningEnd + 60 && currentTime < shiftTimes.afternoonStart) {
+        } else if (shiftTimes.morningEnd !== undefined && currentTime >= shiftTimes.morningEnd + 60 && 
+                   shiftTimes.afternoonStart !== undefined && currentTime < shiftTimes.afternoonStart) {
           // Morning shift completed, afternoon shift is upcoming
           if (shiftTimes.afternoonStart !== undefined && shiftTimes.afternoonEnd !== undefined) {
             status = 'upcoming';
@@ -485,14 +486,15 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             isLocked = true;
             timeRemaining = null;
           }
-        } else if (currentTime >= shiftTimes.afternoonStart && currentTime <= (shiftTimes.afternoonEnd + 60)) {
+        } else if (shiftTimes.afternoonStart !== undefined && shiftTimes.afternoonEnd !== undefined &&
+                   currentTime >= shiftTimes.afternoonStart && currentTime <= (shiftTimes.afternoonEnd + 60)) {
           // Afternoon shift is active
           currentShift = 'Afternoon';
           status = 'active';
           timeRemaining = getTimeRemaining(shiftTimes.afternoonEnd + 60);
           // Morning shift should be locked now
           isMorningLocked = true;
-        } else if (currentTime >= shiftTimes.afternoonEnd + 60) {
+        } else if (shiftTimes.afternoonEnd !== undefined && currentTime >= shiftTimes.afternoonEnd + 60) {
           // Afternoon shift has expired
           currentShift = 'Afternoon';
           status = 'afternoon-locked';
@@ -524,15 +526,13 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       isMorningLocked,
       isAfternoonLocked
     };
-  };
+  }, [shiftType, getShiftTimes]);
 
-  const getNextClockAction = () => {
-    const currentShift = getCurrentActiveShift();
-    const shiftTimes = getShiftTimes();
+  const getNextClockAction = useCallback(() => {
     const shiftStatus = getShiftStatus();
     
     // If shift is locked, prevent any clock actions
-    if (shiftStatus.isLocked) {
+    if (shiftStatus && shiftStatus.isLocked) {
       return { action: null, label: 'Shift Locked', type: 'locked', shift: shiftStatus.shift || 'Expired' };
     }
     
@@ -631,11 +631,16 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     
     // All actions completed for today
     return { action: null, label: 'Completed', type: 'completed', shift: 'All' };
-  };
+  }, [shiftType, todayRecord, getShiftStatus]);
 
   
   const [currentDateTime, setCurrentDateTime] = useState('');
-  const [nextAction, setNextAction] = useState<any>({
+  const [nextAction, setNextAction] = useState<{
+    action: string | null;
+    label: string;
+    type: string;
+    shift?: string;
+  }>({
     action: null,
     label: 'Loading...',
     type: 'loading',
@@ -656,7 +661,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     isAfternoonLocked: boolean;
   }>({
     shift: null,
-    status: 'loading', // Start with loading state
+    status: 'active' as const, // Start with active state instead of loading
     nextShiftTime: null,
     timeRemaining: null,
     isLocked: false,
@@ -667,7 +672,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   // Initialize shift status on client side only
   useEffect(() => {
     const status = getShiftStatus();
-    setCurrentShiftStatus(status);
+    if (status) {
+      setCurrentShiftStatus(status);
+    }
   }, [shiftType]);
 
   const formatTime = (timeString?: string) => {
@@ -877,7 +884,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
           {/* Today's Progress */}
           <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-600 mb-3">Today's Progress</h4>
+            <h4 className="text-sm font-medium text-gray-600 mb-3">Today&apos;s Progress</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Morning Shift */}
               {(shiftType === 'regular' || shiftType === '2shift' || shiftType === 'morning' || shiftType === '1shift') && (

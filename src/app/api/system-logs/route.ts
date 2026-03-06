@@ -16,16 +16,17 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const page = parseInt(searchParams.get('page') || '1');
     
-    let query: any = {};
+    const query: Record<string, unknown> = {};
     
     if (userType) query.userType = userType;
     if (action) query.action = { $regex: action, $options: 'i' };
     if (severity) query.severity = severity;
     
     if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate);
-      if (endDate) query.createdAt.$lte = new Date(endDate);
+      const createdAtQuery: Record<string, Date> = {};
+      if (startDate) createdAtQuery.$gte = new Date(startDate);
+      if (endDate) createdAtQuery.$lte = new Date(endDate);
+      query.createdAt = createdAtQuery;
     }
     
     const skip = (page - 1) * limit;

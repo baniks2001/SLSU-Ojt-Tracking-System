@@ -35,15 +35,15 @@ export async function POST(request: Request) {
         studentInfo = {
           name: `${student.firstName} ${student.lastName}`,
           studentId: student.studentId,
-          course: (student.courseId as any)?.courseName,
-          department: (student.departmentId as any)?.departmentName,
+          course: (student.courseId as { courseName?: string })?.courseName,
+          department: (student.departmentId as { departmentName?: string })?.departmentName,
         };
       }
     }
     
     // Perform OCR simulation (in production, use Tesseract.js or cloud OCR)
     // This extracts data from the template based on the Civil Service Form No. 48 format
-    const extractedData = await performOCRExtraction(template, studentInfo);
+    const extractedData = await performOCRExtraction(template, studentInfo || {});
     
     // Update template with extracted data
     template.extractedData = extractedData;
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 }
 
 // Simulate OCR extraction based on Civil Service Form No. 48 format
-async function performOCRExtraction(template: any, studentInfo: any) {
+async function performOCRExtraction(template: Record<string, unknown>, studentInfo: Record<string, unknown>) {
   // In production, this would use actual OCR (Tesseract.js, AWS Textract, Google Vision API, etc.)
   // For now, we'll simulate based on the expected format
   
@@ -78,7 +78,7 @@ async function performOCRExtraction(template: any, studentInfo: any) {
   // Generate sample data matching the Civil Service Form No. 48 format
   const days = [];
   for (let i = 1; i <= 31; i++) {
-    const dayData: any = { day: i };
+    const dayData: Record<string, unknown> = { day: i };
     
     // Weekends have no entries
     const date = new Date(now.getFullYear(), now.getMonth(), i);

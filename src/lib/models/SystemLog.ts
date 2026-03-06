@@ -8,7 +8,7 @@ export interface ISystemLog extends Document {
   description: string;
   ipAddress?: string;
   userAgent?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   severity: 'info' | 'warning' | 'error' | 'critical';
   createdAt: Date;
 }

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const department = searchParams.get('department');
     const isAccepted = searchParams.get('isAccepted');
 
-    let query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (accountType) {
       query.accountType = accountType;
@@ -25,14 +25,14 @@ export async function GET(request: Request) {
 
     const users = await User.find(query).select('-password -__v');
 
-    let enrichedUsers = [];
+    const enrichedUsers = [];
 
     for (const user of users) {
       const userObj = user.toObject();
       let details = null;
 
       if (user.accountType === 'student') {
-        const studentQuery: any = { userId: user._id };
+        const studentQuery: Record<string, unknown> = { userId: user._id };
         if (department) studentQuery.department = department;
         if (isAccepted !== null) studentQuery.isAccepted = isAccepted === 'true';
         
