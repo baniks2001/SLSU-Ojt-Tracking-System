@@ -202,8 +202,8 @@ export async function PUT(request: Request) {
   }
 }
 
-// GET - Get attendance statistics for OJT tracking
-export async function GET(request: Request) {
+// GET - Get attendance records or statistics
+export async function GET_ATTENDANCE(request: Request) {
   try {
     await connectDB();
     const { searchParams } = new URL(request.url);

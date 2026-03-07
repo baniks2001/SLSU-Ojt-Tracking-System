@@ -219,20 +219,55 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       // Stop any existing stream first
       stopCamera();
       
-      // Request camera with more compatible constraints
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+      // Request camera with device default and standard quality
+      let constraints = {
+        video: {
+          width: { min: 320, ideal: 640 },
+          height: { min: 240, ideal: 480 },
           facingMode: 'user'
         },
         audio: false
-      });
+      };
+      
+      // Try to get user's preferred camera first
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        // Use first available camera or default to user-facing
+        if (videoDevices.length > 0) {
+          const deviceId = videoDevices[0].deviceId;
+          constraints.video.deviceId = deviceId;
+        }
+      } catch (deviceError) {
+        console.warn('Could not enumerate devices:', deviceError);
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // If high quality fails, fallback to standard quality
+      if (!stream) {
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+          
+          if (fallbackStream && videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            await videoRef.current.play();
+            setShowCamera(true);
+            return;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback camera failed:', fallbackError);
+        }
+      }
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        // Play the video explicitly
+        // Play video explicitly
         try {
           await videoRef.current.play();
         } catch (playError) {
@@ -266,22 +301,13 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       console.error('Camera access error:', error);
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          toast.error('Camera permission denied. Please allow camera access in your browser settings and refresh the page.');
+          toast.error('Camera permission denied. Please allow camera access in your browser settings and refresh.');
         } else if (error.name === 'NotFoundError') {
           toast.error('No camera found. Please connect a camera and try again.');
         } else if (error.name === 'NotReadableError') {
           toast.error('Camera is already in use by another application. Please close other apps using the camera.');
         } else if (error.name === 'OverconstrainedError') {
           toast.error('Camera constraints cannot be satisfied. Trying with lower quality...');
-          // Retry with lower quality
-          try {
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
-              video: true,
-              audio: false
-            });
-            if (videoRef.current) {
-              videoRef.current.srcObject = fallbackStream;
-              await videoRef.current.play();
               setShowCamera(true);
             }
           } catch (fallbackError) {

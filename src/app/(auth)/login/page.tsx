@@ -87,7 +87,7 @@ export default function LoginPage() {
           </div>
 
           {/* Login Card */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl animate-fadeIn">
+          <Card className="bg-white border border-gray-200 shadow-xl rounded-2xl animate-fadeIn">
             <CardHeader className="space-y-2 pb-6">
               <CardTitle className="text-xl font-semibold text-gray-900 text-center">Sign In</CardTitle>
               <CardDescription className="text-gray-600 text-center">
@@ -108,7 +108,7 @@ export default function LoginPage() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
-                      className="pl-10 h-11 bg-white border-gray-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all duration-200"
+                      className="pl-10 h-11 bg-white border-gray-200 rounded-xl focus:border-blue-900 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -138,12 +138,12 @@ export default function LoginPage() {
                 
                 <Button 
                   type="submit" 
-                  className="w-full h-11 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-2xl"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-transparent animate-spin rounded-full"></div>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full"></div>
                       <span>Signing in...</span>
                     </div>
                   ) : (

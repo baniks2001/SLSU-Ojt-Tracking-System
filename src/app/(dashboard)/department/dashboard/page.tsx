@@ -3,6 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+
+interface Student {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  studentId: string;
+  course: string;
+  isAccepted: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -908,47 +921,23 @@ export default function DepartmentDashboard() {
                                   {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
                                     <Dialog>
                                       <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
+                                        <Button variant="outline" size="sm">
                                           VIEW IMAGE<br/>MORNING IN
                                         </Button>
                                       </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
+                                      <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
                                         <DialogTitle>Morning Clock In Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningIn ? new Date(record.morningIn).toLocaleString() : 'N/A'}
+                                            Clock in time: {record.morningIn || 'Not recorded'}
                                           </p>
-                                          <img 
-                                            src={record.morningInImage} 
-                                            alt="Morning In" 
-                                            className="w-full rounded-lg border"
+                                          <img
+                                            src={record.morningInImage || ''}
+                                            alt="Morning clock in"
+                                            className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
                                             onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowMorningColumns(studentShiftType) && record.morningOutImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>MORNING OUT
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Morning Clock Out Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.morningOut ? new Date(record.morningOut).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.morningOutImage} 
-                                            alt="Morning Out" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                              console.error('Image load error:', e);
+                                              this.src = 'Image not available';
                                             }}
                                           />
                                         </div>
@@ -958,97 +947,23 @@ export default function DepartmentDashboard() {
                                   {shouldShowAfternoonColumns(studentShiftType) && record.afternoonInImage && (
                                     <Dialog>
                                       <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
+                                        <Button variant="outline" size="sm">
                                           VIEW IMAGE<br/>AFTERNOON IN
                                         </Button>
                                       </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
+                                      <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
                                         <DialogTitle>Afternoon Clock In Image</DialogTitle>
                                         <div className="space-y-2">
                                           <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonIn ? new Date(record.afternoonIn).toLocaleString() : 'N/A'}
+                                            Clock in time: {record.afternoonIn || 'Not recorded'}
                                           </p>
-                                          <img 
-                                            src={record.afternoonInImage} 
-                                            alt="Afternoon In" 
-                                            className="w-full rounded-lg border"
+                                          <img
+                                            src={record.afternoonInImage || ''}
+                                            alt="Afternoon clock in"
+                                            className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
                                             onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonOutImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>AFTERNOON OUT
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Afternoon Clock Out Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.afternoonOut ? new Date(record.afternoonOut).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.afternoonOutImage} 
-                                            alt="Afternoon Out" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowEveningColumns(studentShiftType) && record.eveningInImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>EVENING IN
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Evening Clock In Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningIn ? new Date(record.eveningIn).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.eveningInImage} 
-                                            alt="Evening In" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
-                                  {shouldShowEveningColumns(studentShiftType) && record.eveningOutImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="image-btn">
-                                          VIEW IMAGE<br/>EVENING OUT
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl">
-                                        <DialogTitle>Evening Clock Out Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            {(record.studentId as any)?.firstName} {(record.studentId as any)?.lastName || ''} - {record.eveningOut ? new Date(record.eveningOut).toLocaleString() : 'N/A'}
-                                          </p>
-                                          <img 
-                                            src={record.eveningOutImage} 
-                                            alt="Evening Out" 
-                                            className="w-full rounded-lg border"
-                                            onError={(e) => {
-                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280" font-size="12"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                              console.error('Image load error:', e);
+                                              this.src = 'Image not available';
                                             }}
                                           />
                                         </div>
@@ -1098,7 +1013,8 @@ export default function DepartmentDashboard() {
                             </div>
                             <Button
                               onClick={() => handleAcceptStudent(student._id)}
-                              className="bg-green-600 hover:bg-green-700"
+                              className="bg-blue-900 hover:bg-blue-800 text-white"
+                              size="sm"
                             >
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Accept
@@ -1153,7 +1069,7 @@ export default function DepartmentDashboard() {
                               <div className="flex space-x-2 mt-4 md:mt-0">
                                 <Button
                                   onClick={() => handleReviewScheduleRequest(request._id, 'approved')}
-                                  className="bg-green-600 hover:bg-green-700"
+                                  className="bg-blue-900 hover:bg-blue-800 text-white"
                                   size="sm"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-1" />
@@ -1163,6 +1079,7 @@ export default function DepartmentDashboard() {
                                   onClick={() => handleReviewScheduleRequest(request._id, 'rejected')}
                                   variant="destructive"
                                   size="sm"
+                                  className="bg-red-600 hover:bg-red-700 text-white"
                                 >
                                   <UserX className="h-4 w-4 mr-1" />
                                   Reject

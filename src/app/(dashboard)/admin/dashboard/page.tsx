@@ -105,6 +105,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchAllUsersSilent = async () => {
+    try {
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -165,7 +177,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         toast.success('Student deleted successfully');
-        fetchAllUsers(); // Refresh users list
+        fetchAllUsersSilent(); // Refresh users list silently
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to delete student');
@@ -238,7 +250,7 @@ export default function AdminDashboard() {
           description: '',
           totalHours: 500
         });
-        fetchCourses();
+        fetchCourses(); // Refresh courses list
       } else {
         toast.error(data.error || 'Failed to create course');
       }
@@ -273,7 +285,7 @@ export default function AdminDashboard() {
           contactEmail: '',
           contactNumber: ''
         });
-        fetchCampuses();
+        fetchCampuses(); // Refresh campuses list
       } else {
         toast.error(data.error || 'Failed to create campus');
       }
@@ -415,13 +427,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-xl">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-xl">
+          <TabsList>
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Users</TabsTrigger>
             <TabsTrigger value="courses" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Courses</TabsTrigger>
             <TabsTrigger value="monitoring" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Monitoring</TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -887,18 +898,12 @@ export default function AdminDashboard() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="departmentName">Department Name</Label>
-                <Select value={newCourseData.departmentName} onValueChange={(value) => setNewCourseData({ ...newCourseData, departmentName: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departmentUsers.map((dept: any) => (
-                      <SelectItem key={dept._id} value={dept.details?.departmentName || dept.email}>
-                        {dept.details?.departmentName || dept.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="departmentName"
+                  placeholder="Enter department name"
+                  value={newCourseData.departmentName}
+                  onChange={(e) => setNewCourseData({ ...newCourseData, departmentName: e.target.value })}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="campus">Campus</Label>
@@ -906,7 +911,7 @@ export default function AdminDashboard() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select campus" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg">
                     {campuses.map((campus: any) => (
                       <SelectItem key={campus._id} value={campus._id}>
                         {campus.campusName} ({campus.campusCode})
