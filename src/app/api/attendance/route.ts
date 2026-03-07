@@ -78,6 +78,7 @@ export async function POST(request: Request) {
       action,
       imageData,
       shiftType = 'regular',
+      location,
     } = body;
 
     // Find the student by studentId string to get their ObjectId
@@ -146,31 +147,80 @@ export async function POST(request: Request) {
       }
     }
 
+    // Check for early clock-in restriction (1 hour before shift start)
+    if (action.includes('In')) {
+      let shiftTypeToCheck: string = '';
+      let shiftStartTime: string = '';
+      
+      switch (action) {
+        case 'morningIn':
+          shiftTypeToCheck = 'morning';
+          shiftStartTime = '08:00';
+          break;
+        case 'afternoonIn':
+          shiftTypeToCheck = 'afternoon';
+          shiftStartTime = '13:00';
+          break;
+        case 'eveningIn':
+          shiftTypeToCheck = 'evening';
+          shiftStartTime = '17:00';
+          break;
+      }
+
+      if (shiftTypeToCheck && shiftStartTime) {
+        const [shiftHours, shiftMinutes] = shiftStartTime.split(':').map(Number);
+        const shiftStartMinutes = shiftHours * 60 + shiftMinutes;
+        const currentMinutes = serverTime.getHours() * 60 + serverTime.getMinutes();
+        
+        // Check if current time is more than 1 hour (60 minutes) before shift start
+        if (currentMinutes < shiftStartMinutes - 60) {
+          const minutesUntilShift = shiftStartMinutes - currentMinutes;
+          const hoursUntilShift = Math.floor(minutesUntilShift / 60);
+          const remainingMinutes = minutesUntilShift % 60;
+          
+          return NextResponse.json({
+            error: 'Too early to clock in',
+            message: `You cannot clock in for ${shiftTypeToCheck} shift more than 1 hour early. Shift starts at ${shiftStartTime}. Current time is ${serverTime.toLocaleTimeString()}. Please wait ${hoursUntilShift}h ${remainingMinutes}m.`,
+            shiftType: shiftTypeToCheck,
+            shiftStartTime: shiftStartTime,
+            currentTime: serverTime.toISOString(),
+            minutesUntilShift: minutesUntilShift
+          }, { status: 400 });
+        }
+      }
+    }
+
     // Update based on action using server time
     switch (action) {
       case 'morningIn':
         attendance.morningIn = serverTime;
         attendance.morningInImage = imageData;
+        attendance.morningInLocation = location;
         break;
       case 'morningOut':
         attendance.morningOut = serverTime;
         attendance.morningOutImage = imageData;
+        attendance.morningOutLocation = location;
         break;
       case 'afternoonIn':
         attendance.afternoonIn = serverTime;
         attendance.afternoonInImage = imageData;
+        attendance.afternoonInLocation = location;
         break;
       case 'afternoonOut':
         attendance.afternoonOut = serverTime;
         attendance.afternoonOutImage = imageData;
+        attendance.afternoonOutLocation = location;
         break;
       case 'eveningIn':
         attendance.eveningIn = serverTime;
         attendance.eveningInImage = imageData;
+        attendance.eveningInLocation = location;
         break;
       case 'eveningOut':
         attendance.eveningOut = serverTime;
         attendance.eveningOutImage = imageData;
+        attendance.eveningOutLocation = location;
         break;
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

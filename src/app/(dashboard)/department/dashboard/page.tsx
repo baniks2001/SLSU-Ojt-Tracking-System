@@ -174,18 +174,54 @@ interface AttendanceRecord {
   date: string;
   morningIn?: string;
   morningOut?: string;
-  afternoonIn?: string;
-  afternoonOut?: string;
-  eveningIn?: string;
-  eveningOut?: string;
   morningInImage?: string;
   morningOutImage?: string;
+  morningInLocation?: {
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
+  morningOutLocation?: {
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
+  afternoonIn?: string;
+  afternoonOut?: string;
   afternoonInImage?: string;
   afternoonOutImage?: string;
+  afternoonInLocation?: {
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
+  afternoonOutLocation?: {
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
+  eveningIn?: string;
+  eveningOut?: string;
   eveningInImage?: string;
   eveningOutImage?: string;
+  eveningInLocation?: {
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
+  eveningOutLocation?: {
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
   totalHours: number;
-  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | '1shift' | '2shift';
+  shiftType: 'regular' | 'regular-split' | 'graveyard' | 'custom' | 'morning' | 'afternoon' | 'evening' | 'midnight' | '1shift' | '2shift';
 }
 
 export default function DepartmentDashboard() {
@@ -915,59 +951,93 @@ export default function DepartmentDashboard() {
                               )}
                               <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
                               <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                          VIEW IMAGE<br/>MORNING IN
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
-                                        <DialogTitle>Morning Clock In Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            Clock in time: {record.morningIn || 'Not recorded'}
-                                          </p>
-                                          <img
-                                            src={record.morningInImage || ''}
-                                            alt="Morning clock in"
-                                            className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
-                                            onError={(e) => {
-                                              console.error('Image load error:', e);
-                                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
+                                <div className="space-y-1">
+                                  {/* Location Info */}
+                                  {record.morningInLocation && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">📍 In: </span>
+                                      {record.morningInLocation.latitude && record.morningInLocation.longitude ? (
+                                        <span>
+                                          {record.morningInLocation.latitude.toFixed(4)}, {record.morningInLocation.longitude.toFixed(4)}
+                                          {record.morningInLocation.accuracy && (
+                                            <span className="text-gray-400"> (±{record.morningInLocation.accuracy.toFixed(0)}m)</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">No location</span>
+                                      )}
+                                    </div>
                                   )}
-                                  {shouldShowAfternoonColumns(studentShiftType) && record.afternoonInImage && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                          VIEW IMAGE<br/>AFTERNOON IN
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
-                                        <DialogTitle>Afternoon Clock In Image</DialogTitle>
-                                        <div className="space-y-2">
-                                          <p className="text-sm text-gray-600">
-                                            Clock in time: {record.afternoonIn || 'Not recorded'}
-                                          </p>
-                                          <img
-                                            src={record.afternoonInImage || ''}
-                                            alt="Afternoon clock in"
-                                            className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
-                                            onError={(e) => {
-                                              console.error('Image load error:', e);
-                                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
-                                            }}
-                                          />
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
+                                  {record.morningOutLocation && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">📍 Out: </span>
+                                      {record.morningOutLocation.latitude && record.morningOutLocation.longitude ? (
+                                        <span>
+                                          {record.morningOutLocation.latitude.toFixed(4)}, {record.morningOutLocation.longitude.toFixed(4)}
+                                          {record.morningOutLocation.accuracy && (
+                                            <span className="text-gray-400"> (±{record.morningOutLocation.accuracy.toFixed(0)}m)</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">No location</span>
+                                      )}
+                                    </div>
                                   )}
+                                  {/* Images */}
+                                  <div className="flex flex-wrap gap-1">
+                                    {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">
+                                            VIEW IMAGE<br/>MORNING IN
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
+                                          <DialogTitle>Morning Clock In Image</DialogTitle>
+                                          <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                              Clock in time: {record.morningIn || 'Not recorded'}
+                                            </p>
+                                            <img
+                                              src={record.morningInImage || ''}
+                                              alt="Morning clock in"
+                                              className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
+                                              onError={(e) => {
+                                                console.error('Image load error:', e);
+                                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+                                              }}
+                                            />
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    )}
+                                    {shouldShowMorningColumns(studentShiftType) && record.morningOutImage && (
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">
+                                            VIEW IMAGE<br/>MORNING OUT
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
+                                          <DialogTitle>Morning Clock Out Image</DialogTitle>
+                                          <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                              Clock out time: {record.morningOut || 'Not recorded'}
+                                            </p>
+                                            <img
+                                              src={record.morningOutImage || ''}
+                                              alt="Morning clock out"
+                                              className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
+                                              onError={(e) => {
+                                                console.error('Image load error:', e);
+                                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+                                              }}
+                                            />
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    )}
+                                  </div>
                                 </div>
                               </TableCell>
                             </TableRow>

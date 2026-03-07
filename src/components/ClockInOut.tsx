@@ -29,10 +29,16 @@ interface AttendanceRecord {
   date: string;
   morningIn?: string;
   morningOut?: string;
+  morningInImage?: string;
+  morningOutImage?: string;
   afternoonIn?: string;
   afternoonOut?: string;
+  afternoonInImage?: string;
+  afternoonOutImage?: string;
   eveningIn?: string;
   eveningOut?: string;
+  eveningInImage?: string;
+  eveningOutImage?: string;
   shiftType: string;
   totalHours: number;
 }
@@ -48,6 +54,18 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [shiftExpired, setShiftExpired] = useState(false);
   const [expiredShiftInfo, setExpiredShiftInfo] = useState<any>(null);
+  const [deviceLocation, setDeviceLocation] = useState<{
+    latitude: number | null;
+    longitude: number | null;
+    accuracy: number | null;
+    timestamp: string | null;
+  }>({
+    latitude: null,
+    longitude: null,
+    accuracy: null,
+    timestamp: null
+  });
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -56,6 +74,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       console.warn('Student ID is undefined, skipping attendance fetch');
       return;
     }
+
+    // Get device location before fetching attendance
+    await getCurrentLocation();
     
     try {
       const response = await fetch(`/api/attendance?studentId=${studentId}&date=${new Date().toISOString().split('T')[0]}`);
@@ -71,6 +92,68 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       console.error('Error fetching today record:', error);
     }
   }, [studentId]);
+
+  // Get current device location
+  const getCurrentLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your device');
+      setLocationPermission('denied');
+      return;
+    }
+
+    // Check if location permission is already granted
+    if (locationPermission === 'granted') {
+      // Get current position
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setDeviceLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString()
+          });
+          setLocationPermission('granted');
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setLocationPermission('denied');
+          toast.error('Unable to get your location. Please enable location services.');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    } else {
+      // Request permission first
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setDeviceLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString()
+          });
+          setLocationPermission('granted');
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setLocationPermission('denied');
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Location permission denied. Please enable location services to continue.');
+          } else {
+            toast.error('Unable to get your location. Please enable location services.');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
+    }
+  }, [locationPermission]);
 
   // Check for shift expiration
   const checkShiftExpiration = useCallback(async () => {
@@ -385,6 +468,12 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       return;
     }
 
+    // Check if location is available and required
+    if (!deviceLocation.latitude || !deviceLocation.longitude) {
+      toast.error('Location services are required. Please enable GPS/location services and try again.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch('/api/attendance', {
@@ -395,6 +484,12 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
           action,
           imageData: capturedImage,
           shiftType,
+          location: {
+            latitude: deviceLocation.latitude,
+            longitude: deviceLocation.longitude,
+            accuracy: deviceLocation.accuracy,
+            timestamp: deviceLocation.timestamp
+          }
         }),
       });
 

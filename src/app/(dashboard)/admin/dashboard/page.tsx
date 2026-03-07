@@ -64,8 +64,12 @@ export default function AdminDashboard() {
   const [showEditCourse, setShowEditCourse] = useState(false);
   const [showDeleteCourse, setShowDeleteCourse] = useState(false);
   const [showCreateCampus, setShowCreateCampus] = useState(false);
+  const [showCreateShift, setShowCreateShift] = useState(false);
+  const [showEditShift, setShowEditShift] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<any>(null);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+  const [shifts, setShifts] = useState([]);
+  const [shiftToEdit, setShiftToEdit] = useState<any>(null);
   const [courses, setCourses] = useState([]);
   const [campuses, setCampuses] = useState([]);
   const [systemLogs, setSystemLogs] = useState([]);
@@ -76,6 +80,15 @@ export default function AdminDashboard() {
     campusId: '',
     totalHours: 500,
     isActive: true,
+    description: ''
+  });
+  const [newShiftData, setNewShiftData] = useState({
+    shiftName: '',
+    shiftType: 'morning', // morning, afternoon, evening, midnight
+    timePeriod: 'AM', // AM, PM
+    startTime: '',
+    endTime: '',
+    maxEarlyClockIn: 60, // minutes before shift start
     description: ''
   });
   const [newCampusData, setNewCampusData] = useState({
@@ -101,20 +114,26 @@ export default function AdminDashboard() {
         return;
       }
       setUser(userData);
-      fetchAllUsers();
-      fetchCourses();
-      fetchCampuses();
-      fetchSystemLogs();
     } catch (error) {
       router.push('/login');
     }
     setIsLoading(false);
+  }, [router]);
 
+  useEffect(() => {
+    fetchAllUsers();
+    fetchCourses();
+    fetchCampuses();
+    fetchSystemLogs();
+    fetchShifts();
+  }, []);
+
+  useEffect(() => {
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timeInterval);
-  }, [router]);
+  }, []);
 
   const fetchAllUsers = async () => {
     setIsLoading(true);
@@ -425,6 +444,121 @@ export default function AdminDashboard() {
     }
   };
 
+  // Shift management functions
+  const fetchShifts = async () => {
+    try {
+      const response = await fetch('/api/shift-management');
+      if (response.ok) {
+        const data = await response.json();
+        setShifts(data.shifts || []);
+      }
+    } catch (error) {
+      console.error('Error fetching shifts:', error);
+    }
+  };
+
+  const handleCreateShift = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/shift-management', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newShiftData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Shift created successfully!');
+        setShowCreateShift(false);
+        setNewShiftData({
+          shiftName: '',
+          shiftType: 'morning',
+          timePeriod: 'AM',
+          startTime: '',
+          endTime: '',
+          maxEarlyClockIn: 60,
+          description: ''
+        });
+        fetchShifts();
+      } else {
+        toast.error(data.error || 'Failed to create shift');
+      }
+    } catch (error) {
+      toast.error('An error occurred while creating shift');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditShift = (shift: any) => {
+    setShiftToEdit(shift);
+    setNewShiftData({
+      shiftName: shift.shiftName,
+      shiftType: shift.shiftType,
+      timePeriod: shift.timePeriod,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      maxEarlyClockIn: shift.maxEarlyClockIn,
+      description: shift.description
+    });
+    setShowEditShift(true);
+  };
+
+  const handleUpdateShift = async () => {
+    if (!shiftToEdit) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/shift-management/${shiftToEdit._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newShiftData),
+      });
+
+      if (response.ok) {
+        toast.success('Shift updated successfully');
+        setShowEditShift(false);
+        setShiftToEdit(null);
+        fetchShifts();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update shift');
+      }
+    } catch (error) {
+      toast.error('An error occurred while updating shift');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteShift = async (shiftId: string) => {
+    if (!confirm('Are you sure you want to delete this shift?')) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/shift-management/${shiftId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Shift deleted successfully');
+        fetchShifts();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete shift');
+      }
+    } catch (error) {
+      toast.error('An error occurred while deleting shift');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Course CRUD operations
   const handleEditCourse = (course: any) => {
     setCourseToEdit(course);
@@ -710,10 +844,11 @@ export default function AdminDashboard() {
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 p-1 rounded-xl h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-gray-100 p-1 rounded-xl h-auto">
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Overview</TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Users</TabsTrigger>
             <TabsTrigger value="courses" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Courses</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Schedule</TabsTrigger>
             <TabsTrigger value="monitoring" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Monitoring</TabsTrigger>
           </TabsList>
 
@@ -1027,6 +1162,84 @@ export default function AdminDashboard() {
                       </TableBody>
                     </Table>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="schedule" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-blue-900">Shift Management</CardTitle>
+                  <Button 
+                    onClick={() => setShowCreateShift(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Shift
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">Shift Name</TableHead>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">Type</TableHead>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">Period</TableHead>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">Start Time</TableHead>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">End Time</TableHead>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">Early Clock-in</TableHead>
+                        <TableHead className="bg-blue-50 sticky top-0 z-10">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {shifts.map((shift: any) => (
+                        <TableRow key={shift._id}>
+                          <TableCell className="text-gray-900">{shift.shiftName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {shift.shiftType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={shift.timePeriod === 'AM' ? 'default' : 'secondary'}>
+                              {shift.timePeriod}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-600">{shift.startTime}</TableCell>
+                          <TableCell className="text-gray-600">{shift.endTime}</TableCell>
+                          <TableCell className="text-gray-600">{shift.maxEarlyClockIn} min</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col sm:flex-row gap-1 sm:space-x-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="border-gray-300 text-gray-700 hover:bg-gray-100 text-xs px-2 py-1"
+                                onClick={() => handleEditShift(shift)}
+                                disabled={isLoading}
+                              >
+                                <Edit className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">Edit</span>
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                className="text-xs px-2 py-1"
+                                onClick={() => handleDeleteShift(shift._id)}
+                                disabled={isLoading}
+                              >
+                                <Trash2 className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">Delete</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
@@ -1699,6 +1912,220 @@ export default function AdminDashboard() {
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Delete Course
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Shift Dialog */}
+        <Dialog open={showCreateShift} onOpenChange={setShowCreateShift}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[500px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Create New Shift</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Create a new work shift with time schedule.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="shiftName">Shift Name</Label>
+                <Input
+                  id="shiftName"
+                  placeholder="e.g., Morning Shift"
+                  value={newShiftData.shiftName}
+                  onChange={(e) => setNewShiftData({ ...newShiftData, shiftName: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="shiftType">Shift Type</Label>
+                  <Select value={newShiftData.shiftType} onValueChange={(value) => setNewShiftData({ ...newShiftData, shiftType: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shift type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="morning">Morning</SelectItem>
+                      <SelectItem value="afternoon">Afternoon</SelectItem>
+                      <SelectItem value="evening">Evening</SelectItem>
+                      <SelectItem value="midnight">Midnight</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="timePeriod">Time Period</Label>
+                  <Select value={newShiftData.timePeriod} onValueChange={(value) => setNewShiftData({ ...newShiftData, timePeriod: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="PM">PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={newShiftData.startTime}
+                    onChange={(e) => setNewShiftData({ ...newShiftData, startTime: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={newShiftData.endTime}
+                    onChange={(e) => setNewShiftData({ ...newShiftData, endTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="maxEarlyClockIn">Early Clock-in (minutes before shift)</Label>
+                <Input
+                  id="maxEarlyClockIn"
+                  type="number"
+                  placeholder="60"
+                  value={newShiftData.maxEarlyClockIn}
+                  onChange={(e) => setNewShiftData({ ...newShiftData, maxEarlyClockIn: parseInt(e.target.value) || 60 })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  placeholder="Shift description (optional)"
+                  value={newShiftData.description}
+                  onChange={(e) => setNewShiftData({ ...newShiftData, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateShift(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateShift}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Create Shift
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Shift Dialog */}
+        <Dialog open={showEditShift} onOpenChange={setShowEditShift}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[500px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Edit Shift</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Update the shift information.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="shiftName">Shift Name</Label>
+                <Input
+                  id="shiftName"
+                  placeholder="e.g., Morning Shift"
+                  value={newShiftData.shiftName}
+                  onChange={(e) => setNewShiftData({ ...newShiftData, shiftName: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="shiftType">Shift Type</Label>
+                  <Select value={newShiftData.shiftType} onValueChange={(value) => setNewShiftData({ ...newShiftData, shiftType: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shift type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="morning">Morning</SelectItem>
+                      <SelectItem value="afternoon">Afternoon</SelectItem>
+                      <SelectItem value="evening">Evening</SelectItem>
+                      <SelectItem value="midnight">Midnight</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="timePeriod">Time Period</Label>
+                  <Select value={newShiftData.timePeriod} onValueChange={(value) => setNewShiftData({ ...newShiftData, timePeriod: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="PM">PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={newShiftData.startTime}
+                    onChange={(e) => setNewShiftData({ ...newShiftData, startTime: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={newShiftData.endTime}
+                    onChange={(e) => setNewShiftData({ ...newShiftData, endTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="maxEarlyClockIn">Early Clock-in (minutes before shift)</Label>
+                <Input
+                  id="maxEarlyClockIn"
+                  type="number"
+                  placeholder="60"
+                  value={newShiftData.maxEarlyClockIn}
+                  onChange={(e) => setNewShiftData({ ...newShiftData, maxEarlyClockIn: parseInt(e.target.value) || 60 })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  placeholder="Shift description (optional)"
+                  value={newShiftData.description}
+                  onChange={(e) => setNewShiftData({ ...newShiftData, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditShift(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdateShift}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Update Shift
               </Button>
             </DialogFooter>
           </DialogContent>
