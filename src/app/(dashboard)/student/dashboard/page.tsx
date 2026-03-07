@@ -30,7 +30,7 @@ export default function StudentDashboard() {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       fetchCourseData(parsedUser.details?.courseId);
-      fetchAttendanceStats(parsedUser._id);
+      fetchAttendanceStats(parsedUser.details?.studentId || parsedUser._id);
     }
   }, []);
 

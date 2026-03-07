@@ -17,8 +17,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find student
-    const student = await Student.findById(studentId);
+    // Find student by studentId string to get their ObjectId
+    const student = await Student.findOne({ studentId });
     if (!student) {
       return NextResponse.json(
         { success: false, error: 'Student not found' },

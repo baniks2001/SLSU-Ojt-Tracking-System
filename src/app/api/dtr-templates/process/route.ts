@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     // Get student info if studentId provided
     let studentInfo = null;
     if (studentId) {
-      const student = await Student.findById(studentId)
+      const student = await Student.findOne({ studentId })
         .populate('userId', 'email')
         .populate('courseId', 'courseName')
         .populate('departmentId', 'departmentName');

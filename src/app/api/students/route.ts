@@ -40,7 +40,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { studentId, updates, action, ojtAdvisorId } = body;
 
-    const student = await Student.findById(studentId).populate('userId');
+    const student = await Student.findOne({ studentId }).populate('userId');
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
@@ -95,7 +95,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Student ID required' }, { status: 400 });
     }
 
-    const student = await Student.findById(studentId);
+    const student = await Student.findOne({ studentId });
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
@@ -104,7 +104,7 @@ export async function DELETE(request: Request) {
     await User.findByIdAndDelete(student.userId);
     
     // Delete student
-    await Student.findByIdAndDelete(studentId);
+    await Student.findByIdAndDelete(student._id);
 
     return NextResponse.json({
       success: true,

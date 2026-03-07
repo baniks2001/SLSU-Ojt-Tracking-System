@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     // If student ID is provided, get department-specific announcements
     if (studentId) {
-      const student = await Student.findById(studentId);
+      const student = await Student.findOne({ studentId });
       if (student) {
         query.$or = [
           { isForAll: true },

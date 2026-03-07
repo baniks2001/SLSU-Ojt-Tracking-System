@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const { studentId, currentShiftType, requestedShiftType, requestedShiftConfig, reason } = body;
 
     // Get student's department
-    const student = await Student.findById(studentId);
+    const student = await Student.findOne({ studentId });
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     }
 
     const scheduleRequest = await ScheduleChangeRequest.create({
-      studentId,
+      studentId: student._id,
       departmentId: department._id,
       currentShiftType,
       requestedShiftType,
