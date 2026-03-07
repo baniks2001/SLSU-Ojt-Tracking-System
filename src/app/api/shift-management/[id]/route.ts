@@ -49,28 +49,11 @@ let shifts: Shift[] = [
   }
 ];
 
-// GET - Fetch all shifts
-export async function GET() {
+// PUT - Update shift
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    
-    return NextResponse.json({
-      success: true,
-      shifts: shifts
-    });
-  } catch (error) {
-    console.error('Error fetching shifts:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch shifts' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST - Create new shift
-export async function POST(request: Request) {
-  try {
-    await connectDB();
+    const { id } = await params;
     const body = await request.json();
     const {
       shiftName,
@@ -90,9 +73,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create new shift object
-    const newShift: Shift = {
-      _id: Date.now().toString(), // Generate unique ID
+    // Find shift by ID
+    const shiftIndex = shifts.findIndex(shift => shift._id === id);
+    if (shiftIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Shift not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update shift
+    const updatedShift: Shift = {
+      ...shifts[shiftIndex],
       shiftName,
       shiftType,
       timePeriod,
@@ -100,22 +92,51 @@ export async function POST(request: Request) {
       endTime,
       maxEarlyClockIn: maxEarlyClockIn || 60,
       description: description || '',
-      createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    // Add to in-memory storage
-    shifts.push(newShift);
+    shifts[shiftIndex] = updatedShift;
 
     return NextResponse.json({
       success: true,
-      message: 'Shift created successfully',
-      shift: newShift
+      message: 'Shift updated successfully',
+      shift: updatedShift
     });
   } catch (error) {
-    console.error('Error creating shift:', error);
+    console.error('Error updating shift:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create shift' },
+      { success: false, error: 'Failed to update shift' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete shift
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await connectDB();
+    const { id } = await params;
+
+    // Find shift by ID
+    const shiftIndex = shifts.findIndex(shift => shift._id === id);
+    if (shiftIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Shift not found' },
+        { status: 404 }
+      );
+    }
+
+    // Remove shift
+    shifts.splice(shiftIndex, 1);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Shift deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting shift:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete shift' },
       { status: 500 }
     );
   }

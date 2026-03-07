@@ -952,10 +952,10 @@ export default function DepartmentDashboard() {
                               <TableCell>{record.totalHours?.toFixed(2) || '0.00'}</TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  {/* Location Info */}
+                                  {/* Location Info - Dynamic based on available data */}
                                   {record.morningInLocation && (
                                     <div className="text-xs text-gray-600">
-                                      <span className="font-medium">📍 In: </span>
+                                      <span className="font-medium">📍 Morning In: </span>
                                       {record.morningInLocation.latitude && record.morningInLocation.longitude ? (
                                         <span>
                                           {record.morningInLocation.latitude.toFixed(4)}, {record.morningInLocation.longitude.toFixed(4)}
@@ -970,7 +970,7 @@ export default function DepartmentDashboard() {
                                   )}
                                   {record.morningOutLocation && (
                                     <div className="text-xs text-gray-600">
-                                      <span className="font-medium">📍 Out: </span>
+                                      <span className="font-medium">📍 Morning Out: </span>
                                       {record.morningOutLocation.latitude && record.morningOutLocation.longitude ? (
                                         <span>
                                           {record.morningOutLocation.latitude.toFixed(4)}, {record.morningOutLocation.longitude.toFixed(4)}
@@ -983,9 +983,69 @@ export default function DepartmentDashboard() {
                                       )}
                                     </div>
                                   )}
-                                  {/* Images */}
+                                  {record.afternoonInLocation && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">📍 Afternoon In: </span>
+                                      {record.afternoonInLocation.latitude && record.afternoonInLocation.longitude ? (
+                                        <span>
+                                          {record.afternoonInLocation.latitude.toFixed(4)}, {record.afternoonInLocation.longitude.toFixed(4)}
+                                          {record.afternoonInLocation.accuracy && (
+                                            <span className="text-gray-400"> (±{record.afternoonInLocation.accuracy.toFixed(0)}m)</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">No location</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {record.afternoonOutLocation && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">📍 Afternoon Out: </span>
+                                      {record.afternoonOutLocation.latitude && record.afternoonOutLocation.longitude ? (
+                                        <span>
+                                          {record.afternoonOutLocation.latitude.toFixed(4)}, {record.afternoonOutLocation.longitude.toFixed(4)}
+                                          {record.afternoonOutLocation.accuracy && (
+                                            <span className="text-gray-400"> (±{record.afternoonOutLocation.accuracy.toFixed(0)}m)</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">No location</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {record.eveningInLocation && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">📍 Evening In: </span>
+                                      {record.eveningInLocation.latitude && record.eveningInLocation.longitude ? (
+                                        <span>
+                                          {record.eveningInLocation.latitude.toFixed(4)}, {record.eveningInLocation.longitude.toFixed(4)}
+                                          {record.eveningInLocation.accuracy && (
+                                            <span className="text-gray-400"> (±{record.eveningInLocation.accuracy.toFixed(0)}m)</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">No location</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {record.eveningOutLocation && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">📍 Evening Out: </span>
+                                      {record.eveningOutLocation.latitude && record.eveningOutLocation.longitude ? (
+                                        <span>
+                                          {record.eveningOutLocation.latitude.toFixed(4)}, {record.eveningOutLocation.longitude.toFixed(4)}
+                                          {record.eveningOutLocation.accuracy && (
+                                            <span className="text-gray-400"> (±{record.eveningOutLocation.accuracy.toFixed(0)}m)</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">No location</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {/* Images - Dynamic based on available data */}
                                   <div className="flex flex-wrap gap-1">
-                                    {shouldShowMorningColumns(studentShiftType) && record.morningInImage && (
+                                    {record.morningInImage && (
                                       <Dialog>
                                         <DialogTrigger asChild>
                                           <Button variant="outline" size="sm">
@@ -1011,7 +1071,7 @@ export default function DepartmentDashboard() {
                                         </DialogContent>
                                       </Dialog>
                                     )}
-                                    {shouldShowMorningColumns(studentShiftType) && record.morningOutImage && (
+                                    {record.morningOutImage && (
                                       <Dialog>
                                         <DialogTrigger asChild>
                                           <Button variant="outline" size="sm">
@@ -1027,6 +1087,110 @@ export default function DepartmentDashboard() {
                                             <img
                                               src={record.morningOutImage || ''}
                                               alt="Morning clock out"
+                                              className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
+                                              onError={(e) => {
+                                                console.error('Image load error:', e);
+                                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+                                              }}
+                                            />
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    )}
+                                    {record.afternoonInImage && (
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">
+                                            VIEW IMAGE<br/>AFTERNOON IN
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
+                                          <DialogTitle>Afternoon Clock In Image</DialogTitle>
+                                          <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                              Clock in time: {record.afternoonIn || 'Not recorded'}
+                                            </p>
+                                            <img
+                                              src={record.afternoonInImage || ''}
+                                              alt="Afternoon clock in"
+                                              className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
+                                              onError={(e) => {
+                                                console.error('Image load error:', e);
+                                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+                                              }}
+                                            />
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    )}
+                                    {record.afternoonOutImage && (
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">
+                                            VIEW IMAGE<br/>AFTERNOON OUT
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
+                                          <DialogTitle>Afternoon Clock Out Image</DialogTitle>
+                                          <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                              Clock out time: {record.afternoonOut || 'Not recorded'}
+                                            </p>
+                                            <img
+                                              src={record.afternoonOutImage || ''}
+                                              alt="Afternoon clock out"
+                                              className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
+                                              onError={(e) => {
+                                                console.error('Image load error:', e);
+                                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+                                              }}
+                                            />
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    )}
+                                    {record.eveningInImage && (
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">
+                                            VIEW IMAGE<br/>EVENING IN
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
+                                          <DialogTitle>Evening Clock In Image</DialogTitle>
+                                          <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                              Clock in time: {record.eveningIn || 'Not recorded'}
+                                            </p>
+                                            <img
+                                              src={record.eveningInImage || ''}
+                                              alt="Evening clock in"
+                                              className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
+                                              onError={(e) => {
+                                                console.error('Image load error:', e);
+                                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OTk5OSI+SW1hZ2Ugbm90IGF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+                                              }}
+                                            />
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    )}
+                                    {record.eveningOutImage && (
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">
+                                            VIEW IMAGE<br/>EVENING OUT
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl">
+                                          <DialogTitle>Evening Clock Out Image</DialogTitle>
+                                          <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                              Clock out time: {record.eveningOut || 'Not recorded'}
+                                            </p>
+                                            <img
+                                              src={record.eveningOutImage || ''}
+                                              alt="Evening clock out"
                                               className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-300"
                                               onError={(e) => {
                                                 console.error('Image load error:', e);

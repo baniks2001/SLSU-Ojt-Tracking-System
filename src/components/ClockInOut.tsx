@@ -468,10 +468,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       return;
     }
 
-    // Check if location is available and required
+    // Location is optional - only show warning if not available
     if (!deviceLocation.latitude || !deviceLocation.longitude) {
-      toast.error('Location services are required. Please enable GPS/location services and try again.');
-      return;
+      console.log('Location not available - proceeding without location');
     }
 
     setIsLoading(true);
@@ -484,12 +483,12 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
           action,
           imageData: capturedImage,
           shiftType,
-          location: {
+          location: deviceLocation.latitude && deviceLocation.longitude ? {
             latitude: deviceLocation.latitude,
             longitude: deviceLocation.longitude,
             accuracy: deviceLocation.accuracy,
             timestamp: deviceLocation.timestamp
-          }
+          } : null
         }),
       });
 

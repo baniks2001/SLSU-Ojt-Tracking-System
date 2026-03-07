@@ -37,6 +37,7 @@ interface ScheduleRequest {
   _id: string;
   currentShiftType: string;
   requestedShiftType: string;
+  selectedShifts?: string[]; // Add selectedShifts field
   requestedShiftConfig: {
     description?: string;
   };
@@ -50,8 +51,15 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
   const [isLoading, setIsLoading] = useState(false);
   const [requests, setRequests] = useState<ScheduleRequest[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    requestedShiftType: string;
+    selectedShifts: string[];
+    eveningStart: string;
+    eveningEnd: string;
+    reason: string;
+  }>({
     requestedShiftType: 'custom',
+    selectedShifts: [], // Array to store selected shifts
     eveningStart: '19:00',
     eveningEnd: '07:00',
     reason: '',
@@ -105,6 +113,7 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
         setShowForm(false);
         setFormData({
           requestedShiftType: 'custom',
+          selectedShifts: [],
           eveningStart: '19:00',
           eveningEnd: '07:00',
           reason: '',
@@ -245,6 +254,40 @@ export default function ScheduleChangeRequest({ studentId, currentShiftType, dep
                   required
                   className="min-h-[100px]"
                 />
+              </div>
+              
+              {/* Shift Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Select Shifts (You can select multiple)</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  {['morning', 'afternoon', 'evening', 'midnight'].map((shift) => (
+                    <div key={shift} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`shift-${shift}`}
+                        checked={formData.selectedShifts?.includes(shift)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          if (checked) {
+                            setFormData({ 
+                              ...formData, 
+                              selectedShifts: [...formData.selectedShifts, shift] 
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              selectedShifts: formData.selectedShifts.filter(s => s !== shift) 
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"
+                      />
+                      <Label htmlFor={`shift-${shift}`} className="text-sm font-medium capitalize">
+                        {shift.charAt(0).toUpperCase() + shift.slice(1)} Shift
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex space-x-2">
