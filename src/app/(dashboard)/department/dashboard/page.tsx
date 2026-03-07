@@ -321,9 +321,9 @@ export default function DepartmentDashboard() {
 
   const handleViewStudentAttendance = (student: Student) => {
     setSelectedStudentData(student);
-    setSelectedStudent(student._id);
+    setSelectedStudent(student.studentId);
     setViewMode('attendance');
-    fetchAttendance(student._id);
+    fetchAttendance(student.studentId);
   };
 
   const handleBackToList = () => {

@@ -42,7 +42,7 @@ export default function DTRTemplate({ student }: DTRTemplateProps) {
 
   const fetchAttendance = async () => {
     try {
-      const response = await fetch(`/api/attendance?studentId=${student._id}&month=${selectedMonth}&year=${selectedYear}`);
+      const response = await fetch(`/api/attendance?studentId=${student.studentId}&month=${selectedMonth}&year=${selectedYear}`);
       if (response.ok) {
         const data = await response.json();
         setAttendance(data.attendance || []);
@@ -54,7 +54,7 @@ export default function DTRTemplate({ student }: DTRTemplateProps) {
 
   useEffect(() => {
     setTimeout(() => fetchAttendance(), 0);
-  }, [student._id, selectedMonth, selectedYear]);
+  }, [student.studentId, selectedMonth, selectedYear]);
 
   const formatTime = (timeString?: string) => {
     if (!timeString) return '';

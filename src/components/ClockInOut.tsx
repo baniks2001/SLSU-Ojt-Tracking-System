@@ -592,7 +592,18 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     return null; // No active shift
   };
 
-  const getShiftStatus = useCallback(() => {
+  interface ShiftStatus {
+  currentShift: string | null;
+  shift: string | null;
+  status: 'active' | 'upcoming' | 'completed' | 'expired' | 'locked' | 'morning-locked' | 'afternoon-locked';
+  nextShiftTime: string | null;
+  timeRemaining: string | null;
+  isLocked: boolean;
+  isMorningLocked: boolean;
+  isAfternoonLocked: boolean;
+}
+
+  const getShiftStatus = useCallback((): ShiftStatus | null => {
     // Prevent hydration issues by running only on client
     if (typeof window === 'undefined') return null;
     
@@ -797,6 +808,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     }
 
     return {
+      currentShift,
       shift: currentShift,
       status,
       nextShiftTime,
@@ -812,34 +824,44 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     
     // If shift is locked, prevent any clock actions
     if (shiftStatus && shiftStatus.isLocked) {
-      return { action: null, label: 'Shift Locked', type: 'locked', shift: shiftStatus.shift || 'Expired' };
+      return { action: null, label: 'All Shifts Completed', type: 'locked', shift: shiftStatus.shift || 'Expired' };
     }
     
-    // For single shift types, only show their specific shifts
-    if (shiftType === 'morning') {
-      if (!todayRecord?.morningIn) {
-        if (isShiftTimeWindowPassed('morning')) {
-          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Morning' };
+    // For regular shifts (morning + afternoon), check current active shift
+    if (shiftType === 'regular' || shiftType === 'regular-split') {
+      // If morning shift is active or upcoming
+      if (shiftStatus && (shiftStatus.currentShift === 'Morning' || shiftStatus.status === 'upcoming')) {
+        if (!todayRecord?.morningIn) {
+          if (shiftStatus.isMorningLocked) {
+            return { action: null, label: 'Morning Shift Expired', type: 'expired', shift: 'Morning' };
+          }
+          return { action: 'morningIn', label: 'Clock In (Morning)', type: 'in', shift: 'Morning' };
         }
-        return { action: 'morningIn', label: 'Clock In', type: 'in', shift: 'Morning' };
-      }
-      if (!todayRecord?.morningOut) {
-        return { action: 'morningOut', label: 'Clock Out', type: 'out', shift: 'Morning' };
-      }
-      return { action: null, label: 'Completed', type: 'completed', shift: 'Morning' };
-    }
-    
-    if (shiftType === 'afternoon') {
-      if (!todayRecord?.morningIn) { // Using morningIn for afternoon shift
-        if (isShiftTimeWindowPassed('afternoon')) {
-          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Afternoon' };
+        if (!todayRecord?.morningOut) {
+          return { action: 'morningOut', label: 'Clock Out (Morning)', type: 'out', shift: 'Morning' };
         }
-        return { action: 'afternoonIn', label: 'Clock In', type: 'in', shift: 'Afternoon' };
       }
-      if (!todayRecord?.morningOut) { // Using morningOut for afternoon shift
-        return { action: 'afternoonOut', label: 'Clock Out', type: 'out', shift: 'Afternoon' };
+      
+      // If afternoon shift is active
+      if (shiftStatus && shiftStatus.currentShift === 'Afternoon') {
+        if (!todayRecord?.morningIn) { // Using morningIn for afternoon shift
+          if (shiftStatus.isAfternoonLocked) {
+            return { action: null, label: 'Afternoon Shift Expired', type: 'expired', shift: 'Afternoon' };
+          }
+          return { action: 'afternoonIn', label: 'Clock In (Afternoon)', type: 'in', shift: 'Afternoon' };
+        }
+        if (!todayRecord?.morningOut) { // Using morningOut for afternoon shift
+          return { action: 'afternoonOut', label: 'Clock Out (Afternoon)', type: 'out', shift: 'Afternoon' };
+        }
       }
-      return { action: null, label: 'Completed', type: 'completed', shift: 'Afternoon' };
+      
+      // If both shifts are locked/completed
+      if (shiftStatus && shiftStatus.isMorningLocked && shiftStatus.isAfternoonLocked) {
+        return { action: null, label: 'All Shifts Completed', type: 'completed', shift: 'Regular' };
+      }
+      
+      // Default case - no active shift
+      return { action: null, label: 'No Active Shift', type: 'locked', shift: 'Regular' };
     }
     
     if (shiftType === '1shift') {
@@ -865,52 +887,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       return { action: null, label: 'Completed', type: 'completed', shift: 'Evening' };
     }
     
-    // For regular and 2shift types
-    // First check if morning shift is completed
-    if (todayRecord?.morningIn) {
-      if (!todayRecord?.morningOut) {
-        return { action: 'morningOut', label: 'Clock Out', type: 'out', shift: 'Morning' };
-      }
-      
-      // Morning is completed, check afternoon shift
-      if (shiftType === 'regular' || shiftType === '2shift') {
-        if (!todayRecord?.afternoonIn) {
-          if (isShiftTimeWindowPassed('afternoon')) {
-            return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Afternoon' };
-          }
-          return { action: 'afternoonIn', label: 'Clock In', type: 'in', shift: 'Afternoon' };
-        }
-        
-        if (!todayRecord?.afternoonOut) {
-          return { action: 'afternoonOut', label: 'Clock Out', type: 'out', shift: 'Afternoon' };
-        }
-      }
-      
-      // All actions completed for today
-      return { action: null, label: 'Completed', type: 'completed', shift: 'All' };
-    }
-    
-    // Morning shift not started yet
-    if (!todayRecord?.morningIn) {
-      if (isShiftTimeWindowPassed('morning')) {
-        // If morning shift time has passed, move to afternoon if it's available
-        if (shiftType === '2shift' || shiftType === 'regular') {
-          if (!todayRecord?.afternoonIn) {
-            if (isShiftTimeWindowPassed('afternoon')) {
-              return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'All' };
-            }
-            return { action: 'afternoonIn', label: 'Clock In', type: 'in', shift: 'Afternoon' };
-          }
-        } else {
-          return { action: null, label: 'Shift Time Expired', type: 'expired', shift: 'Morning' };
-        }
-      }
-      return { action: 'morningIn', label: 'Clock In', type: 'in', shift: 'Morning' };
-    }
-    
-    // All actions completed for today
-    return { action: null, label: 'Completed', type: 'completed', shift: 'All' };
-  }, [shiftType, todayRecord, getShiftStatus]);
+    // Default case
+    return { action: null, label: 'No Active Shift', type: 'locked', shift: 'Unknown' };
+  }, [getShiftStatus, todayRecord, isShiftTimeWindowPassed, shiftType]);
 
   
   const [currentDateTime, setCurrentDateTime] = useState('');
