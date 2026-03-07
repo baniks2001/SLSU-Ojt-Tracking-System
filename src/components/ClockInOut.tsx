@@ -237,7 +237,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         // Use first available camera or default to user-facing
         if (videoDevices.length > 0) {
           const deviceId = videoDevices[0].deviceId;
-          constraints.video.deviceId = deviceId;
+          (constraints.video as any).deviceId = deviceId;
         }
       } catch (deviceError) {
         console.warn('Could not enumerate devices:', deviceError);
@@ -308,8 +308,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
           toast.error('Camera is already in use by another application. Please close other apps using the camera.');
         } else if (error.name === 'OverconstrainedError') {
           toast.error('Camera constraints cannot be satisfied. Trying with lower quality...');
-              setShowCamera(true);
-            }
+          try {
+            setShowCamera(true);
           } catch (fallbackError) {
             toast.error('Could not access camera with any settings.');
           }
