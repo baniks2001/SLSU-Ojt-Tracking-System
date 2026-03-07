@@ -634,30 +634,30 @@ export default function DepartmentDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 bg-gray-100 p-1 rounded-xl">
-            <TabsTrigger value="students" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsList className="flex flex-wrap w-full bg-gray-100 p-1 rounded-xl gap-1">
+            <TabsTrigger value="students" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1 min-w-[100px]">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Students</span>
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="attendance" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1 min-w-[100px]">
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Attendance</span>
             </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="pending" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1 min-w-[100px]">
               <UserX className="w-4 h-4" />
               <span className="hidden sm:inline">Pending</span>
               {pendingStudents.length > 0 && (
                 <Badge variant="destructive" className="ml-1 text-xs">{pendingStudents.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="schedule-requests" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1 min-w-[100px]">
               <Clock className="w-4 h-4" />
               <span className="hidden sm:inline">Schedule</span>
               {pendingRequests.length > 0 && (
                 <Badge variant="destructive" className="ml-1 text-xs">{pendingRequests.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="announcements" className="flex items-center justify-center space-x-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1 min-w-[100px]">
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Announce</span>
             </TabsTrigger>

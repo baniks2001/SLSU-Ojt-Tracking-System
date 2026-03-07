@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Users, Building, Shield, LogOut, Trash2, Edit, Key, Check, X, School, UserCheck } from 'lucide-react';
+import { Users, Building, Shield, LogOut, Trash2, Edit, Key, Check, X, School, UserCheck, AlertTriangle, Activity, BookOpen, Plus } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,27 @@ export default function AdminDashboard() {
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [showCreateCourse, setShowCreateCourse] = useState(false);
+  const [showCreateCampus, setShowCreateCampus] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [campuses, setCampuses] = useState([]);
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [newCourseData, setNewCourseData] = useState({
+    courseCode: '',
+    courseName: '',
+    departmentName: '',
+    campusId: '',
+    description: '',
+    totalHours: 500
+  });
+  const [newCampusData, setNewCampusData] = useState({
+    campusName: '',
+    campusCode: '',
+    location: '',
+    address: '',
+    contactEmail: '',
+    contactNumber: ''
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -58,6 +79,9 @@ export default function AdminDashboard() {
       }
       setUser(userData);
       fetchAllUsers();
+      fetchCourses();
+      fetchCampuses();
+      fetchSystemLogs();
     } catch (error) {
       router.push('/login');
     }
@@ -151,6 +175,112 @@ export default function AdminDashboard() {
     } finally {
       setShowDeleteDialog(false);
       setStudentToDelete(null);
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch('/api/courses');
+      if (response.ok) {
+        const data = await response.json();
+        setCourses(data.courses || []);
+      }
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
+
+  const fetchCampuses = async () => {
+    try {
+      const response = await fetch('/api/campuses');
+      if (response.ok) {
+        const data = await response.json();
+        setCampuses(data.campuses || []);
+      }
+    } catch (error) {
+      console.error('Error fetching campuses:', error);
+    }
+  };
+
+  const fetchSystemLogs = async () => {
+    try {
+      const response = await fetch('/api/system-logs');
+      if (response.ok) {
+        const data = await response.json();
+        setSystemLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching system logs:', error);
+    }
+  };
+
+  const handleCreateCourse = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/courses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCourseData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Course created successfully!');
+        setShowCreateCourse(false);
+        setNewCourseData({
+          courseCode: '',
+          courseName: '',
+          departmentName: '',
+          campusId: '',
+          description: '',
+          totalHours: 500
+        });
+        fetchCourses();
+      } else {
+        toast.error(data.error || 'Failed to create course');
+      }
+    } catch (error) {
+      toast.error('An error occurred while creating course');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateCampus = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/campuses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCampusData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Campus created successfully!');
+        setShowCreateCampus(false);
+        setNewCampusData({
+          campusName: '',
+          campusCode: '',
+          location: '',
+          address: '',
+          contactEmail: '',
+          contactNumber: ''
+        });
+        fetchCampuses();
+      } else {
+        toast.error(data.error || 'Failed to create campus');
+      }
+    } catch (error) {
+      toast.error('An error occurred while creating campus');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -286,9 +416,11 @@ export default function AdminDashboard() {
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Users</TabsTrigger>
+            <TabsTrigger value="courses" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Courses</TabsTrigger>
+            <TabsTrigger value="monitoring" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Monitoring</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Settings</TabsTrigger>
           </TabsList>
 
@@ -417,6 +549,200 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="courses" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-blue-900">Course Management</CardTitle>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => setShowCreateCourse(true)}
+                      className="bg-sky-600 hover:bg-sky-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Course
+                    </Button>
+                    <Button 
+                      onClick={() => setShowCreateCampus(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Building className="w-4 h-4 mr-2" />
+                      Add Campus
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Courses ({courses.length})</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="bg-blue-50">Course Code</TableHead>
+                          <TableHead className="bg-blue-50">Course Name</TableHead>
+                          <TableHead className="bg-blue-50">Department</TableHead>
+                          <TableHead className="bg-blue-50">Campus</TableHead>
+                          <TableHead className="bg-blue-50">Hours</TableHead>
+                          <TableHead className="bg-blue-50">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {courses.map((course: any) => (
+                          <TableRow key={course._id}>
+                            <TableCell className="text-gray-900">{course.courseCode}</TableCell>
+                            <TableCell className="text-gray-900">{course.courseName}</TableCell>
+                            <TableCell className="text-gray-600">{course.departmentName}</TableCell>
+                            <TableCell className="text-gray-600">
+                              {course.campusId?.campusName || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-gray-600">{course.totalHours}</TableCell>
+                            <TableCell>
+                              <Badge variant={course.isActive ? "default" : "secondary"}>
+                                {course.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Campuses ({campuses.length})</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="bg-gray-50">Campus Code</TableHead>
+                          <TableHead className="bg-gray-50">Campus Name</TableHead>
+                          <TableHead className="bg-gray-50">Location</TableHead>
+                          <TableHead className="bg-gray-50">Contact</TableHead>
+                          <TableHead className="bg-gray-50">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {campuses.map((campus: any) => (
+                          <TableRow key={campus._id}>
+                            <TableCell className="text-gray-900">{campus.campusCode}</TableCell>
+                            <TableCell className="text-gray-900">{campus.campusName}</TableCell>
+                            <TableCell className="text-gray-600">{campus.location}</TableCell>
+                            <TableCell className="text-gray-600">{campus.contactEmail || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Badge variant={campus.isActive ? "default" : "secondary"}>
+                                {campus.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="monitoring" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-orange-900 flex items-center">
+                    <AlertTriangle className="w-5 h-5 mr-2" />
+                    System Anomaly Monitoring
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <h4 className="font-semibold text-red-800 mb-2">Critical Issues</h4>
+                      <div className="text-sm text-red-700">
+                        {systemLogs.filter((log: any) => log.severity === 'critical').length} critical issues detected
+                      </div>
+                    </div>
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h4 className="font-semibold text-yellow-800 mb-2">Warnings</h4>
+                      <div className="text-sm text-yellow-700">
+                        {systemLogs.filter((log: any) => log.severity === 'warning').length} warnings detected
+                      </div>
+                    </div>
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="font-semibold text-blue-800 mb-2">System Health</h4>
+                      <div className="text-sm text-blue-700">
+                        All systems operational
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-blue-900 flex items-center">
+                    <Activity className="w-5 h-5 mr-2" />
+                    Recent System Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {systemLogs.slice(0, 10).map((log: any, index: number) => (
+                      <div key={log._id || index} className="p-3 bg-gray-50 rounded-lg text-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-gray-900">{log.action}</span>
+                          <Badge variant={log.severity === 'error' ? 'destructive' : log.severity === 'warning' ? 'secondary' : 'default'}>
+                            {log.severity}
+                          </Badge>
+                        </div>
+                        <div className="text-gray-600 text-xs">{log.description}</div>
+                        <div className="text-gray-400 text-xs mt-1">
+                          {log.userEmail} • {new Date(log.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-blue-900 flex items-center">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  System Logs
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="bg-gray-50">Timestamp</TableHead>
+                      <TableHead className="bg-gray-50">User</TableHead>
+                      <TableHead className="bg-gray-50">Action</TableHead>
+                      <TableHead className="bg-gray-50">Description</TableHead>
+                      <TableHead className="bg-gray-50">Severity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {systemLogs.slice(0, 20).map((log: any) => (
+                      <TableRow key={log._id}>
+                        <TableCell className="text-gray-600 text-sm">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-gray-900">{log.userEmail || 'System'}</TableCell>
+                        <TableCell className="text-gray-900">{log.action}</TableCell>
+                        <TableCell className="text-gray-600 text-sm">{log.description}</TableCell>
+                        <TableCell>
+                          <Badge variant={log.severity === 'error' ? 'destructive' : log.severity === 'warning' ? 'secondary' : 'default'}>
+                            {log.severity}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="settings" className="space-y-6">
             <Card>
               <CardHeader>
@@ -433,10 +759,10 @@ export default function AdminDashboard() {
 
         {/* Create Admin Dialog */}
         <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New Admin Account</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Create New Admin Account</DialogTitle>
+              <DialogDescription className="text-gray-600">
                 Create a new administrator or super admin account.
               </DialogDescription>
             </DialogHeader>
@@ -474,11 +800,18 @@ export default function AdminDashboard() {
                 </Select>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateAdmin(false)}>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateAdmin(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleCreateAdmin}>
+              <Button 
+                onClick={handleCreateAdmin}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Create Admin
               </Button>
             </DialogFooter>
@@ -486,19 +819,213 @@ export default function AdminDashboard() {
         </Dialog>
         {/* Delete Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Confirm Delete</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Confirm Delete</DialogTitle>
+              <DialogDescription className="text-gray-600">
                 Are you sure you want to delete this student? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteDialog(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={confirmDeleteStudent}>
+              <Button 
+                variant="destructive" 
+                onClick={confirmDeleteStudent}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
                 Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Course Dialog */}
+        <Dialog open={showCreateCourse} onOpenChange={setShowCreateCourse}>
+          <DialogContent className="sm:max-w-[500px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Create New Course</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Add a new course to the system with department and campus assignment.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="courseCode">Course Code</Label>
+                  <Input
+                    id="courseCode"
+                    placeholder="e.g., BSIT"
+                    value={newCourseData.courseCode}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, courseCode: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="totalHours">Total Hours</Label>
+                  <Input
+                    id="totalHours"
+                    type="number"
+                    placeholder="500"
+                    value={newCourseData.totalHours}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, totalHours: parseInt(e.target.value) || 500 })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="courseName">Course Name</Label>
+                <Input
+                  id="courseName"
+                  placeholder="e.g., Bachelor of Science in Information Technology"
+                  value={newCourseData.courseName}
+                  onChange={(e) => setNewCourseData({ ...newCourseData, courseName: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="departmentName">Department Name</Label>
+                <Select value={newCourseData.departmentName} onValueChange={(value) => setNewCourseData({ ...newCourseData, departmentName: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departmentUsers.map((dept: any) => (
+                      <SelectItem key={dept._id} value={dept.details?.departmentName || dept.email}>
+                        {dept.details?.departmentName || dept.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="campus">Campus</Label>
+                <Select value={newCourseData.campusId} onValueChange={(value) => setNewCourseData({ ...newCourseData, campusId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campuses.map((campus: any) => (
+                      <SelectItem key={campus._id} value={campus._id}>
+                        {campus.campusName} ({campus.campusCode})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  placeholder="Course description (optional)"
+                  value={newCourseData.description}
+                  onChange={(e) => setNewCourseData({ ...newCourseData, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateCourse(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateCourse}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Create Course
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Campus Dialog */}
+        <Dialog open={showCreateCampus} onOpenChange={setShowCreateCampus}>
+          <DialogContent className="sm:max-w-[500px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Create New Campus</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Add a new campus to the system.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="campusCode">Campus Code</Label>
+                  <Input
+                    id="campusCode"
+                    placeholder="e.g., MAIN"
+                    value={newCampusData.campusCode}
+                    onChange={(e) => setNewCampusData({ ...newCampusData, campusCode: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="campusName">Campus Name</Label>
+                  <Input
+                    id="campusName"
+                    placeholder="e.g., Main Campus"
+                    value={newCampusData.campusName}
+                    onChange={(e) => setNewCampusData({ ...newCampusData, campusName: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  placeholder="e.g., Hinunangan, Southern Leyte"
+                  value={newCampusData.location}
+                  onChange={(e) => setNewCampusData({ ...newCampusData, location: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  placeholder="Full address (optional)"
+                  value={newCampusData.address}
+                  onChange={(e) => setNewCampusData({ ...newCampusData, address: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    placeholder="campus@example.com"
+                    value={newCampusData.contactEmail}
+                    onChange={(e) => setNewCampusData({ ...newCampusData, contactEmail: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="contactNumber">Contact Number</Label>
+                  <Input
+                    id="contactNumber"
+                    placeholder="+63 XXX XXX XXXX"
+                    value={newCampusData.contactNumber}
+                    onChange={(e) => setNewCampusData({ ...newCampusData, contactNumber: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateCampus(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateCampus}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                Create Campus
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -219,17 +219,29 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       // Stop any existing stream first
       stopCamera();
       
-      // Request camera with better constraints
+      // Request camera with more compatible constraints
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 640 },
+          height: { ideal: 480 },
           facingMode: 'user'
-        } 
+        },
+        audio: false
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        
+        // Play the video explicitly
+        try {
+          await videoRef.current.play();
+        } catch (playError) {
+          console.error('Video play error:', playError);
+          toast.error('Could not start camera preview. Please try again.');
+          stopCamera();
+          return;
+        }
+        
         // Wait for video to be ready
         videoRef.current.onloadedmetadata = () => {
           setShowCamera(true);
@@ -241,18 +253,40 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
           toast.error('Camera error occurred. Please try again.');
           stopCamera();
         };
+        
+        // Set a timeout in case video doesn't load
+        setTimeout(() => {
+          if (!showCamera) {
+            console.warn('Video loading timeout');
+            setShowCamera(true); // Show camera anyway to allow user to try capture
+          }
+        }, 3000);
       }
     } catch (error) {
       console.error('Camera access error:', error);
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          toast.error('Camera permission denied. Please allow camera access and try again.');
+          toast.error('Camera permission denied. Please allow camera access in your browser settings and refresh the page.');
         } else if (error.name === 'NotFoundError') {
           toast.error('No camera found. Please connect a camera and try again.');
         } else if (error.name === 'NotReadableError') {
-          toast.error('Camera is already in use by another application.');
+          toast.error('Camera is already in use by another application. Please close other apps using the camera.');
         } else if (error.name === 'OverconstrainedError') {
-          toast.error('Camera constraints cannot be satisfied. Please try a different camera.');
+          toast.error('Camera constraints cannot be satisfied. Trying with lower quality...');
+          // Retry with lower quality
+          try {
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+              video: true,
+              audio: false
+            });
+            if (videoRef.current) {
+              videoRef.current.srcObject = fallbackStream;
+              await videoRef.current.play();
+              setShowCamera(true);
+            }
+          } catch (fallbackError) {
+            toast.error('Could not access camera with any settings.');
+          }
         } else {
           toast.error('Could not access camera: ' + error.message);
         }
@@ -296,7 +330,12 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
-        // Check if video is ready
+        // Check if video is ready and has valid dimensions
+        if (!video.readyState || video.readyState < 2) {
+          toast.error('Camera is still loading. Please wait a moment and try again.');
+          return;
+        }
+        
         if (video.videoWidth === 0 || video.videoHeight === 0) {
           toast.error('Camera is not ready yet. Please wait a moment and try again.');
           return;
@@ -308,8 +347,15 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
         
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          // Flip the image horizontally to match mirror effect
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+          
           // Draw the video frame to canvas
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Reset transform
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
           
           // Convert to JPEG with good quality
           const imageData = canvas.toDataURL('image/jpeg', 0.9);
@@ -323,7 +369,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
           toast.error('Could not capture image. Please try again.');
         }
       } catch (error) {
-        console.error('Error capturing image:', error);
+        console.error('Capture error:', error);
         toast.error('Failed to capture photo. Please try again.');
       }
     } else {
@@ -1331,7 +1377,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                     autoPlay
                     playsInline
                     muted
+                    controls={false}
                     className="w-full h-full object-cover"
+                    style={{ transform: 'scaleX(-1)' }}
                     onError={(e) => {
                       console.error('Video error:', e);
                       toast.error('Camera error occurred. Please try again.');

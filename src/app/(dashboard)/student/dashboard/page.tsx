@@ -154,36 +154,42 @@ export default function StudentDashboard() {
 
         {/* Tab Navigation */}
         <div className="border-b border-blue-200 mb-6">
-          <nav className="-mb-px flex space-x-2 sm:space-x-8 overflow-x-auto">
+          <nav className="flex flex-wrap -mb-px gap-1 sm:gap-8">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-2 px-1 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+              className={`py-3 px-3 sm:py-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
                 activeTab === 'overview'
-                  ? 'border-blue-900 text-blue-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-900 bg-blue-50 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              Overview
+              <span className="flex items-center gap-2">
+                <span>Overview</span>
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('dtr')}
-              className={`py-2 px-1 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+              className={`py-3 px-3 sm:py-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
                 activeTab === 'dtr'
-                  ? 'border-blue-900 text-blue-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-900 bg-blue-50 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              Daily Time Record
+              <span className="flex items-center gap-2">
+                <span>Daily Time Record</span>
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('schedule')}
-              className={`py-2 px-1 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+              className={`py-3 px-3 sm:py-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
                 activeTab === 'schedule'
-                  ? 'border-blue-900 text-blue-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-900 bg-blue-50 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              Schedule Change
+              <span className="flex items-center gap-2">
+                <span>Schedule Change</span>
+              </span>
             </button>
           </nav>
         </div>
