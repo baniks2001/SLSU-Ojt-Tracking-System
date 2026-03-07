@@ -307,13 +307,14 @@ export default function HomePage() {
                 <ul className="space-y-2 text-gray-400 text-sm">
                   <li>ojt@slsu.edu.ph</li>
                   <li>+63 123 456 7890</li>
-                  <li>Southern Leyte State University</li>
-                  <li>Hinundayan, Southern Leyte</li>
+                  <li>Southern Leyte State University - San Juan Campus</li>
+                  <li>San Juan, Southern Leyte</li>
                 </ul>
               </div>
             </div>
             <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-              <p>&copy; 2024 Southern Leyte State University. All rights reserved.</p>
+              <p>&copy; 2026 Southern Leyte State University - San Juan Campus. All rights reserved.</p>
+              <p> Developer: Servando S. Tio III</p>
             </div>
           </div>
         </footer>

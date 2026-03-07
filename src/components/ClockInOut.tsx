@@ -844,13 +844,13 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
       
       // If afternoon shift is active
       if (shiftStatus && shiftStatus.currentShift === 'Afternoon') {
-        if (!todayRecord?.morningIn) { // Using morningIn for afternoon shift
+        if (!todayRecord?.afternoonIn) {
           if (shiftStatus.isAfternoonLocked) {
             return { action: null, label: 'Afternoon Shift Expired', type: 'expired', shift: 'Afternoon' };
           }
           return { action: 'afternoonIn', label: 'Clock In (Afternoon)', type: 'in', shift: 'Afternoon' };
         }
-        if (!todayRecord?.morningOut) { // Using morningOut for afternoon shift
+        if (!todayRecord?.afternoonOut) {
           return { action: 'afternoonOut', label: 'Clock Out (Afternoon)', type: 'out', shift: 'Afternoon' };
         }
       }

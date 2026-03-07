@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Users, Building, Shield, LogOut, Trash2, Edit, Key, Check, X, School, UserCheck, AlertTriangle, Activity, BookOpen, Plus } from 'lucide-react';
+import { Users, Building, Shield, LogOut, Trash2, Edit, Key, Check, X, School, UserCheck, AlertTriangle, Activity, BookOpen, Plus, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -61,7 +61,11 @@ export default function AdminDashboard() {
     confirmPassword: ''
   });
   const [showCreateCourse, setShowCreateCourse] = useState(false);
+  const [showEditCourse, setShowEditCourse] = useState(false);
+  const [showDeleteCourse, setShowDeleteCourse] = useState(false);
   const [showCreateCampus, setShowCreateCampus] = useState(false);
+  const [courseToEdit, setCourseToEdit] = useState<any>(null);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [courses, setCourses] = useState([]);
   const [campuses, setCampuses] = useState([]);
   const [systemLogs, setSystemLogs] = useState([]);
@@ -70,8 +74,9 @@ export default function AdminDashboard() {
     courseName: '',
     departmentName: '',
     campusId: '',
-    description: '',
-    totalHours: 500
+    totalHours: 500,
+    isActive: true,
+    description: ''
   });
   const [newCampusData, setNewCampusData] = useState({
     campusName: '',
@@ -112,26 +117,59 @@ export default function AdminDashboard() {
   }, [router]);
 
   const fetchAllUsers = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch('/api/users', {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error('Request timed out. Please try again.');
+      } else {
+        toast.error('Failed to fetch users');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchAllUsersSilent = async () => {
     try {
-      const response = await fetch('/api/users');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for silent fetch
+      
+      const response = await fetch('/api/users', {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching users silently:', error);
+      // Don't show toast for silent fetch errors
     }
   };
 
@@ -225,6 +263,7 @@ export default function AdminDashboard() {
   const handleUpdateStudent = async () => {
     if (!studentToEdit) return;
     
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/users/${studentToEdit._id}`, {
         method: 'PUT',
@@ -232,8 +271,19 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...editStudentData,
-          accountType: 'student'
+          updates: editStudentData,
+          accountType: 'student',
+          profileData: {
+            firstName: editStudentData.firstName,
+            lastName: editStudentData.lastName,
+            studentId: editStudentData.studentId,
+            course: editStudentData.course,
+            department: editStudentData.department,
+            campus: editStudentData.campus,
+            year: editStudentData.year,
+            section: editStudentData.section
+          },
+          requesterAccountType: user?.accountType || 'admin'
         }),
       });
 
@@ -247,7 +297,10 @@ export default function AdminDashboard() {
         toast.error(data.error || 'Failed to update student information');
       }
     } catch (error) {
+      console.error('Error updating student:', error);
       toast.error('An error occurred while updating student information');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -276,6 +329,7 @@ export default function AdminDashboard() {
       return;
     }
     
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/users/${studentToEdit._id}/password`, {
         method: 'PUT',
@@ -284,6 +338,7 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify({
           password: editPasswordData.newPassword,
+          requesterAccountType: user?.accountType || 'admin'
         }),
       });
 
@@ -297,7 +352,10 @@ export default function AdminDashboard() {
         toast.error(data.error || 'Failed to update student password');
       }
     } catch (error) {
+      console.error('Error updating password:', error);
       toast.error('An error occurred while updating student password');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -337,6 +395,112 @@ export default function AdminDashboard() {
     }
   };
 
+  // Admin CRUD operations
+  const handleEditAdmin = (admin: any) => {
+    // TODO: Implement edit admin functionality
+    toast.info('Edit admin functionality coming soon');
+  };
+
+  const handleDeleteAdmin = async (adminId: string) => {
+    if (!confirm('Are you sure you want to delete this admin?')) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${adminId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Admin deleted successfully');
+        fetchAllUsersSilent();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete admin');
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      toast.error('An error occurred while deleting admin');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Course CRUD operations
+  const handleEditCourse = (course: any) => {
+    setCourseToEdit(course);
+    setNewCourseData({
+      courseCode: course.courseCode,
+      courseName: course.courseName,
+      departmentName: course.departmentName,
+      campusId: course.campusId,
+      totalHours: course.totalHours,
+      isActive: course.isActive,
+      description: course.description
+    });
+    setShowEditCourse(true);
+  };
+
+  const handleUpdateCourse = async () => {
+    if (!courseToEdit) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/courses/${courseToEdit._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCourseData),
+      });
+
+      if (response.ok) {
+        toast.success('Course updated successfully');
+        setShowEditCourse(false);
+        setCourseToEdit(null);
+        fetchCourses();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update course');
+      }
+    } catch (error) {
+      console.error('Error updating course:', error);
+      toast.error('An error occurred while updating course');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteCourse = (courseId: string) => {
+    setCourseToDelete(courseId);
+    setShowDeleteCourse(true);
+  };
+
+  const confirmDeleteCourse = async () => {
+    if (!courseToDelete) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/courses/${courseToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Course deleted successfully');
+        setShowDeleteCourse(false);
+        setCourseToDelete(null);
+        fetchCourses();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete course');
+      }
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      toast.error('An error occurred while deleting course');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCreateCourse = async () => {
     setIsLoading(true);
     try {
@@ -358,8 +522,9 @@ export default function AdminDashboard() {
           courseName: '',
           departmentName: '',
           campusId: '',
-          description: '',
-          totalHours: 500
+          totalHours: 500,
+          isActive: true,
+          description: ''
         });
         fetchCourses(); // Refresh courses list
       } else {
@@ -424,29 +589,35 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Image 
                   src="/logo.png" 
                   alt="SLSU Logo" 
-                  width={24}
-                  height={24}
-                  className="rounded"
+                  width={20}
+                  height={20}
+                  className="rounded sm:w-6 sm:h-6"
                 />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">SLSU OJT Tracking</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">SLSU OJT Tracking</h1>
                 <p className="text-xs text-gray-600 hidden lg:block">
                   {user.accountType === 'superadmin' ? 'Super Admin Dashboard' : 'Admin Dashboard'}
                 </p>
               </div>
+              <div className="sm:hidden">
+                <h1 className="text-sm font-bold text-gray-900">Admin</h1>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-mono text-gray-700">{currentTime.toLocaleTimeString()}</p>
                 <p className="text-xs text-gray-500">{currentTime.toLocaleDateString()}</p>
+              </div>
+              <div className="sm:hidden text-right">
+                <p className="text-xs font-mono text-gray-700">{currentTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</p>
               </div>
               <Button
                 variant="ghost"
@@ -454,7 +625,7 @@ export default function AdminDashboard() {
                 onClick={handleLogout}
                 className="text-gray-700 hover:text-sky-600 hover:bg-sky-50 transition-colors"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </div>
           </div>
@@ -462,27 +633,27 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Shield className="w-8 h-8 text-white" />
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-sky-500 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 {user.accountType === 'superadmin' ? 'Super Administrator' : 'Administrator'}
               </h2>
-              <p className="text-gray-600">{user.email}</p>
+              <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
               {user.accountType === 'superadmin' && (
-                <Badge className="mt-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white">Super Admin Access</Badge>
+                <Badge className="mt-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-xs">Super Admin Access</Badge>
               )}
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -538,12 +709,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-xl">
-          <TabsList>
-            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
-            <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Users</TabsTrigger>
-            <TabsTrigger value="courses" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Courses</TabsTrigger>
-            <TabsTrigger value="monitoring" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Monitoring</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 p-1 rounded-xl h-auto">
+            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Overview</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Users</TabsTrigger>
+            <TabsTrigger value="courses" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Courses</TabsTrigger>
+            <TabsTrigger value="monitoring" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-4">Monitoring</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -567,62 +738,86 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Students ({students.length})</h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="bg-blue-50">Name</TableHead>
-                        <TableHead className="bg-blue-50">Email</TableHead>
-                        <TableHead className="bg-blue-50">Status</TableHead>
-                        <TableHead className="bg-blue-50">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students.map((student) => (
-                        <TableRow key={student._id}>
-                          <TableCell className="text-gray-900">
-                            {student.details?.firstName} {student.details?.lastName || 'N/A'}
-                          </TableCell>
-                          <TableCell className="text-gray-600">{student.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={student.isActive ? "default" : "secondary"}>
-                              {student.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
-                                onClick={() => handleEditStudent(student._id)}
-                                title="Edit Information"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-                                onClick={() => handleEditPassword(student._id)}
-                                title="Edit Password"
-                              >
-                                <Key className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
-                                onClick={() => handleDeleteStudent(student._id)}
-                                title="Delete Student"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="bg-blue-50 sticky top-0 z-10">Name</TableHead>
+                          <TableHead className="bg-blue-50 sticky top-0 z-10">Email</TableHead>
+                          <TableHead className="bg-blue-50 sticky top-0 z-10">Status</TableHead>
+                          <TableHead className="bg-blue-50 sticky top-0 z-10">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {students.map((student) => (
+                          <TableRow key={student._id}>
+                            <TableCell className="text-gray-900 min-w-[150px]">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                                    {student.details?.firstName?.[0] || 'S'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="hidden sm:block">
+                                  {student.details?.firstName} {student.details?.lastName || 'N/A'}
+                                </div>
+                                <div className="sm:hidden">
+                                  <div className="text-sm font-medium">
+                                    {student.details?.firstName} {student.details?.lastName || 'N/A'}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate max-w-[100px]">
+                                    {student.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-gray-600 hidden sm:table-cell min-w-[200px]">
+                              <div className="truncate">{student.email}</div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={student.isActive ? "default" : "secondary"} className="whitespace-nowrap">
+                                {student.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col sm:flex-row gap-1 sm:space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleEditStudent(student._id)}
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-2 py-1"
+                                  disabled={isLoading}
+                                >
+                                  <Edit className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Edit</span>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleEditPassword(student._id)}
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-2 py-1"
+                                  disabled={isLoading}
+                                >
+                                  <Key className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Password</span>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => handleDeleteStudent(student._id)}
+                                  className="text-xs px-2 py-1"
+                                  disabled={isLoading}
+                                >
+                                  <Trash2 className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
                 <div className="space-y-4 mt-8">
@@ -631,52 +826,89 @@ export default function AdminDashboard() {
                     <Button 
                       onClick={() => setShowCreateAdmin(true)}
                       className="bg-sky-600 hover:bg-sky-700 text-white"
+                      disabled={isLoading}
                     >
                       <Shield className="w-4 h-4 mr-2" />
+                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                       Create Admin
                     </Button>
                   </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-gray-700 font-medium">Name</TableHead>
-                        <TableHead className="text-gray-700 font-medium">Email</TableHead>
-                        <TableHead className="text-gray-700 font-medium">Role</TableHead>
-                        <TableHead className="text-gray-700 font-medium">Status</TableHead>
-                        <TableHead className="text-gray-700 font-medium">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {adminUsers.map((admin) => (
-                        <TableRow key={admin._id}>
-                          <TableCell className="text-gray-900">
-                            {admin.details?.departmentName || 'System Admin'}
-                          </TableCell>
-                          <TableCell className="text-gray-600">{admin.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={admin.accountType === 'superadmin' ? 'destructive' : 'default'}>
-                              {admin.accountType === 'superadmin' ? 'Super Admin' : 'Admin'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={admin.isActive ? 'default' : 'secondary'}>
-                              {admin.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button size="sm" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-gray-700 font-medium sticky top-0 z-10">Name</TableHead>
+                          <TableHead className="text-gray-700 font-medium sticky top-0 z-10">Email</TableHead>
+                          <TableHead className="text-gray-700 font-medium sticky top-0 z-10">Role</TableHead>
+                          <TableHead className="text-gray-700 font-medium sticky top-0 z-10">Status</TableHead>
+                          <TableHead className="text-gray-700 font-medium sticky top-0 z-10">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {adminUsers.map((admin) => (
+                          <TableRow key={admin._id}>
+                            <TableCell className="text-gray-900 min-w-[150px]">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="bg-sky-100 text-sky-600 text-xs">
+                                    {admin.details?.departmentName?.[0] || 'A'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="hidden sm:block">
+                                  {admin.details?.departmentName || 'System Admin'}
+                                </div>
+                                <div className="sm:hidden">
+                                  <div className="text-sm font-medium">
+                                    {admin.details?.departmentName || 'System Admin'}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate max-w-[100px]">
+                                    {admin.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-gray-600 hidden sm:table-cell min-w-[200px]">
+                              <div className="truncate">{admin.email}</div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={admin.accountType === 'superadmin' ? 'destructive' : 'default'} className="whitespace-nowrap">
+                                {admin.accountType === 'superadmin' ? 'Super Admin' : 'Admin'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={admin.isActive ? 'default' : 'secondary'} className="whitespace-nowrap">
+                                {admin.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col sm:flex-row gap-1 sm:space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-100 text-xs px-2 py-1"
+                                  onClick={() => handleEditAdmin(admin)}
+                                  disabled={isLoading}
+                                >
+                                  <Edit className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Edit</span>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive" 
+                                  className="text-xs px-2 py-1"
+                                  onClick={() => handleDeleteAdmin(admin._id)}
+                                  disabled={isLoading}
+                                >
+                                  <Trash2 className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -718,6 +950,7 @@ export default function AdminDashboard() {
                           <TableHead className="bg-blue-50">Campus</TableHead>
                           <TableHead className="bg-blue-50">Hours</TableHead>
                           <TableHead className="bg-blue-50">Status</TableHead>
+                          <TableHead className="bg-blue-50">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -734,6 +967,30 @@ export default function AdminDashboard() {
                               <Badge variant={course.isActive ? "default" : "secondary"}>
                                 {course.isActive ? 'Active' : 'Inactive'}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col sm:flex-row gap-1 sm:space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-100 text-xs px-2 py-1"
+                                  onClick={() => handleEditCourse(course)}
+                                  disabled={isLoading}
+                                >
+                                  <Edit className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Edit</span>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive" 
+                                  className="text-xs px-2 py-1"
+                                  onClick={() => handleDeleteCourse(course._id)}
+                                  disabled={isLoading}
+                                >
+                                  <Trash2 className="h-3 w-3 sm:mr-1" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -892,7 +1149,7 @@ export default function AdminDashboard() {
 
         {/* Create Admin Dialog */}
         <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
-          <DialogContent className="sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+          <DialogContent className="max-w-[95vw] sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="border-b border-gray-100 pb-4">
               <DialogTitle className="text-gray-900 text-lg font-semibold">Create New Admin Account</DialogTitle>
               <DialogDescription className="text-gray-600">
@@ -952,7 +1209,7 @@ export default function AdminDashboard() {
         </Dialog>
         {/* Delete Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent className="sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+          <DialogContent className="max-w-[95vw] sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="border-b border-gray-100 pb-4">
               <DialogTitle className="text-gray-900 text-lg font-semibold">Confirm Delete</DialogTitle>
               <DialogDescription className="text-gray-600">
@@ -1097,7 +1354,7 @@ export default function AdminDashboard() {
 
         {/* Edit Password Dialog */}
         <Dialog open={showEditPassword} onOpenChange={setShowEditPassword}>
-          <DialogContent className="sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+          <DialogContent className="max-w-[95vw] sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="border-b border-gray-100 pb-4">
               <DialogTitle className="text-gray-900 text-lg font-semibold">Change Student Password</DialogTitle>
               <DialogDescription className="text-gray-600">
@@ -1319,6 +1576,129 @@ export default function AdminDashboard() {
                 className="bg-purple-600 hover:bg-purple-700 text-white"
               >
                 Create Campus
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Course Dialog */}
+        <Dialog open={showEditCourse} onOpenChange={setShowEditCourse}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[500px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Edit Course</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Update the course information.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="courseCode">Course Code</Label>
+                  <Input
+                    id="courseCode"
+                    placeholder="e.g., BSIT"
+                    value={newCourseData.courseCode}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, courseCode: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="totalHours">Total Hours</Label>
+                  <Input
+                    id="totalHours"
+                    type="number"
+                    placeholder="500"
+                    value={newCourseData.totalHours}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, totalHours: parseInt(e.target.value) || 500 })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="courseName">Course Name</Label>
+                <Input
+                  id="courseName"
+                  placeholder="e.g., Bachelor of Science in Information Technology"
+                  value={newCourseData.courseName}
+                  onChange={(e) => setNewCourseData({ ...newCourseData, courseName: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="departmentName">Department</Label>
+                <Input
+                  id="departmentName"
+                  placeholder="Enter department name"
+                  value={newCourseData.departmentName}
+                  onChange={(e) => setNewCourseData({ ...newCourseData, departmentName: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="campus">Campus</Label>
+                <Select value={newCourseData.campusId} onValueChange={(value) => setNewCourseData({ ...newCourseData, campusId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campuses.map((campus: any) => (
+                      <SelectItem key={campus._id} value={campus._id}>
+                        {campus.campusName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  placeholder="Course description (optional)"
+                  value={newCourseData.description}
+                  onChange={(e) => setNewCourseData({ ...newCourseData, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditCourse(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdateCourse}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Update Course
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Course Confirmation Dialog */}
+        <Dialog open={showDeleteCourse} onOpenChange={setShowDeleteCourse}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Confirm Delete Course</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Are you sure you want to delete this course? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteCourse(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmDeleteCourse}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Delete Course
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -313,10 +313,8 @@ export default function DepartmentDashboard() {
   };
 
   const getEffectiveShiftType = (record: any) => {
-    // Try to get shift type from multiple sources
-    return record.studentId?.shiftType || 
-           record.shiftType || 
-           'regular'; // fallback
+    // Get shift type from the attendance record itself
+    return record.shiftType || selectedStudentData?.shiftType || 'regular';
   };
 
   const handleViewStudentAttendance = (student: Student) => {
@@ -759,7 +757,7 @@ export default function DepartmentDashboard() {
                         />
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-7 0 0 0-11 7m11 7v4a7 7 0 0011-7h-4a7 7 0 00-7 7v-4a7 7 0 00-7-7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
                         </div>
                       </div>

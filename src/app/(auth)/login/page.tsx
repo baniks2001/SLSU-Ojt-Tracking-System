@@ -80,6 +80,16 @@ export default function LoginPage() {
                 width={40}
                 height={40}
                 className="rounded-lg"
+                priority
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = '<div class="w-10 h-10 bg-sky-600 rounded-lg flex items-center justify-center"><span class="text-white font-bold text-lg">SLSU</span></div>';
+                  }
+                }}
               />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
@@ -170,9 +180,18 @@ export default function LoginPage() {
           </Card>
 
           {/* Footer */}
-          <div className="text-center mt-8 text-xs text-gray-500">
-            <p>© 2024 Southern Leyte State University</p>
-            <p className="mt-1">OJT Tracking System</p>
+          <div className="text-center mt-8 text-xs text-gray-500 space-y-2">
+            <div className="flex items-center justify-center space-x-4">
+              <Link 
+                href="/" 
+                className="text-sky-600 hover:text-sky-700 hover:underline transition-colors"
+              >
+                ← Back to Home
+              </Link>
+              <span>•</span>
+              <span>© 2024 Southern Leyte State University</span>
+            </div>
+            <p>OJT Tracking System</p>
           </div>
         </div>
       </div>
