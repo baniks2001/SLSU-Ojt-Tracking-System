@@ -202,6 +202,91 @@ export async function PUT(request: Request) {
   }
 }
 
+// GET - Get attendance statistics for OJT tracking
+export async function GET(request: Request) {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const studentId = searchParams.get('studentId');
+    const stats = searchParams.get('stats');
+
+    // If stats parameter is present, return statistics
+    if (stats === 'true') {
+      if (!studentId) {
+        return NextResponse.json({ error: 'Student ID is required' }, { status: 400 });
+      }
+
+      // Get all attendance records for the student
+      const attendanceRecords = await Attendance.find({ studentId })
+        .sort({ date: 1 });
+
+      let totalHours = 0;
+      let daysWorked = 0;
+
+      attendanceRecords.forEach(record => {
+        const dayHours = calculateTotalHours(record);
+        totalHours += dayHours;
+        if (dayHours > 0) {
+          daysWorked++;
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        totalHours: parseFloat(totalHours.toFixed(2)),
+        daysWorked,
+        averageHoursPerDay: daysWorked > 0 ? parseFloat((totalHours / daysWorked).toFixed(2)) : 0
+      });
+    }
+
+    // Original attendance logic
+    const date = searchParams.get('date');
+    const month = searchParams.get('month');
+    const year = searchParams.get('year');
+
+    const query: Record<string, unknown> = {};
+
+    if (studentId) {
+      query.studentId = studentId;
+    }
+
+    if (date) {
+      const targetDate = new Date(date);
+      query.date = {
+        $gte: startOfDay(targetDate),
+        $lte: endOfDay(targetDate),
+      };
+    }
+
+    if (month && year) {
+      const targetMonth = parseInt(month);
+      const targetYear = parseInt(year);
+      const startDate = startOfMonth(new Date(targetYear, targetMonth - 1));
+      const endDate = endOfMonth(new Date(targetYear, targetMonth - 1));
+      query.date = {
+        $gte: startDate,
+        $lte: endDate,
+      };
+    }
+
+    const attendanceRecords = await Attendance.find(query)
+      .populate('studentId', 'firstName lastName studentId shiftType')
+      .sort({ date: -1 });
+
+    return NextResponse.json(
+      { attendance: attendanceRecords },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('GET attendance error:', error);
+    return NextResponse.json({ error: 'Failed to fetch attendance' }, { status: 500 });
+  }
+}
+
 function calculateTotalHours(attendance: {
   morningIn?: Date;
   morningOut?: Date;
