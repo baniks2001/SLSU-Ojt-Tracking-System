@@ -117,6 +117,30 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     setNextAction(getNextClockAction());
   }, [todayRecord, shiftType]);
 
+  // Auto-start camera when modal opens
+  useEffect(() => {
+    if (showCameraModal && !showCamera && !capturedImage) {
+      const timer = setTimeout(() => {
+        startCamera();
+      }, 500); // Small delay to ensure modal is fully rendered
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showCameraModal, showCamera, capturedImage]);
+
+  // Handle camera initialization timeout
+  useEffect(() => {
+    if (showCameraModal && !showCamera) {
+      const timeout = setTimeout(() => {
+        if (!showCamera) {
+          toast.error('Camera failed to start automatically. Please check camera permissions.');
+        }
+      }, 5000); // 5 second timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [showCameraModal, showCamera]);
+
   // Update shift status based on current time
   useEffect(() => {
     const updateShiftStatus = () => {
@@ -1290,14 +1314,12 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             {/* Camera Section */}
             {!showCamera && !capturedImage && (
               <div className="text-center py-8">
-                <p className="text-gray-600 mb-6 text-base">Please capture your photo to verify identity</p>
-                <Button 
-                  onClick={startCamera} 
-                  className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200"
-                >
-                  <Camera className="h-5 w-5 mr-3" />
-                  Open Camera
-                </Button>
+                <div className="animate-pulse">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-sky-100 rounded-full flex items-center justify-center">
+                    <Camera className="h-8 w-8 text-sky-600" />
+                  </div>
+                </div>
+                <p className="text-gray-600 text-base">Starting camera...</p>
               </div>
             )}
 

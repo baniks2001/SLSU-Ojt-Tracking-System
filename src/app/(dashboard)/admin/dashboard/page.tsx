@@ -40,10 +40,13 @@ export default function AdminDashboard() {
     password: '',
     accountType: 'admin'
   });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    if (!token || !userStr) {
       router.push('/login');
       return;
     }
@@ -115,6 +118,39 @@ export default function AdminDashboard() {
       toast.error('An error occurred while creating admin account');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditStudent = (studentId: string) => {
+    // TODO: Implement edit student functionality
+    toast.info('Edit student functionality coming soon');
+  };
+
+  const handleDeleteStudent = async (studentId: string) => {
+    setStudentToDelete(studentId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteStudent = async () => {
+    if (!studentToDelete) return;
+    
+    try {
+      const response = await fetch(`/api/users/${studentToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Student deleted successfully');
+        fetchAllUsers(); // Refresh users list
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete student');
+      }
+    } catch (error) {
+      toast.error('An error occurred while deleting student');
+    } finally {
+      setShowDeleteDialog(false);
+      setStudentToDelete(null);
     }
   };
 
@@ -300,10 +336,20 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button size="sm" variant="outline" className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
+                                onClick={() => handleEditStudent(student._id)}
+                              >
                                 <Edit className="h-3 w-3" />
                               </Button>
-                              <Button size="sm" variant="outline" className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                                onClick={() => handleDeleteStudent(student._id)}
+                              >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
@@ -434,6 +480,25 @@ export default function AdminDashboard() {
               </Button>
               <Button onClick={handleCreateAdmin}>
                 Create Admin
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirm Delete</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this student? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteStudent}>
+                Delete
               </Button>
             </DialogFooter>
           </DialogContent>
