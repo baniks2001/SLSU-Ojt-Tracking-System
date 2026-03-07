@@ -273,12 +273,12 @@ export default function StudentDashboard() {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ClockInOut 
-                studentId={user._id}
+                studentId={user.details?.studentId || user._id}
                 shiftType={user.details?.shiftType || 'regular'}
                 isAccepted={true}
               />
               <ScheduleChangeRequest 
-                studentId={user._id}
+                studentId={user.details?.studentId || user._id}
                 currentShiftType={user.details?.shiftType || 'regular'}
               />
             </div>
