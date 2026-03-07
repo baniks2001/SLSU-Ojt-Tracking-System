@@ -322,7 +322,8 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
     setCurrentAction(action);
     setShowCameraModal(true);
-    // Don't start camera immediately - wait for user to click start button
+    // Start camera automatically when modal opens
+    await startCamera();
   };
 
   const captureImage = () => {
@@ -1359,66 +1360,48 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             </div>
 
             {/* Camera Section */}
-            {!showCamera && !capturedImage && (
-              <div className="text-center py-8">
-                <div className="mb-6">
-                  <div className="w-20 h-20 mx-auto mb-4 bg-sky-100 rounded-full flex items-center justify-center">
-                    <Camera className="h-10 w-10 text-sky-600" />
+            <div className="space-y-6">
+              {/* Camera Preview */}
+              <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-inner">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  controls={false}
+                  className="w-full h-full object-cover"
+                  style={{ transform: 'scaleX(-1)' }}
+                  onError={(e) => {
+                    console.error('Video error:', e);
+                    toast.error('Camera error occurred. Please try again.');
+                  }}
+                />
+                <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm px-3 py-2 rounded-lg shadow-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    Camera Active
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Camera Access Required</h3>
-                  <p className="text-gray-600 text-base mb-6">Please allow camera access to verify your identity for clocking {currentAction === 'clockIn' ? 'in' : 'out'}.</p>
                 </div>
+              </div>
+
+              {/* Capture and Cancel Buttons */}
+              <div className="flex justify-center gap-4">
                 <Button 
-                  onClick={startCamera} 
+                  onClick={captureImage} 
                   className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200"
                 >
                   <Camera className="h-5 w-5 mr-3" />
-                  Start Camera
+                  Capture Photo
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => { setShowCameraModal(false); stopCamera(); }}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
+                >
+                  Cancel
                 </Button>
               </div>
-            )}
-
-            {showCamera && (
-              <div className="space-y-6">
-                <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-inner">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    controls={false}
-                    className="w-full h-full object-cover"
-                    style={{ transform: 'scaleX(-1)' }}
-                    onError={(e) => {
-                      console.error('Video error:', e);
-                      toast.error('Camera error occurred. Please try again.');
-                    }}
-                  />
-                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm px-3 py-2 rounded-lg shadow-lg">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                      Camera Active
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-6">
-                  <Button 
-                    onClick={captureImage} 
-                    className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200"
-                  >
-                    <Camera className="h-5 w-5 mr-3" />
-                    Capture Photo
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => { setShowCameraModal(false); stopCamera(); }}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
+            </div>
 
             <canvas ref={canvasRef} className="hidden" />
           </div>
