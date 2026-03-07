@@ -380,6 +380,11 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
   };
 
   const executeClockAction = async (action: string) => {
+    console.log('executeClockAction called with:', action);
+    console.log('capturedImage exists:', !!capturedImage);
+    console.log('studentId:', studentId);
+    console.log('shiftType:', shiftType);
+    
     if (!capturedImage) {
       toast.error('Please capture your image first');
       return;
@@ -387,18 +392,23 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
     setIsLoading(true);
     try {
+      const requestBody = {
+        studentId,
+        action,
+        imageData: capturedImage,
+        shiftType,
+      };
+      console.log('Sending request body:', requestBody);
+
       const response = await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId,
-          action,
-          imageData: capturedImage,
-          shiftType,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         const actionText = action.replace(/([A-Z])/g, ' $1').trim();
@@ -1461,7 +1471,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
                     className="px-4 py-2 text-sm sm:px-6 sm:py-3 bg-blue-900 hover:bg-blue-800 text-white"
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Processing...' : `Confirm ${currentAction === 'clockIn' ? 'Clock In' : 'Clock Out'}`}
+                    {isLoading ? 'Processing...' : `Confirm ${currentAction?.includes('In') ? 'Clock In' : 'Clock Out'}`}
                   </Button>
                 </div>
               </div>
