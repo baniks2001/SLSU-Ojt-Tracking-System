@@ -117,30 +117,6 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
     setNextAction(getNextClockAction());
   }, [todayRecord, shiftType]);
 
-  // Auto-start camera when modal opens
-  useEffect(() => {
-    if (showCameraModal && !showCamera && !capturedImage) {
-      const timer = setTimeout(() => {
-        startCamera();
-      }, 500); // Small delay to ensure modal is fully rendered
-      
-      return () => clearTimeout(timer);
-    }
-  }, [showCameraModal, showCamera, capturedImage]);
-
-  // Handle camera initialization timeout
-  useEffect(() => {
-    if (showCameraModal && !showCamera) {
-      const timeout = setTimeout(() => {
-        if (!showCamera) {
-          toast.error('Camera failed to start automatically. Please check camera permissions.');
-        }
-      }, 5000); // 5 second timeout
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [showCameraModal, showCamera]);
-
   // Update shift status based on current time
   useEffect(() => {
     const updateShiftStatus = () => {
@@ -346,8 +322,7 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
 
     setCurrentAction(action);
     setShowCameraModal(true);
-    // Start camera capture flow
-    await startCamera();
+    // Don't start camera immediately - wait for user to click start button
   };
 
   const captureImage = () => {
@@ -1386,12 +1361,20 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
             {/* Camera Section */}
             {!showCamera && !capturedImage && (
               <div className="text-center py-8">
-                <div className="animate-pulse">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-sky-100 rounded-full flex items-center justify-center">
-                    <Camera className="h-8 w-8 text-sky-600" />
+                <div className="mb-6">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-sky-100 rounded-full flex items-center justify-center">
+                    <Camera className="h-10 w-10 text-sky-600" />
                   </div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Camera Access Required</h3>
+                  <p className="text-gray-600 text-base mb-6">Please allow camera access to verify your identity for clocking {currentAction === 'clockIn' ? 'in' : 'out'}.</p>
                 </div>
-                <p className="text-gray-600 text-base">Starting camera...</p>
+                <Button 
+                  onClick={startCamera} 
+                  className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200"
+                >
+                  <Camera className="h-5 w-5 mr-3" />
+                  Start Camera
+                </Button>
               </div>
             )}
 

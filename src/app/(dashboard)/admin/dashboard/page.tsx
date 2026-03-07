@@ -42,6 +42,24 @@ export default function AdminDashboard() {
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [showEditStudent, setShowEditStudent] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [studentToEdit, setStudentToEdit] = useState<any>(null);
+  const [editStudentData, setEditStudentData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    studentId: '',
+    course: '',
+    department: '',
+    campus: '',
+    year: '',
+    section: ''
+  });
+  const [editPasswordData, setEditPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [showCreateCourse, setShowCreateCourse] = useState(false);
   const [showCreateCampus, setShowCreateCampus] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -158,8 +176,22 @@ export default function AdminDashboard() {
   };
 
   const handleEditStudent = (studentId: string) => {
-    // TODO: Implement edit student functionality
-    toast.info('Edit student functionality coming soon');
+    const student = users.find(u => u._id === studentId);
+    if (student) {
+      setStudentToEdit(student);
+      setEditStudentData({
+        firstName: student.details?.firstName || '',
+        lastName: student.details?.lastName || '',
+        email: student.email,
+        studentId: student.details?.studentId || '',
+        course: student.details?.course || '',
+        department: student.details?.department || '',
+        campus: student.details?.campus || '',
+        year: student.details?.year || '',
+        section: student.details?.section || ''
+      });
+      setShowEditStudent(true);
+    }
   };
 
   const handleDeleteStudent = async (studentId: string) => {
@@ -187,6 +219,85 @@ export default function AdminDashboard() {
     } finally {
       setShowDeleteDialog(false);
       setStudentToDelete(null);
+    }
+  };
+
+  const handleUpdateStudent = async () => {
+    if (!studentToEdit) return;
+    
+    try {
+      const response = await fetch(`/api/users/${studentToEdit._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...editStudentData,
+          accountType: 'student'
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student information updated successfully');
+        setShowEditStudent(false);
+        setStudentToEdit(null);
+        fetchAllUsersSilent(); // Refresh users list silently
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update student information');
+      }
+    } catch (error) {
+      toast.error('An error occurred while updating student information');
+    }
+  };
+
+  const handleEditPassword = (studentId: string) => {
+    const student = users.find(u => u._id === studentId);
+    if (student) {
+      setStudentToEdit(student);
+      setEditPasswordData({
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setShowEditPassword(true);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!studentToEdit) return;
+    
+    if (editPasswordData.newPassword !== editPasswordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (editPasswordData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/users/${studentToEdit._id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: editPasswordData.newPassword,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Student password updated successfully');
+        setShowEditPassword(false);
+        setStudentToEdit(null);
+        setEditPasswordData({ newPassword: '', confirmPassword: '' });
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update student password');
+      }
+    } catch (error) {
+      toast.error('An error occurred while updating student password');
     }
   };
 
@@ -484,14 +595,25 @@ export default function AdminDashboard() {
                                 variant="outline" 
                                 className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
                                 onClick={() => handleEditStudent(student._id)}
+                                title="Edit Information"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="outline" 
+                                className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+                                onClick={() => handleEditPassword(student._id)}
+                                title="Edit Password"
+                              >
+                                <Key className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
                                 className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
                                 onClick={() => handleDeleteStudent(student._id)}
+                                title="Delete Student"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -851,6 +973,172 @@ export default function AdminDashboard() {
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Student Dialog */}
+        <Dialog open={showEditStudent} onOpenChange={setShowEditStudent}>
+          <DialogContent className="sm:max-w-[500px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Edit Student Information</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Update the student's personal and academic information.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={editStudentData.firstName}
+                    onChange={(e) => setEditStudentData({...editStudentData, firstName: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={editStudentData.lastName}
+                    onChange={(e) => setEditStudentData({...editStudentData, lastName: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editStudentData.email}
+                  onChange={(e) => setEditStudentData({...editStudentData, email: e.target.value})}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="studentId">Student ID</Label>
+                <Input
+                  id="studentId"
+                  value={editStudentData.studentId}
+                  onChange={(e) => setEditStudentData({...editStudentData, studentId: e.target.value})}
+                  className="mt-1"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="course">Course</Label>
+                  <Input
+                    id="course"
+                    value={editStudentData.course}
+                    onChange={(e) => setEditStudentData({...editStudentData, course: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="department">Department</Label>
+                  <Input
+                    id="department"
+                    value={editStudentData.department}
+                    onChange={(e) => setEditStudentData({...editStudentData, department: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="campus">Campus</Label>
+                  <Input
+                    id="campus"
+                    value={editStudentData.campus}
+                    onChange={(e) => setEditStudentData({...editStudentData, campus: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="year">Year</Label>
+                  <Input
+                    id="year"
+                    value={editStudentData.year}
+                    onChange={(e) => setEditStudentData({...editStudentData, year: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="section">Section</Label>
+                  <Input
+                    id="section"
+                    value={editStudentData.section}
+                    onChange={(e) => setEditStudentData({...editStudentData, section: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditStudent(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdateStudent}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Update Student
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Password Dialog */}
+        <Dialog open={showEditPassword} onOpenChange={setShowEditPassword}>
+          <DialogContent className="sm:max-w-[425px] bg-white border border-gray-200 rounded-2xl shadow-2xl">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-gray-900 text-lg font-semibold">Change Student Password</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Set a new password for this student account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div>
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={editPasswordData.newPassword}
+                  onChange={(e) => setEditPasswordData({...editPasswordData, newPassword: e.target.value})}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={editPasswordData.confirmPassword}
+                  onChange={(e) => setEditPasswordData({...editPasswordData, confirmPassword: e.target.value})}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter className="border-t border-gray-100 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditPassword(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdatePassword}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Update Password
               </Button>
             </DialogFooter>
           </DialogContent>
