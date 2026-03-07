@@ -12,7 +12,17 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
 
     const query: Record<string, unknown> = {};
-    if (studentId) query.studentId = studentId;
+    if (studentId) {
+      // Find the student by studentId string to get their ObjectId
+      const student = await Student.findOne({ studentId });
+      if (!student) {
+        return NextResponse.json(
+          { error: 'Student not found' },
+          { status: 404 }
+        );
+      }
+      query.studentId = student._id;
+    }
     if (departmentId) query.departmentId = departmentId;
     if (status) query.status = status;
 

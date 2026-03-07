@@ -17,7 +17,15 @@ export async function GET(request: Request) {
     const query: Record<string, unknown> = {};
 
     if (studentId) {
-      query.studentId = studentId;
+      // Find the student by studentId string to get their ObjectId
+      const student = await Student.findOne({ studentId });
+      if (!student) {
+        return NextResponse.json(
+          { error: 'Student not found' },
+          { status: 404 }
+        );
+      }
+      query.studentId = student._id;
     }
 
     if (date) {
@@ -52,8 +60,11 @@ export async function GET(request: Request) {
       }
     );
   } catch (error) {
-    console.error('Get attendance error:', error);
-    return NextResponse.json({ error: 'Failed to get attendance' }, { status: 500 });
+    console.error('Error fetching attendance:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch attendance records' },
+      { status: 500 }
+    );
   }
 }
 
@@ -69,12 +80,21 @@ export async function POST(request: Request) {
       shiftType = 'regular',
     } = body;
 
+    // Find the student by studentId string to get their ObjectId
+    const student = await Student.findOne({ studentId });
+    if (!student) {
+      return NextResponse.json(
+        { error: 'Student not found' },
+        { status: 404 }
+      );
+    }
+
     // Use server time only - prevent client time manipulation
     const serverTime = new Date();
 
     // Find or create attendance record for today
     let attendance = await Attendance.findOne({
-      studentId,
+      studentId: student._id,
       date: {
         $gte: startOfDay(serverTime),
         $lte: endOfDay(serverTime),
@@ -83,7 +103,7 @@ export async function POST(request: Request) {
 
     if (!attendance) {
       attendance = await Attendance.create({
-        studentId,
+        studentId: student._id,
         date: serverTime,
         shiftType,
       });
