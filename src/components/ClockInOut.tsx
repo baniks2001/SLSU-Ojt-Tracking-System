@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Camera, Clock, LogIn, LogOut, Calendar, CheckCircle, Lock } from 'lucide-react';
 
@@ -1348,6 +1348,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
               </div>
               <span>Verify Your Identity</span>
             </DialogTitle>
+            <DialogDescription className="text-center text-gray-600">
+              Please allow camera access and capture your photo to verify your identity for clocking {currentAction === 'clockIn' ? 'in' : 'out'}.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6 p-6">
@@ -1418,6 +1421,9 @@ export default function ClockInOut({ studentId, shiftType, shiftConfig, isAccept
               </div>
               <span>Review Your Photo</span>
             </DialogTitle>
+            <DialogDescription className="text-center text-gray-600">
+              Please review your captured photo before confirming. Make sure your face is clearly visible.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6 p-6">
